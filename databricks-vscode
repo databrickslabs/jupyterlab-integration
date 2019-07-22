@@ -1,0 +1,66 @@
+#!/usr/bin/env python
+import argparse
+import base64
+import os
+import subprocess
+import time
+import uuid
+from getpass import getpass, getuser
+
+import sysrsync
+
+import jupyter_core.command
+
+import databricks_jupyterlab
+from databricks_jupyterlab.remote import (get_db_config, get_cluster, connect, prepare_ssh_config, bye)
+
+parser = argparse.ArgumentParser(description='Configure remote Databricks access with VS Code')
+
+parser.add_argument('profile', nargs=1, type=str, 
+                    help='A databricks-cli profile')
+
+parser.add_argument('-s', '--sync-interval', dest='interval', 
+                    help='interval in seconds to sync local and remote folder')
+
+args = parser.parse_args()
+profile = args.profile[0]
+interval = 300  # 5 min
+try:
+    interval = int(args.interval)
+except:
+    print("Wrong interval parameter, using %d seconds")
+
+print("\n1. Getting host and token from .databrickscfg")
+host, token = get_db_config(profile)
+
+print("\n2. Select remote cluster")
+apiclient = connect(profile)
+cluster_id, public_ip, cluster_name = get_cluster(apiclient, profile, host, token)
+
+print("\n3. Configuring ssh config for remote cluster")
+prepare_ssh_config(cluster_id, profile, public_ip)
+
+folder = os.getcwd()
+foldername = os.path.basename(folder)
+
+user = getuser()
+
+command = ["ssh", cluster_id, "mkdir", "-p", "/home/ubuntu/%s" % user]
+subprocess.run(command)
+
+print("   Synching local files to Databricks server")
+sysrsync.run(source=folder + "/",
+             destination="/home/ubuntu/%s/%s" % (user, foldername),
+             destination_ssh=cluster_id,
+             options=["-r", "-l", "-p", "-t", "-z", "-v"],
+             exclusions=[".git"])
+
+while True:
+    print("\n   DO NOT STOP THIS PROCESS - IT SYNCS REMOTE FILES TO LOCAL FOLDER EVERY %d SECONDS!" % interval)
+    time.sleep(interval)
+    print("   => Synching files from Databricks server to local folder")
+    sysrsync.run(destination=folder,
+                 source="/home/ubuntu/%s/%s" % (user, foldername),
+                 source_ssh=cluster_id,
+                 options=["-r", "-l", "-p", "-t", "-z", "-v", "--delete"],
+                 exclusions=[".git"])
