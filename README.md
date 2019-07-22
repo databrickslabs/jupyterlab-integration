@@ -1,4 +1,4 @@
-# Local JupyterLab connecting to Databricks
+# Local JupyterLab connecting to Databricks via SSH
 
 ## 1 Prerequisites
 
