@@ -11,10 +11,17 @@
 
 ## 2 Installation
 
+Clone the repository:
+
+```bash
+git clone https://github.com/databrickslabs/Jupyterlab-Integration.git
+cd Jupyterlab-Integration
+```
+
 Select a conda environment name (e.g. *jlab*) and install databricks-jupyterlab
 
 ```bash
-install.sh jlab
+./install.sh jlab
 ```
 
 ## 3 Usage
