@@ -35,7 +35,7 @@ from databricks_cli.clusters.api import ClusterApi
 from remote_ikernel.manage  import show_kernel, add_kernel
 from remote_ikernel.compat import kernelspec as ks
 
-from databricks_jupyterlab.rest import Clusters
+from databricks_jupyterlab.rest import Clusters, Libraries
 
 
 class Dark(Default):
@@ -137,16 +137,29 @@ def get_cluster(apiclient, profile, host, token):
     state = response["state"]
 
     if state == "TERMINATED":
-        print("\nStarting cluster %s (this can take up to 5 min)" % cluster_id)
+        print("   => Starting cluster %s (this can take up to 5 min)" % cluster_id)
         response = cluster_api.start(cluster_id)
-        print(response)
-    
-    while not state in ("RUNNING", "RESIZING"):
-        print(".", end="", flush=True)
-        time.sleep(5)
-        response = cluster_api.status(cluster_id)
-        state = response["state"]
-    
+
+        print("   ", end="", flush=True)
+        while not state in ("RUNNING", "RESIZING"):
+            print(".", end="", flush=True)
+            time.sleep(5)
+            response = cluster_api.status(cluster_id)
+            state = response["state"]
+        
+        print("\n   => Waiting for libraries on cluster %s being installed (this can take some time)" % cluster_id)
+        print("   ", end="", flush=True)    
+        done = False
+        while not done:
+            states = get_library_state(cluster_id, host=host, token=token)
+            installing = any([s in ["PENDING", "RESOLVING", "INSTALLING"] for s in states])
+            if installing:
+                print(".", end="", flush=True)
+                time.sleep(5)
+            else:
+                done = True
+                print("\n   Done\n")
+
     public_ip = response["driver"]["public_dns"]
     
     print("   => Selected cluster: %s (%s)" % (cluster_name, public_ip))
@@ -231,9 +244,16 @@ def show_profiles():
 def get_remote_packages(host):
     return json.loads(ssh(host, "/databricks/python/bin/pip list --format=json"))
 
-def is_reachable(host):
-    try:
-        subprocess.check_output(["ssh", "-o", "StrictHostKeyChecking=no", "-o", "ConnectTimeout=2", host, "hostname"])
+def is_reachable(public_dns):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    result = sock.connect_ex((public_dns, 2200))
+    if result == 0:
+        sock.close()
         return True
-    except:
+    else:
         return False
+
+def get_library_state(clusterId, host, token):
+    libraries_api = Libraries(url=host, token=token)
+    libraries = libraries_api.status(clusterId)
+    return [lib["status"] for lib in libraries["library_statuses"]]
