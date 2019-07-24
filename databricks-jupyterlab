@@ -18,6 +18,17 @@ from databricks_jupyterlab.remote import (get_db_config, get_cluster, connect, p
                                           get_remote_packages, is_reachable, create_kernelspec,
                                           install_libs, mount_sshfs, show_profiles, bye)
 
+def conda_version():
+    try:
+        result = check_output(["conda", "--version"])
+    except Exception as ex:
+        print(ex)
+        print("conda cannot be called. Is it properly installed?")
+        sys.exit(1)
+
+    result = result.strip().decode()
+    return tuple([int(v) for v in result.split(" ")[1].split(".")])
+    
 class VCheck(Enum):
     a = 'all'
     d = 'diff'
@@ -46,6 +57,14 @@ parser.add_argument('-v', '--versioncheck', dest='versioncheck', type=VCheck, ch
 args = parser.parse_args()
 profile = args.profile
 
+version = conda_version()
+if version[1] >= 4 and version[2] >= 5:
+    print("Valid version of conda detected: %s.%s.%s" % version)
+else:
+    print("Too old conda version:")
+    print("Please update conda to at least 4.7.5")
+    sys.exit(1)
+
 module_path = os.path.dirname(databricks_jupyterlab.__file__)
 if args.profile == "" and not args.profiles:
     parser.print_help()
@@ -67,6 +86,12 @@ if args.kernelspec or args.sshfs or args.versioncheck:
 
     print("\n* Configuring ssh config for remote cluster")
     prepare_ssh_config(cluster_id, profile, public_ip)
+    if not is_reachable(public_ip):
+        print("Cannot connect to remote cluster")
+        print("Please check:")
+        print("- whether port 2200 is open in cloud security group")
+        print("- whether VPN is enabled if you need one to connect to the cluster")
+        sys.exit(1)
 
 if args.kernelspec:
     packages = json.loads(check_output(["conda", "list", "--json"]))
