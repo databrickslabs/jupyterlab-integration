@@ -108,3 +108,13 @@ class Clusters(object):
         data = {"cluster_id": cluster_id}
         result = Rest.post(self.url, "2.0", "clusters/start", json=data, token=self.token)
         return result
+
+
+class Libraries(object):
+    def __init__(self, url, token):
+        self.url = url
+        self.token = token
+
+    def status(self, cluster_id):
+        result = Rest.get(self.url, "2.0", "libraries/cluster-status?cluster_id=%s" % cluster_id, token=self.token)
+        return result
