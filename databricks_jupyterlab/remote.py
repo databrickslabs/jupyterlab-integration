@@ -35,7 +35,7 @@ from databricks_cli.clusters.api import ClusterApi
 from remote_ikernel.manage  import show_kernel, add_kernel
 from remote_ikernel.compat import kernelspec as ks
 
-from databricks_jupyterlab.rest import Clusters, Libraries
+from databricks_jupyterlab.rest import Clusters, Libraries, Command
 
 
 class Dark(Default):
@@ -136,10 +136,12 @@ def get_cluster(apiclient, profile, host, token):
     response = cluster_api.status(cluster_id)
     state = response["state"]
 
-    if state == "TERMINATED":
-        print("   => Starting cluster %s (this can take up to 5 min)" % cluster_id)
-        response = cluster_api.start(cluster_id)
-
+    if not state in ["RUNNING", "RESIZING"]:
+        if state == "TERMINATED":
+            print("   => Starting cluster %s" % cluster_id)
+            response = cluster_api.start(cluster_id)
+        
+        print("   => Waiting for cluster %s being started (this can take up to 5 min)" % cluster_id)
         print("   ", end="", flush=True)
         while not state in ("RUNNING", "RESIZING"):
             print(".", end="", flush=True)
@@ -245,13 +247,11 @@ def get_remote_packages(host):
     return json.loads(ssh(host, "/databricks/python/bin/pip list --format=json"))
 
 def is_reachable(public_dns):
+    print("   => Testing whether cluster can be reached")
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(3)
     result = sock.connect_ex((public_dns, 2200))
-    if result == 0:
-        sock.close()
-        return True
-    else:
-        return False
+    return result == 0
 
 def get_library_state(clusterId, host, token):
     libraries_api = Libraries(url=host, token=token)
