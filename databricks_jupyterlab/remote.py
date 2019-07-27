@@ -210,14 +210,15 @@ def install_libs(host, module_path, ipywidets_version, sidecar_version):
 
     wheel = glob.glob("%s/lib/*.whl" % module_path)[0]
     target = "/home/ubuntu/%s" % str(uuid.uuid4())
+    pip_cmd = "/databricks/python/bin/pip install -q --no-warn-conflicts --disable-pip-version-check"
 
     print("   Installing ipywidgets")
-    ssh(host, "sudo -H /databricks/python/bin/pip install -q ipywidgets==%s sidecar==%s" % (ipywidets_version, sidecar_version))
+    ssh(host, "sudo -H %s ipywidgets==%s sidecar==%s" % (pip_cmd, ipywidets_version, sidecar_version))
 
     print("   Installing databricks_jupyterlab")
     ssh(host, "mkdir -p %s" % target)
     scp(host, wheel, target)
-    ssh(host, "sudo -H /databricks/python/bin/pip install -q --upgrade %s/%s" % (target, os.path.basename(wheel)))
+    ssh(host, "sudo -H %s --upgrade %s/%s" % (pip_cmd, target, os.path.basename(wheel)))
     ssh(host, "rm -f %s/* && rmdir %s" % (target, target))
 
 def mount_sshfs(host):
