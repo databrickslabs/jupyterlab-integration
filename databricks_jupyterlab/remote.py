@@ -212,8 +212,14 @@ def create_kernelspec(profile, organisation, host, cluster_id, cluster_name):
     if organisation is not None:
         env += " DBJL_ORG=%s" % organisation
     kernel_cmd = "sudo -H %s /databricks/python3/bin/python3 -m ipykernel -f {connection_file}" % env
-    add_kernel("ssh", name="%s:%s" % (profile, cluster_name), kernel_cmd=kernel_cmd,
-                language="python", workdir="/home/ubuntu", host="%s:2200" % cluster_id, verbose=True)
+    kernel_name = add_kernel("ssh",
+        name="%s:%s" % (profile, cluster_name),
+        kernel_cmd=kernel_cmd,
+        language="python",
+        workdir="/home/ubuntu",
+        host="%s:2200" % cluster_id,
+        ssh_init=json.dumps(["databricks-jupyterlab", profile, "-r", "-i", cluster_id]),
+        verbose=True)
 
     print("   => Kernel specification 'SSH %s:2200 %s' created or updated" % (cluster_id, cluster_name))
 
