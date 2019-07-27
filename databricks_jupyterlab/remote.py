@@ -269,4 +269,7 @@ def is_reachable(public_dns):
 def get_library_state(clusterId, host, token):
     libraries_api = Libraries(url=host, token=token)
     libraries = libraries_api.status(clusterId)
-    return [lib["status"] for lib in libraries["library_statuses"]]
+    if libraries == {}:
+        return []
+    else:
+        return [lib["status"] for lib in libraries["library_statuses"]]
