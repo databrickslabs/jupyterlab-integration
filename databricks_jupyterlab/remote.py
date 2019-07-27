@@ -93,7 +93,7 @@ def connect(profile):
     else:
         bye("Token for profile '%s' is invalid" % profile)
 
-def get_cluster(apiclient, profile, host, token):
+def get_cluster(apiclient, profile, host, token, cluster_id=None):
     with open("%s/.ssh/id_%s.pub" % (expanduser("~"), profile)) as fd:
         try:
             ssh_pub = fd.read().strip()
@@ -104,31 +104,41 @@ def get_cluster(apiclient, profile, host, token):
     clusters = client.list_clusters()
     my_clusters = [cluster for cluster in clusters["clusters"] if ssh_pub in [c.strip() for c in cluster.get("ssh_public_keys", [])]]
 
-    def entry(i, cluster):
-        if cluster.get("autoscale", None) is None:
-            return "%s: %s (id: %s, state: %s, workers: %d)" % (
-                i,
-                cluster["cluster_name"],
-                cluster["cluster_id"],
-                cluster["state"],
-                cluster["num_workers"]
-            )
-        else:
-            return "%s: %s (id: %s, state: %s, scale: %d-%d)" % (
-                i,
-                cluster["cluster_name"],
-                cluster["cluster_id"],
-                cluster["state"],
-                cluster["autoscale"]["min_workers"],
-                cluster["autoscale"]["max_workers"]
-            )
+    if cluster_id is None:
+        def entry(i, cluster):
+            if cluster.get("autoscale", None) is None:
+                return "%s: %s (id: %s, state: %s, workers: %d)" % (
+                    i,
+                    cluster["cluster_name"],
+                    cluster["cluster_id"],
+                    cluster["state"],
+                    cluster["num_workers"]
+                )
+            else:
+                return "%s: %s (id: %s, state: %s, scale: %d-%d)" % (
+                    i,
+                    cluster["cluster_name"],
+                    cluster["cluster_id"],
+                    cluster["state"],
+                    cluster["autoscale"]["min_workers"],
+                    cluster["autoscale"]["max_workers"]
+                )
 
-    choice = [
-        inquirer.List('cluster_id', message='Which cluster to connect to?',
-                      choices=[entry(i, cluster) for i, cluster in enumerate(my_clusters)])
-    ]
-    answer = inquirer.prompt(choice, theme=Dark())
-    cluster = my_clusters[int(answer["cluster_id"].split(":")[0])]
+        choice = [
+            inquirer.List('cluster_id', message='Which cluster to connect to?',
+                        choices=[entry(i, cluster) for i, cluster in enumerate(my_clusters)])
+        ]
+        answer = inquirer.prompt(choice, theme=Dark())
+        cluster = my_clusters[int(answer["cluster_id"].split(":")[0])]
+    else:
+        cluster = None
+        for c in my_clusters:
+            if c["cluster_id"] == cluster_id:
+                cluster = c
+                break
+        if cluster is None:
+            return cluster_id, None, None, None
+
     cluster_id = cluster["cluster_id"]
     cluster_name = cluster["cluster_name"]
 
@@ -136,9 +146,11 @@ def get_cluster(apiclient, profile, host, token):
     response = cluster_api.status(cluster_id)
     state = response["state"]
 
+    started = False
     if not state in ["RUNNING", "RESIZING"]:
         if state == "TERMINATED":
             print("   => Starting cluster %s" % cluster_id)
+            started = True
             response = cluster_api.start(cluster_id)
         
         print("   => Waiting for cluster %s being started (this can take up to 5 min)" % cluster_id)
@@ -166,7 +178,7 @@ def get_cluster(apiclient, profile, host, token):
     
     print("   => Selected cluster: %s (%s)" % (cluster_name, public_ip))
 
-    return  (cluster_id, public_ip, cluster_name)
+    return  (cluster_id, public_ip, cluster_name, started)
 
 def prepare_ssh_config(cluster_id, profile, public_ip):
     config = os.path.join(expanduser("~"), ".ssh/config")
