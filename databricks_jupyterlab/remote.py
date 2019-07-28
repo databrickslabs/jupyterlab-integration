@@ -38,6 +38,9 @@ from remote_ikernel.compat import kernelspec as ks
 from databricks_jupyterlab.rest import Clusters, Libraries, Command
 
 
+PIP_INSTALL = "/databricks/python/bin/pip install -q --no-warn-conflicts --disable-pip-version-check"
+PIP_LIST = "/databricks/python/bin/pip list --disable-pip-version-check --format=json"
+
 class Dark(Default):
 
     def __init__(self):
@@ -254,19 +257,18 @@ def install_libs(host, module_path, ipywidets_version, sidecar_version):
 
     wheel = glob.glob("%s/lib/*.whl" % module_path)[0]
     target = "/home/ubuntu/%s" % str(uuid.uuid4())
-    pip_cmd = "/databricks/python/bin/pip install -q --no-warn-conflicts --disable-pip-version-check"
 
     print("   Installing ipywidgets")
     ssh(
         host, "sudo -H %s ipywidgets==%s sidecar==%s" %
-        (pip_cmd, ipywidets_version, sidecar_version))
+        (PIP_INSTALL, ipywidets_version, sidecar_version))
 
     print("   Installing databricks_jupyterlab")
     ssh(host, "mkdir -p %s" % target)
     scp(host, wheel, target)
     ssh(
         host, "sudo -H %s --upgrade %s/%s" %
-        (pip_cmd, target, os.path.basename(wheel)))
+        (PIP_INSTALL, target, os.path.basename(wheel)))
     ssh(host, "rm -f %s/* && rmdir %s" % (target, target))
 
 
@@ -302,8 +304,7 @@ def show_profiles():
 
 
 def get_remote_packages(host):
-    return json.loads(ssh(host,
-                          "/databricks/python/bin/pip list --format=json"))
+    return json.loads(ssh(host, PIP_LIST))
 
 
 def is_reachable(public_dns):
@@ -321,3 +322,12 @@ def get_library_state(clusterId, host, token):
         return []
     else:
         return [lib["status"] for lib in libraries["library_statuses"]]
+
+def check_installed(host):
+    packages = get_remote_packages(host)
+    found = False
+    for p in packages:
+        if p["name"] == "databricks-jupyterlab":
+            found = True
+            break
+    return found

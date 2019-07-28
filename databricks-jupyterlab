@@ -30,7 +30,7 @@ import jupyter_core.command
 
 import databricks_jupyterlab
 from databricks_jupyterlab.remote import (get_db_config, get_cluster, connect,
-                                          prepare_ssh_config,
+                                          prepare_ssh_config, check_installed,
                                           get_remote_packages, is_reachable,
                                           create_kernelspec, install_libs,
                                           mount_sshfs, show_profiles, bye)
@@ -213,7 +213,7 @@ if args.kernelspec or args.restart or args.sshfs or args.versioncheck:
         )
         sys.exit(1)
 
-if started and (args.kernelspec or args.restart):
+if (args.kernelspec or args.restart) and not check_installed(cluster_id):
     packages = json.loads(check_output(["conda", "list", "--json"]))
     deps = {
         p["name"]: p["version"]
