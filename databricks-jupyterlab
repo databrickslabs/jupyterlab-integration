@@ -57,21 +57,21 @@ parser = argparse.ArgumentParser(description='Configure remote Databricks access
 
 parser.add_argument('profile', nargs='?', type=str, default="",
                     help='A databricks-cli profile')
-parser.add_argument('-c', '--clipboard', dest='clipboard', action='store_true', 
+parser.add_argument('-c', '--clipboard', dest='clipboard', action='store_true',
                     help='Copy the personal access token to the clipboard')
-parser.add_argument('-i', '--id', dest='cluster_id', 
-                    help='The cluster_id to avoid manual selection')                    
-parser.add_argument('-k', '--kernelspec', dest='kernelspec', action='store_true', 
+parser.add_argument('-i', '--id', dest='cluster_id',
+                    help='The cluster_id to avoid manual selection')
+parser.add_argument('-k', '--kernelspec', dest='kernelspec', action='store_true',
                     help='Create a kernel specification')
-parser.add_argument('-o', '--organisation', dest='organisation', 
+parser.add_argument('-o', '--organisation', dest='organisation',
                     help='The organisation for Azure Databricks')
 parser.add_argument('-p', '--profiles', dest='profiles', action='store_true',
                     help='Show all datbricks cli profiles and check SSH key')
-parser.add_argument('-r', '--restart', dest='restart', action='store_true', 
-                    help='Restart cluster with id cluster_id')                    
-parser.add_argument('-s', '--sshfs', dest='sshfs', action='store_true', 
+parser.add_argument('-r', '--restart', dest='restart', action='store_true',
+                    help='Restart cluster with id cluster_id')
+parser.add_argument('-s', '--sshfs', dest='sshfs', action='store_true',
                     help='Mount remote filesystem via sshfs')
-parser.add_argument('-v', '--versioncheck', dest='versioncheck', type=VCheck, choices=list(VCheck), 
+parser.add_argument('-v', '--versioncheck', dest='versioncheck', type=VCheck, choices=list(VCheck),
                     help='Check version of local env with remote env')
 
 args = parser.parse_args()
