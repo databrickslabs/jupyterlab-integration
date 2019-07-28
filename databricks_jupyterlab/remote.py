@@ -219,6 +219,7 @@ def create_kernelspec(profile, organisation, host, cluster_id, cluster_name):
         workdir="/home/ubuntu",
         host="%s:2200" % cluster_id,
         ssh_init=json.dumps(["databricks-jupyterlab", profile, "-r", "-i", cluster_id]),
+        no_passwords=True,
         verbose=True)
 
     print("   => Kernel specification 'SSH %s:2200 %s' created or updated" % (cluster_id, cluster_name))
