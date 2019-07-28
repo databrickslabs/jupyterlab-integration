@@ -11,7 +11,7 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
-   
+
 import os
 import re
 
@@ -19,30 +19,35 @@ from sidecar import Sidecar
 from ipywidgets import Select, VBox, HBox, Button, Output
 from IPython.display import display
 
+
 class Dbfs(object):
-    
-    instance = None    
+
+    instance = None
 
     class __Dbfs(object):
-    
+
         def __init__(self, dbutils):
             self.dbutils = dbutils
 
         def create(self):
-            self.sc = Sidecar(title="DBFS-%s" % os.environ["DBJL_CLUSTER"].split("-")[-1])
+            self.sc = Sidecar(title="DBFS-%s" %
+                              os.environ["DBJL_CLUSTER"].split("-")[-1])
             self.path = "/"
             self.flist = Select(options=[], rows=40, disabled=False)
             self.flist.observe(self.on_click, names='value')
-            
+
             self.refresh = Button(description="refresh")
             self.refresh.on_click(self.on_refresh)
             self.output = Output()
-            
+
             self.up = Button(description="up")
             self.up.on_click(self.on_up)
-            
+
             with self.sc:
-                display(VBox([HBox([self.up, self.refresh]), self.flist, self.output]))        
+                display(
+                    VBox([
+                        HBox([self.up, self.refresh]), self.flist, self.output
+                    ]))
 
             self.update()
 
@@ -61,29 +66,35 @@ class Dbfs(object):
             return (size, unit)
 
         def update(self):
-            with self.output: print("updating ...")
+            with self.output:
+                print("updating ...")
             fobjs = self.dbutils.fs.ls(self.path)
             self.show_path(self.path)
 
-            dirs = sorted([fobj.name for fobj in fobjs if fobj.isDir()], key=lambda x: x.lower())
-            files = sorted(["%s (%d %s)" % ((fobj.name, ) + self.convertBytes(fobj.size))  
-                            for fobj in fobjs if not fobj.isDir()], key=lambda x: x[0].lower())
+            dirs = sorted([fobj.name for fobj in fobjs if fobj.isDir()],
+                          key=lambda x: x.lower())
+            files = sorted([
+                "%s (%d %s)" % ((fobj.name,) + self.convertBytes(fobj.size))
+                for fobj in fobjs
+                if not fobj.isDir()
+            ],
+                           key=lambda x: x[0].lower())
             self.flist.options = [""] + dirs + files
-            
 
         def show_path(self, path):
-            self.output.clear_output() 
-            with self.output: print("dbfs:" + re.sub(r"\s\(.*?\)$", "", path))
+            self.output.clear_output()
+            with self.output:
+                print("dbfs:" + re.sub(r"\s\(.*?\)$", "", path))
 
         def on_refresh(self, b):
             self.update()
-            
+
         def on_up(self, b):
             new_path = os.path.dirname(self.path.rstrip("/"))
             if new_path != self.path:
                 self.path = new_path
             self.update()
-            
+
         def on_click(self, change):
             new_path = os.path.join(self.path, change["new"])
             if change["old"] is not None:
@@ -95,10 +106,10 @@ class Dbfs(object):
 
         def close(self):
             self.sc.close()
-            
+
     def __init__(self, dbutils=None):
         if not Dbfs.instance:
             Dbfs.instance = Dbfs.__Dbfs(dbutils)
-                
+
     def __getattr__(self, name):
         return getattr(self.instance, name)

@@ -11,7 +11,7 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
-   
+
 import atexit
 import base64
 import configparser
@@ -27,7 +27,8 @@ from IPython.display import HTML, display
 
 sys.path.insert(0, "/databricks/spark/python/lib/py4j-0.10.7-src.zip")
 sys.path.insert(0, "/databricks/spark/python")
-sys.path.insert(0, "/databricks/jars/spark--driver--spark--resources-resources.jar")
+sys.path.insert(
+    0, "/databricks/jars/spark--driver--spark--resources-resources.jar")
 
 # will only work on the Databricks side
 try:
@@ -38,7 +39,7 @@ try:
     import warnings
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        from PythonShell import get_existing_gateway, RemoteContext   # pylint: disable=import-error
+        from PythonShell import get_existing_gateway, RemoteContext  # pylint: disable=import-error
 
     from dbutils import DBUtils  # pylint: disable=import-error
 except:
@@ -52,6 +53,7 @@ from databricks_jupyterlab.info import Info
 
 
 class JobInfo():
+
     def __init__(self, pool_id):
         self.pool_id = pool_id
         self.group_id = None
@@ -60,15 +62,17 @@ class JobInfo():
 def is_remote():
     return os.environ.get("DBJL_HOST", None) is not None
 
+
 def is_azure():
     return os.environ.get("DBJL_ORG", None) is not None
+
 
 def dbcontext(progressbar=True):
     ip = get_ipython()
 
     if not is_remote():
         return "This is not a remote Databricks kernel"
-        
+
     spark = ip.user_ns.get("spark")
     if spark is not None:
         print("Spark context already exists")
@@ -137,10 +141,11 @@ def dbcontext(progressbar=True):
     # Todo: Find a better way to store pool_id instead of this hack
     #
     job_info = JobInfo(str(random.getrandbits(64)))
-        
+
     # Patch the remote spark UI into the _repr_html_ call
     #
     def repr_html(uiWebUrl):
+
         def sc_repr_html():
             return """
             <div>
@@ -152,12 +157,14 @@ def dbcontext(progressbar=True):
                 </dl>
             </div>
             """.format(sc=spark.sparkContext, uiWebUrl=uiWebUrl)
+
         return sc_repr_html
 
     if organisation is None:
         sparkUi = "%s#/setting/clusters/%s/sparkUi" % (host, clusterId)
     else:
-        sparkUi = "%s/?o=%s#/setting/clusters/%s/sparkUi" % (host, organisation, clusterId)
+        sparkUi = "%s/?o=%s#/setting/clusters/%s/sparkUi" % (host, organisation,
+                                                             clusterId)
 
     sc_repr_html = repr_html(sparkUi)
     sc._repr_html_ = sc_repr_html
@@ -179,7 +186,7 @@ def dbcontext(progressbar=True):
     except:
         pass
 
-    # Initialize the ipython shell with spark context 
+    # Initialize the ipython shell with spark context
     #
     shell = get_ipython()
     shell.sc = sc
@@ -205,28 +212,28 @@ def dbcontext(progressbar=True):
     #
     ip.register_magic_function(sql, magic_kind='line_cell')
 
-    # Ensure that the virtual python environment and py4j gateway gets shut down 
+    # Ensure that the virtual python environment and py4j gateway gets shut down
     # when the python interpreter shuts down
-    # 
+    #
     def shutdown_kernel():
         from IPython import get_ipython
         ip = get_ipython()
 
         ip = get_ipython()
-        if ip.user_ns.get("spark", None) is not None: 
+        if ip.user_ns.get("spark", None) is not None:
             del ip.user_ns["spark"]
-        if ip.user_ns.get("sc", None) is not None: 
+        if ip.user_ns.get("sc", None) is not None:
             del ip.user_ns["sc"]
-        if ip.user_ns.get("sqlContext", None) is not None: 
+        if ip.user_ns.get("sqlContext", None) is not None:
             del ip.user_ns["sqlContext"]
-        if ip.user_ns.get("dbutils", None) is not None: 
+        if ip.user_ns.get("dbutils", None) is not None:
             del ip.user_ns["dbutils"]
 
         # Context is a singleton
         Context().destroy()
-        
+
     atexit.register(shutdown_kernel)
- 
+
     # Forward spark variables to the user namespace
     #
     ip.user_ns["spark"] = spark
@@ -240,11 +247,16 @@ def dbcontext(progressbar=True):
     print("- sqlContext  Hive Context")
     print("- dbutils     Databricks utilities\n")
     print("")
-    print("Open dbfs browser:     import databricks_jupyterlab as dj; dj.browse_dbfs(dbutils)")
-    print("Open database browser: import databricks_jupyterlab as dj; dj.browse_databases(spark)")
+    print(
+        "Open dbfs browser:     import databricks_jupyterlab as dj; dj.browse_dbfs(dbutils)"
+    )
+    print(
+        "Open database browser: import databricks_jupyterlab as dj; dj.browse_databases(spark)"
+    )
     print("")
 
     return spark
+
 
 @line_cell_magic
 def sql(line, cell=None):
@@ -255,4 +267,3 @@ def sql(line, cell=None):
     else:
         code = cell
     return spark.sql(code)
-

@@ -11,17 +11,18 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
-   
+
 from sidecar import Sidecar
 from ipywidgets import Output
 from IPython.display import display
 
 
 class Info(object):
-    
+
     instance = None
-    
+
     class __Info(object):
+
         def __init__(self, spark):
             self.spark = spark
 
@@ -39,10 +40,10 @@ class Info(object):
         def close(self):
             self.selects = []
             self.sc.close()
-        
+
     def __init__(self, spark=None):
         if not Info.instance:
             Info.instance = Info.__Info(spark)
-            
+
     def __getattr__(self, name):
         return getattr(self.instance, name)

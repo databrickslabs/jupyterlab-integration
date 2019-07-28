@@ -14,7 +14,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-
 import argparse
 import base64
 import json
@@ -30,9 +29,12 @@ import pyperclip
 import jupyter_core.command
 
 import databricks_jupyterlab
-from databricks_jupyterlab.remote import (get_db_config, get_cluster, connect, prepare_ssh_config,
-                                          get_remote_packages, is_reachable, create_kernelspec,
-                                          install_libs, mount_sshfs, show_profiles, bye)
+from databricks_jupyterlab.remote import (get_db_config, get_cluster, connect,
+                                          prepare_ssh_config,
+                                          get_remote_packages, is_reachable,
+                                          create_kernelspec, install_libs,
+                                          mount_sshfs, show_profiles, bye)
+
 
 def conda_version():
     try:
@@ -45,6 +47,68 @@ def conda_version():
     result = result.strip().decode()
     return tuple([int(v) for v in result.split(" ")[1].split(".")])
 
+
+def write_config():
+    config = {
+        "c.KernelManager.autorestart": False,
+        "c.MappingKernelManager.kernel_info_timeout": 600
+    }
+    keys = list(config)
+
+    config_file = os.path.expanduser("~/.jupyter/jupyter_notebook_config.py")
+    if os.path.exists(config_file):
+        with open(config_file, "r") as fd:
+            lines = fd.read().split("\n")
+
+        with open(config_file, "w") as fd:
+            for line in lines:
+                kv = line.strip().split("=")
+                if len(kv) == 2:
+                    k, v = kv
+                    if config.get(k, None) is not None:
+                        fd.write("%s=%s\n" % (k, config[k]))
+                        del config[k]
+                    else:
+                        fd.write("%s\n" % line)
+            for k, v in config.items():
+                fd.write("%s=%s\n" % (k, v))
+    else:
+        with open(config_file, "w") as fd:
+            fd.write("\n".join(["%s=%s" % (k, v) for k, v in config.items()]))
+
+
+def version_check():
+    packages = json.loads(check_output(["conda", "list", "--json"]))
+    deps = {p["name"]: p["version"] for p in packages}
+
+    remote_packages = get_remote_packages(cluster_id)
+    remote_deps = {p["name"]: p["version"] for p in remote_packages}
+    joint_keys = sorted(list(set(list(deps.keys()) + list(remote_deps.keys()))))
+    print("%-30s %-10s%-10s" % ("Package", "local", "remote"))
+    if str(args.versioncheck) == "all":
+        scope = joint_keys
+    elif str(args.versioncheck) == "same":
+        scope = [
+            key for key in joint_keys
+            if deps.get(key, None) == remote_deps.get(key, None)
+        ]
+    else:
+        scope = [
+            key for key in joint_keys
+            if deps.get(key, None) != remote_deps.get(key, None) and
+            deps.get(key, None) is not None and
+            remote_deps.get(key, None) is not None
+        ]
+    for key in scope:
+        if deps.get(key) == remote_deps.get(key):
+            print('\033[92m', end="")
+        else:
+            print('\033[91m', end="")
+        print("%-30s %-10s  %-10s" %
+              (key, deps.get(key, "--"), remote_deps.get(key, "--")))
+        print('\033[0m', end="")
+
+
 class VCheck(Enum):
     a = 'all'
     d = 'diff'
@@ -53,25 +117,53 @@ class VCheck(Enum):
     def __str__(self):
         return self.value
 
-parser = argparse.ArgumentParser(description='Configure remote Databricks access with Jupyter Lab')
 
-parser.add_argument('profile', nargs='?', type=str, default="",
+parser = argparse.ArgumentParser(
+    description='Configure remote Databricks access with Jupyter Lab')
+
+parser.add_argument('profile',
+                    nargs='?',
+                    type=str,
+                    default="",
                     help='A databricks-cli profile')
-parser.add_argument('-c', '--clipboard', dest='clipboard', action='store_true',
+parser.add_argument('-c',
+                    '--clipboard',
+                    dest='clipboard',
+                    action='store_true',
                     help='Copy the personal access token to the clipboard')
-parser.add_argument('-i', '--id', dest='cluster_id',
+parser.add_argument('-i',
+                    '--id',
+                    dest='cluster_id',
                     help='The cluster_id to avoid manual selection')
-parser.add_argument('-k', '--kernelspec', dest='kernelspec', action='store_true',
+parser.add_argument('-k',
+                    '--kernelspec',
+                    dest='kernelspec',
+                    action='store_true',
                     help='Create a kernel specification')
-parser.add_argument('-o', '--organisation', dest='organisation',
+parser.add_argument('-o',
+                    '--organisation',
+                    dest='organisation',
                     help='The organisation for Azure Databricks')
-parser.add_argument('-p', '--profiles', dest='profiles', action='store_true',
+parser.add_argument('-p',
+                    '--profiles',
+                    dest='profiles',
+                    action='store_true',
                     help='Show all datbricks cli profiles and check SSH key')
-parser.add_argument('-r', '--restart', dest='restart', action='store_true',
+parser.add_argument('-r',
+                    '--restart',
+                    dest='restart',
+                    action='store_true',
                     help='Restart cluster with id cluster_id')
-parser.add_argument('-s', '--sshfs', dest='sshfs', action='store_true',
+parser.add_argument('-s',
+                    '--sshfs',
+                    dest='sshfs',
+                    action='store_true',
                     help='Mount remote filesystem via sshfs')
-parser.add_argument('-v', '--versioncheck', dest='versioncheck', type=VCheck, choices=list(VCheck),
+parser.add_argument('-v',
+                    '--versioncheck',
+                    dest='versioncheck',
+                    type=VCheck,
+                    choices=list(VCheck),
                     help='Check version of local env with remote env')
 
 args = parser.parse_args()
@@ -88,7 +180,9 @@ else:
 module_path = os.path.dirname(databricks_jupyterlab.__file__)
 if args.profile == "" and not args.profiles:
     parser.print_help()
-    print("\ndatabricks-jupyterlab: error: the following arguments are required: profile\n")
+    print(
+        "\ndatabricks-jupyterlab: error: the following arguments are required: profile\n"
+    )
     sys.exit(1)
 
 if not args.profiles:
@@ -103,7 +197,8 @@ started = False
 if args.kernelspec or args.restart or args.sshfs or args.versioncheck:
     print("\n* Select remote cluster")
     apiclient = connect(profile)
-    cluster_id, public_ip, cluster_name, started = get_cluster(apiclient, profile, host, token, args.cluster_id)
+    cluster_id, public_ip, cluster_name, started = get_cluster(
+        apiclient, profile, host, token, args.cluster_id)
     if cluster_name is None:
         print("Error: cluster_id '%s' not found" % cluster_id)
         sys.exit(1)
@@ -111,74 +206,37 @@ if args.kernelspec or args.restart or args.sshfs or args.versioncheck:
     print("\n* Configuring ssh config for remote cluster")
     prepare_ssh_config(cluster_id, profile, public_ip)
     if not is_reachable(public_ip):
-        print("Cannot connect to remote cluster")
-        print("Please check:")
+        print("Cannot connect to remote cluster. Please check:")
         print("- whether port 2200 is open in cloud security group")
-        print("- whether VPN is enabled if you need one to connect to the cluster")
+        print(
+            "- whether VPN is enabled if you need one to connect to the cluster"
+        )
         sys.exit(1)
 
 if started and (args.kernelspec or args.restart):
     packages = json.loads(check_output(["conda", "list", "--json"]))
-    deps = {p["name"]:p["version"]  for p in packages if p["name"] in ["ipywidgets", "sidecar"]}
-    
+    deps = {
+        p["name"]: p["version"]
+        for p in packages
+        if p["name"] in ["ipywidgets", "sidecar"]
+    }
+
     print("\n* Installing databricks_jupyterlab, ipywidgets on remote driver")
-    install_libs(cluster_id, module_path, ipywidets_version=deps["ipywidgets"], sidecar_version=deps["sidecar"])
+    install_libs(cluster_id,
+                 module_path,
+                 ipywidets_version=deps["ipywidgets"],
+                 sidecar_version=deps["sidecar"])
 
 if args.kernelspec:
     print("\n* Create remote kernel spec")
-    create_kernelspec(profile, args.organisation, host, cluster_id, cluster_name)
+    create_kernelspec(profile, args.organisation, host, cluster_id,
+                      cluster_name)
 
     print("\n* Setting global config of jupyter lab (autorestart, timeout)")
-    config = {
-        "c.KernelManager.autorestart": False,
-        "c.MappingKernelManager.kernel_info_timeout": 600
-    }
-    keys = list(config)
-
-    config_file = os.path.expanduser("~/.jupyter/jupyter_notebook_config.py")
-    if os.path.exists(config_file):
-        with open(config_file, "r") as fd:
-            lines = fd.read().split("\n")
-    
-        with open(config_file, "w") as fd:
-            for line in lines:
-                kv = line.strip().split("=")
-                if len(kv) == 2:
-                    k, v = kv
-                    if config.get(k, None) is not None:
-                        fd.write("%s=%s\n" % (k, config[k]))
-                        del config[k]
-                    else:
-                        fd.write("%s\n" % line)
-            for k, v in config.items():
-                fd.write("%s=%s\n" % (k, v))
-    else:
-        with open(config_file, "w") as fd:
-            fd.write("\n".join(["%s=%s" % (k, v) for k,v in config.items()]))
+    write_config()
 
 if args.versioncheck:
-    packages = json.loads(check_output(["conda", "list", "--json"]))
-    deps = {p["name"]:p["version"]  for p in packages}
-
-    remote_packages = get_remote_packages(cluster_id)
-    remote_deps = {p["name"]:p["version"] for p in remote_packages}
-    joint_keys = sorted(list(set(list(deps.keys()) + list(remote_deps.keys()))))
-    print("%-30s %-10s%-10s" % ("Package", "local", "remote"))
-    if str(args.versioncheck) == "all":
-        scope = joint_keys
-    elif str(args.versioncheck) == "same":
-        scope = [key for key in joint_keys if deps.get(key, None) == remote_deps.get(key, None)]
-    else:
-        scope = [key for key in joint_keys if deps.get(key, None) != remote_deps.get(key, None)
-                                              and deps.get(key, None) is not None 
-                                              and remote_deps.get(key, None) is not None]
-    for key in scope:
-        if deps.get(key) == remote_deps.get(key):
-            print('\033[92m', end="")
-        else:
-            print('\033[91m', end="")
-        print("%-30s %-10s  %-10s" % (key, deps.get(key, "--"), remote_deps.get(key, "--")))
-        print('\033[0m', end="")
+    version_check()
 
 if args.sshfs:
     print("\n* Mount remote filesystem to ./remotefs/%s", cluster_id)

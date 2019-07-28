@@ -11,7 +11,7 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
-   
+
 import configparser
 import json
 import os
@@ -32,13 +32,14 @@ from databricks_cli.configure.provider import get_config, ProfileConfigProvider
 from databricks_cli.sdk.api_client import ApiClient
 from databricks_cli.clusters.api import ClusterApi
 
-from remote_ikernel.manage  import show_kernel, add_kernel
+from remote_ikernel.manage import show_kernel, add_kernel
 from remote_ikernel.compat import kernelspec as ks
 
 from databricks_jupyterlab.rest import Clusters, Libraries, Command
 
 
 class Dark(Default):
+
     def __init__(self):
         super().__init__()
         self.List.selection_color = term.cyan
@@ -49,32 +50,41 @@ def bye(msg=None):
         print(msg)
     sys.exit(1)
 
+
 def ssh(host, cmd):
     try:
-        return subprocess.check_output(["ssh", "-o", "StrictHostKeyChecking=no", host, cmd])
+        return subprocess.check_output(
+            ["ssh", "-o", "StrictHostKeyChecking=no", host, cmd])
     except:
         bye("Error installing package")
         return None
 
+
 def scp(host, file, target):
     try:
-        subprocess.run(["scp", "-q", "-o", "StrictHostKeyChecking=no",  
-                        "%s" % file, "%s:%s" % (host, target)])
+        subprocess.run([
+            "scp", "-q", "-o", "StrictHostKeyChecking=no",
+            "%s" % file,
+            "%s:%s" % (host, target)
+        ])
     except:
         bye("Error copying file over ssh")
+
 
 def run(cmd):
     try:
         subprocess.run(cmd)
     except:
-        bye("Error running: %s" % cmd) 
+        bye("Error running: %s" % cmd)
+
 
 def get_db_config(profile, verbose=True):
     config = configparser.ConfigParser()
     config.read(expanduser("~/.databrickscfg"))
     profiles = config.sections()
     if not profile in profiles:
-        print(" The profile '%s' is not available in ~/.databrickscfg:" % profile)
+        print(" The profile '%s' is not available in ~/.databrickscfg:" %
+              profile)
         for p in profiles:
             print("- %s" % p)
         bye()
@@ -85,6 +95,7 @@ def get_db_config(profile, verbose=True):
             print("   => host: %s" % (host))
         return host, token
 
+
 def connect(profile):
     config = ProfileConfigProvider(profile).get_config()
     verify = config.insecure is None
@@ -93,40 +104,42 @@ def connect(profile):
     else:
         bye("Token for profile '%s' is invalid" % profile)
 
+
 def get_cluster(apiclient, profile, host, token, cluster_id=None):
     with open("%s/.ssh/id_%s.pub" % (expanduser("~"), profile)) as fd:
         try:
             ssh_pub = fd.read().strip()
         except:
-            print("ssh key for profile 'id_%s.pub' does not exist in %s/.ssh" % (profile, expanduser("~")))
+            print("ssh key for profile 'id_%s.pub' does not exist in %s/.ssh" %
+                  (profile, expanduser("~")))
             bye()
     client = ClusterApi(apiclient)
     clusters = client.list_clusters()
-    my_clusters = [cluster for cluster in clusters["clusters"] if ssh_pub in [c.strip() for c in cluster.get("ssh_public_keys", [])]]
+    my_clusters = [
+        cluster for cluster in clusters["clusters"]
+        if ssh_pub in [c.strip() for c in cluster.get("ssh_public_keys", [])]
+    ]
 
     if cluster_id is None:
+
         def entry(i, cluster):
             if cluster.get("autoscale", None) is None:
                 return "%s: %s (id: %s, state: %s, workers: %d)" % (
-                    i,
-                    cluster["cluster_name"],
-                    cluster["cluster_id"],
-                    cluster["state"],
-                    cluster["num_workers"]
-                )
+                    i, cluster["cluster_name"], cluster["cluster_id"],
+                    cluster["state"], cluster["num_workers"])
             else:
                 return "%s: %s (id: %s, state: %s, scale: %d-%d)" % (
-                    i,
-                    cluster["cluster_name"],
-                    cluster["cluster_id"],
-                    cluster["state"],
-                    cluster["autoscale"]["min_workers"],
-                    cluster["autoscale"]["max_workers"]
-                )
+                    i, cluster["cluster_name"], cluster["cluster_id"],
+                    cluster["state"], cluster["autoscale"]["min_workers"],
+                    cluster["autoscale"]["max_workers"])
 
         choice = [
-            inquirer.List('cluster_id', message='Which cluster to connect to?',
-                        choices=[entry(i, cluster) for i, cluster in enumerate(my_clusters)])
+            inquirer.List(
+                'cluster_id',
+                message='Which cluster to connect to?',
+                choices=[
+                    entry(i, cluster) for i, cluster in enumerate(my_clusters)
+                ])
         ]
         answer = inquirer.prompt(choice, theme=Dark())
         cluster = my_clusters[int(answer["cluster_id"].split(":")[0])]
@@ -152,21 +165,26 @@ def get_cluster(apiclient, profile, host, token, cluster_id=None):
             print("   => Starting cluster %s" % cluster_id)
             started = True
             response = cluster_api.start(cluster_id)
-        
-        print("   => Waiting for cluster %s being started (this can take up to 5 min)" % cluster_id)
+
+        print(
+            "   => Waiting for cluster %s being started (this can take up to 5 min)"
+            % cluster_id)
         print("   ", end="", flush=True)
         while not state in ("RUNNING", "RESIZING"):
             print(".", end="", flush=True)
             time.sleep(5)
             response = cluster_api.status(cluster_id)
             state = response["state"]
-        
-        print("\n   => Waiting for libraries on cluster %s being installed (this can take some time)" % cluster_id)
-        print("   ", end="", flush=True)    
+
+        print(
+            "\n   => Waiting for libraries on cluster %s being installed (this can take some time)"
+            % cluster_id)
+        print("   ", end="", flush=True)
         done = False
         while not done:
             states = get_library_state(cluster_id, host=host, token=token)
-            installing = any([s in ["PENDING", "RESOLVING", "INSTALLING"] for s in states])
+            installing = any(
+                [s in ["PENDING", "RESOLVING", "INSTALLING"] for s in states])
             if installing:
                 print(".", end="", flush=True)
                 time.sleep(5)
@@ -175,10 +193,11 @@ def get_cluster(apiclient, profile, host, token, cluster_id=None):
                 print("\n   Done\n")
 
     public_ip = response["driver"]["public_dns"]
-    
+
     print("   => Selected cluster: %s (%s)" % (cluster_name, public_ip))
 
-    return  (cluster_id, public_ip, cluster_name, started)
+    return (cluster_id, public_ip, cluster_name, started)
+
 
 def prepare_ssh_config(cluster_id, profile, public_ip):
     config = os.path.join(expanduser("~"), ".ssh/config")
@@ -199,12 +218,14 @@ def prepare_ssh_config(cluster_id, profile, public_ip):
             'Port': 2200,
             'User': 'ubuntu',
             'ServerAliveInterval': 300,
-            'ServerAliveCountMax': 2}
+            'ServerAliveCountMax': 2
+        }
         host = Host(name=cluster_id, attrs=attrs)
         print("Adding ssh config to ~/.ssh/config")
         print(host)
         sc.append(host)
     sc.write()
+
 
 def create_kernelspec(profile, organisation, host, cluster_id, cluster_name):
     print("Creating kernel specification for profile '%s'" % profile)
@@ -213,42 +234,57 @@ def create_kernelspec(profile, organisation, host, cluster_id, cluster_name):
         env += " DBJL_ORG=%s" % organisation
     kernel_cmd = "sudo -H %s /databricks/python3/bin/python3 -m ipykernel -f {connection_file}" % env
     kernel_name = add_kernel("ssh",
-        name="%s:%s" % (profile, cluster_name),
-        kernel_cmd=kernel_cmd,
-        language="python",
-        workdir="/home/ubuntu",
-        host="%s:2200" % cluster_id,
-        ssh_init=json.dumps(["databricks-jupyterlab", profile, "-r", "-i", cluster_id]),
-        no_passwords=True,
-        verbose=True)
+                             name="%s:%s" % (profile, cluster_name),
+                             kernel_cmd=kernel_cmd,
+                             language="python",
+                             workdir="/home/ubuntu",
+                             host="%s:2200" % cluster_id,
+                             ssh_init=json.dumps([
+                                 "databricks-jupyterlab", profile, "-r", "-i",
+                                 cluster_id
+                             ]),
+                             no_passwords=True,
+                             verbose=True)
 
-    print("   => Kernel specification 'SSH %s:2200 %s' created or updated" % (cluster_id, cluster_name))
+    print("   => Kernel specification 'SSH %s:2200 %s' created or updated" %
+          (cluster_id, cluster_name))
 
 
-def install_libs(host, module_path, ipywidets_version, sidecar_version): 
+def install_libs(host, module_path, ipywidets_version, sidecar_version):
 
     wheel = glob.glob("%s/lib/*.whl" % module_path)[0]
     target = "/home/ubuntu/%s" % str(uuid.uuid4())
     pip_cmd = "/databricks/python/bin/pip install -q --no-warn-conflicts --disable-pip-version-check"
 
     print("   Installing ipywidgets")
-    ssh(host, "sudo -H %s ipywidgets==%s sidecar==%s" % (pip_cmd, ipywidets_version, sidecar_version))
+    ssh(
+        host, "sudo -H %s ipywidgets==%s sidecar==%s" %
+        (pip_cmd, ipywidets_version, sidecar_version))
 
     print("   Installing databricks_jupyterlab")
     ssh(host, "mkdir -p %s" % target)
     scp(host, wheel, target)
-    ssh(host, "sudo -H %s --upgrade %s/%s" % (pip_cmd, target, os.path.basename(wheel)))
+    ssh(
+        host, "sudo -H %s --upgrade %s/%s" %
+        (pip_cmd, target, os.path.basename(wheel)))
     ssh(host, "rm -f %s/* && rmdir %s" % (target, target))
+
 
 def mount_sshfs(host):
     ssh(host, "sudo mkdir -p /usr/lib/ssh")
-    ssh(host, "sudo ln -s /usr/lib/openssh/sftp-server /usr/lib/ssh/sftp-server")
+    ssh(host,
+        "sudo ln -s /usr/lib/openssh/sftp-server /usr/lib/ssh/sftp-server")
     run(["mkdir", "-p", "./remotefs/%s" % host])
     try:
         run(["umount", "-f", "./remotefs/%s" % host])
     except:
         pass
-    run(["sshfs", "ubuntu@%s:/dbfs" % host, "./remotefs/%s" % host,  "-p", "2200"])
+    run([
+        "sshfs",
+        "ubuntu@%s:/dbfs" % host,
+        "./remotefs/%s" % host, "-p", "2200"
+    ])
+
 
 def show_profiles():
     template = "%-20s %-60s %s"
@@ -260,11 +296,15 @@ def show_profiles():
 
     for profile in profiles:
         host, _ = get_db_config(profile, verbose=False)
-        ssh_ok = "OK" if os.path.exists(os.path.expanduser("~/.ssh/id_%s") % profile) else "MISSING"
+        ssh_ok = "OK" if os.path.exists(
+            os.path.expanduser("~/.ssh/id_%s") % profile) else "MISSING"
         print(template % (profile, host, ssh_ok))
 
+
 def get_remote_packages(host):
-    return json.loads(ssh(host, "/databricks/python/bin/pip list --format=json"))
+    return json.loads(ssh(host,
+                          "/databricks/python/bin/pip list --format=json"))
+
 
 def is_reachable(public_dns):
     print("   => Testing whether cluster can be reached")
@@ -272,6 +312,7 @@ def is_reachable(public_dns):
     sock.settimeout(3)
     result = sock.connect_ex((public_dns, 2200))
     return result == 0
+
 
 def get_library_state(clusterId, host, token):
     libraries_api = Libraries(url=host, token=token)
