@@ -56,8 +56,7 @@ def bye(msg=None):
 
 def ssh(host, cmd):
     try:
-        return subprocess.check_output(
-            ["ssh", "-o", "StrictHostKeyChecking=no", host, cmd])
+        return subprocess.check_output(["ssh", "-o", "StrictHostKeyChecking=no", host, cmd])
     except:
         bye("Error installing package")
         return None
@@ -65,11 +64,7 @@ def ssh(host, cmd):
 
 def scp(host, file, target):
     try:
-        subprocess.run([
-            "scp", "-q", "-o", "StrictHostKeyChecking=no",
-            "%s" % file,
-            "%s:%s" % (host, target)
-        ])
+        subprocess.run(["scp", "-q", "-o", "StrictHostKeyChecking=no", "%s" % file, "%s:%s" % (host, target)])
     except:
         bye("Error copying file over ssh")
 
@@ -86,8 +81,7 @@ def get_db_config(profile, verbose=True):
     config.read(expanduser("~/.databrickscfg"))
     profiles = config.sections()
     if not profile in profiles:
-        print(" The profile '%s' is not available in ~/.databrickscfg:" %
-              profile)
+        print(" The profile '%s' is not available in ~/.databrickscfg:" % profile)
         for p in profiles:
             print("- %s" % p)
         bye()
@@ -127,22 +121,17 @@ def get_cluster(apiclient, profile, host, token, cluster_id=None):
 
         def entry(i, cluster):
             if cluster.get("autoscale", None) is None:
-                return "%s: %s (id: %s, state: %s, workers: %d)" % (
-                    i, cluster["cluster_name"], cluster["cluster_id"],
-                    cluster["state"], cluster["num_workers"])
+                return "%s: %s (id: %s, state: %s, workers: %d)" % (i, cluster["cluster_name"], cluster["cluster_id"],
+                                                                    cluster["state"], cluster["num_workers"])
             else:
                 return "%s: %s (id: %s, state: %s, scale: %d-%d)" % (
-                    i, cluster["cluster_name"], cluster["cluster_id"],
-                    cluster["state"], cluster["autoscale"]["min_workers"],
-                    cluster["autoscale"]["max_workers"])
+                    i, cluster["cluster_name"], cluster["cluster_id"], cluster["state"],
+                    cluster["autoscale"]["min_workers"], cluster["autoscale"]["max_workers"])
 
         choice = [
-            inquirer.List(
-                'cluster_id',
-                message='Which cluster to connect to?',
-                choices=[
-                    entry(i, cluster) for i, cluster in enumerate(my_clusters)
-                ])
+            inquirer.List('cluster_id',
+                          message='Which cluster to connect to?',
+                          choices=[entry(i, cluster) for i, cluster in enumerate(my_clusters)])
         ]
         answer = inquirer.prompt(choice, theme=Dark())
         cluster = my_clusters[int(answer["cluster_id"].split(":")[0])]
@@ -169,9 +158,7 @@ def get_cluster(apiclient, profile, host, token, cluster_id=None):
             started = True
             response = cluster_api.start(cluster_id)
 
-        print(
-            "   => Waiting for cluster %s being started (this can take up to 5 min)"
-            % cluster_id)
+        print("   => Waiting for cluster %s being started (this can take up to 5 min)" % cluster_id)
         print("   ", end="", flush=True)
         while not state in ("RUNNING", "RESIZING"):
             print(".", end="", flush=True)
@@ -179,15 +166,12 @@ def get_cluster(apiclient, profile, host, token, cluster_id=None):
             response = cluster_api.status(cluster_id)
             state = response["state"]
 
-        print(
-            "\n   => Waiting for libraries on cluster %s being installed (this can take some time)"
-            % cluster_id)
+        print("\n   => Waiting for libraries on cluster %s being installed (this can take some time)" % cluster_id)
         print("   ", end="", flush=True)
         done = False
         while not done:
             states = get_library_state(cluster_id, host=host, token=token)
-            installing = any(
-                [s in ["PENDING", "RESOLVING", "INSTALLING"] for s in states])
+            installing = any([s in ["PENDING", "RESOLVING", "INSTALLING"] for s in states])
             if installing:
                 print(".", end="", flush=True)
                 time.sleep(5)
@@ -199,7 +183,7 @@ def get_cluster(apiclient, profile, host, token, cluster_id=None):
 
     print("   => Selected cluster: %s (%s)" % (cluster_name, public_ip))
 
-    return (cluster_id, public_ip, cluster_name, started)
+    return (cluster_id, public_ip, cluster_name, started, status_file)
 
 
 def prepare_ssh_config(cluster_id, profile, public_ip):
@@ -249,8 +233,7 @@ def create_kernelspec(profile, organisation, host, cluster_id, cluster_name):
                              no_passwords=True,
                              verbose=True)
 
-    print("   => Kernel specification 'SSH %s:2200 %s' created or updated" %
-          (cluster_id, cluster_name))
+    print("   => Kernel specification 'SSH %s:2200 %s' created or updated" % (cluster_id, cluster_name))
 
 
 def install_libs(host, module_path, ipywidets_version, sidecar_version):
@@ -259,33 +242,24 @@ def install_libs(host, module_path, ipywidets_version, sidecar_version):
     target = "/home/ubuntu/%s" % str(uuid.uuid4())
 
     print("   Installing ipywidgets")
-    ssh(
-        host, "sudo -H %s ipywidgets==%s sidecar==%s" %
-        (PIP_INSTALL, ipywidets_version, sidecar_version))
+    ssh(host, "sudo -H %s ipywidgets==%s sidecar==%s" % (PIP_INSTALL, ipywidets_version, sidecar_version))
 
     print("   Installing databricks_jupyterlab")
     ssh(host, "mkdir -p %s" % target)
     scp(host, wheel, target)
-    ssh(
-        host, "sudo -H %s --upgrade %s/%s" %
-        (PIP_INSTALL, target, os.path.basename(wheel)))
+    ssh(host, "sudo -H %s --upgrade %s/%s" % (PIP_INSTALL, target, os.path.basename(wheel)))
     ssh(host, "rm -f %s/* && rmdir %s" % (target, target))
 
 
 def mount_sshfs(host):
     ssh(host, "sudo mkdir -p /usr/lib/ssh")
-    ssh(host,
-        "sudo ln -s /usr/lib/openssh/sftp-server /usr/lib/ssh/sftp-server")
+    ssh(host, "sudo ln -s /usr/lib/openssh/sftp-server /usr/lib/ssh/sftp-server")
     run(["mkdir", "-p", "./remotefs/%s" % host])
     try:
         run(["umount", "-f", "./remotefs/%s" % host])
     except:
         pass
-    run([
-        "sshfs",
-        "ubuntu@%s:/dbfs" % host,
-        "./remotefs/%s" % host, "-p", "2200"
-    ])
+    run(["sshfs", "ubuntu@%s:/dbfs" % host, "./remotefs/%s" % host, "-p", "2200"])
 
 
 def show_profiles():
@@ -298,8 +272,7 @@ def show_profiles():
 
     for profile in profiles:
         host, _ = get_db_config(profile, verbose=False)
-        ssh_ok = "OK" if os.path.exists(
-            os.path.expanduser("~/.ssh/id_%s") % profile) else "MISSING"
+        ssh_ok = "OK" if os.path.exists(os.path.expanduser("~/.ssh/id_%s") % profile) else "MISSING"
         print(template % (profile, host, ssh_ok))
 
 
