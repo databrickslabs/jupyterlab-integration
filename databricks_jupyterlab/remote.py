@@ -37,12 +37,73 @@ from remote_ikernel.compat import kernelspec as ks
 
 from databricks_jupyterlab.rest import Clusters, Libraries, Command
 
-
 PIP_INSTALL = "/databricks/python/bin/pip install -q --no-warn-conflicts --disable-pip-version-check"
 PIP_LIST = "/databricks/python/bin/pip list --disable-pip-version-check --format=json"
 
-class Dark(Default):
 
+class StatusFile:
+    def __init__(self, profile, cluster_id):
+
+        # create status file folder
+        status_path = os.path.expanduser("~/.databricks-jupyterlab")
+        try:
+            if not os.path.exists(status_path):
+                os.mkdir(status_path)
+            self.ok = True
+        except:
+            print("Warning: Cannot create %s, no Databricks cluster status in Jupyterlab" % status_path)
+            self.ok = False
+
+        # Clean up old startup files
+        try:
+            self.status_file = os.path.join(status_path, "%s_%s" % (profile, cluster_id))
+            os.remove(self.status_file)
+            os.remove("%s.starting" % self.status_file)
+        except:
+            pass
+
+    def log(self, msg):
+        if self.ok:
+            try:
+                with open("%s.starting" % self.status_file, "w") as fd:
+                    fd.write(msg)
+            except:
+                print("Warning: Cannot write to %s, no Databricks cluster status in Jupyterlab" % self.status_file)
+
+    def log_start(self, indicator):
+        self.log("Cluster starting" + indicator)
+
+    def log_started(self):
+        self.log("Cluster started")
+
+    def log_install_cluster(self, indicator):
+        self.log("Installing cluster libs" + indicator)
+
+    def log_ssh(self):
+        self.log("Configuring SSH")
+
+    def log_check(self):
+        self.log("Checking driver libs")
+
+    def log_install_driver(self):
+        self.log("Installing driver libs")
+
+    def log_done(self):
+        self.log("Connected")
+        self.finish()
+
+    def log_error(self, msg):
+        self.log(msg)
+
+    def finish(self):
+        if self.ok:
+            try:
+                os.rename("%s.starting" % self.status_file, self.status_file)
+            except:
+                print("Warning: Cannot rename %s, no Databricks cluster status in Jupyterlab" % self.status_file)
+
+
+class Dark(Default):
     def __init__(self):
         super().__init__()
         self.List.selection_color = term.cyan
@@ -107,8 +168,7 @@ def get_cluster(apiclient, profile, host, token, cluster_id=None):
         try:
             ssh_pub = fd.read().strip()
         except:
-            print("ssh key for profile 'id_%s.pub' does not exist in %s/.ssh" %
-                  (profile, expanduser("~")))
+            print("ssh key for profile 'id_%s.pub' does not exist in %s/.ssh" % (profile, expanduser("~")))
             bye()
     client = ClusterApi(apiclient)
     clusters = client.list_clusters()
@@ -147,6 +207,8 @@ def get_cluster(apiclient, profile, host, token, cluster_id=None):
     cluster_id = cluster["cluster_id"]
     cluster_name = cluster["cluster_name"]
 
+    status_file = StatusFile(profile, cluster_id)
+
     cluster_api = Clusters(url=host, token=token)
     response = cluster_api.status(cluster_id)
     state = response["state"]
@@ -155,26 +217,39 @@ def get_cluster(apiclient, profile, host, token, cluster_id=None):
     if not state in ["RUNNING", "RESIZING"]:
         if state == "TERMINATED":
             print("   => Starting cluster %s" % cluster_id)
+            status_file.log_start("")
             started = True
             response = cluster_api.start(cluster_id)
 
         print("   => Waiting for cluster %s being started (this can take up to 5 min)" % cluster_id)
         print("   ", end="", flush=True)
+
+        indicator = ""
         while not state in ("RUNNING", "RESIZING"):
             print(".", end="", flush=True)
             time.sleep(5)
+            indicator += "."
+            if len(indicator) == 5:
+                indicator = "."
+            status_file.log_start(indicator)
             response = cluster_api.status(cluster_id)
             state = response["state"]
 
         print("\n   => Waiting for libraries on cluster %s being installed (this can take some time)" % cluster_id)
         print("   ", end="", flush=True)
+
+        indicator = ""
         done = False
         while not done:
+            status_file.log_install_cluster(indicator)
             states = get_library_state(cluster_id, host=host, token=token)
             installing = any([s in ["PENDING", "RESOLVING", "INSTALLING"] for s in states])
             if installing:
                 print(".", end="", flush=True)
                 time.sleep(5)
+                indicator += "."
+                if len(indicator) == 5:
+                    indicator = "."
             else:
                 done = True
                 print("\n   Done\n")
@@ -215,23 +290,20 @@ def prepare_ssh_config(cluster_id, profile, public_ip):
 
 
 def create_kernelspec(profile, organisation, host, cluster_id, cluster_name):
-    print("Creating kernel specification for profile '%s'" % profile)
-    env = "DBJL_HOST=%s DBJL_CLUSTER=%s" % (host, cluster_id)
+    print("   Creating kernel specification for profile '%s'" % profile)
+    env = "DBJL_PROFILE=%s DBJL_HOST=%s DBJL_CLUSTER=%s" % (profile, host, cluster_id)
     if organisation is not None:
         env += " DBJL_ORG=%s" % organisation
     kernel_cmd = "sudo -H %s /databricks/python3/bin/python3 -m ipykernel -f {connection_file}" % env
-    kernel_name = add_kernel("ssh",
-                             name="%s:%s" % (profile, cluster_name),
-                             kernel_cmd=kernel_cmd,
-                             language="python",
-                             workdir="/home/ubuntu",
-                             host="%s:2200" % cluster_id,
-                             ssh_init=json.dumps([
-                                 "databricks-jupyterlab", profile, "-r", "-i",
-                                 cluster_id
-                             ]),
-                             no_passwords=True,
-                             verbose=True)
+    add_kernel("ssh",
+               name="%s:%s" % (profile, cluster_name),
+               kernel_cmd=kernel_cmd,
+               language="python",
+               workdir="/home/ubuntu",
+               host="%s:2200" % cluster_id,
+               ssh_init=json.dumps(["databricks-jupyterlab", profile, "-r", "-i", cluster_id]),
+               no_passwords=True,
+               verbose=True)
 
     print("   => Kernel specification 'SSH %s:2200 %s' created or updated" % (cluster_id, cluster_name))
 
@@ -249,7 +321,7 @@ def install_libs(host, module_path, ipywidets_version, sidecar_version):
     scp(host, wheel, target)
     ssh(host, "sudo -H %s --upgrade %s/%s" % (PIP_INSTALL, target, os.path.basename(wheel)))
     ssh(host, "rm -f %s/* && rmdir %s" % (target, target))
-
+    print("   Done")
 
 def mount_sshfs(host):
     ssh(host, "sudo mkdir -p /usr/lib/ssh")
@@ -281,7 +353,6 @@ def get_remote_packages(host):
 
 
 def is_reachable(public_dns):
-    print("   => Testing whether cluster can be reached")
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(3)
     result = sock.connect_ex((public_dns, 2200))

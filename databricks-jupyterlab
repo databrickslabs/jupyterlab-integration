@@ -53,7 +53,6 @@ def write_config():
         "c.KernelManager.autorestart": False,
         "c.MappingKernelManager.kernel_info_timeout": 600
     }
-    keys = list(config)
 
     config_file = os.path.expanduser("~/.jupyter/jupyter_notebook_config.py")
     if os.path.exists(config_file):
@@ -168,7 +167,7 @@ parser.add_argument('-v',
 
 args = parser.parse_args()
 profile = args.profile
-print(args)
+
 version = conda_version()
 if version[1] >= 4 and version[2] >= 5:
     print("Valid version of conda detected: %s.%s.%s" % version)
@@ -197,15 +196,17 @@ started = False
 if args.kernelspec or args.restart or args.sshfs or args.versioncheck:
     print("\n* Select remote cluster")
     apiclient = connect(profile)
-    cluster_id, public_ip, cluster_name, started = get_cluster(
+    cluster_id, public_ip, cluster_name, started, status_file = get_cluster(
         apiclient, profile, host, token, args.cluster_id)
     if cluster_name is None:
         print("Error: cluster_id '%s' not found" % cluster_id)
         sys.exit(1)
 
     print("\n* Configuring ssh config for remote cluster")
+    status_file.log_ssh()
     prepare_ssh_config(cluster_id, profile, public_ip)
-    if not is_reachable(public_ip):
+    print("   => Testing whether cluster can be reached")
+    if not is_reachable(public_dns=public_ip):
         print("Cannot connect to remote cluster. Please check:")
         print("- whether port 2200 is open in cloud security group")
         print(
@@ -213,20 +214,25 @@ if args.kernelspec or args.restart or args.sshfs or args.versioncheck:
         )
         sys.exit(1)
 
-if (args.kernelspec or args.restart) and not check_installed(cluster_id):
-    packages = json.loads(check_output(["conda", "list", "--json"]))
-    deps = {
-        p["name"]: p["version"]
-        for p in packages
-        if p["name"] in ["ipywidgets", "sidecar"]
-    }
+if args.kernelspec or args.restart:
+    print("   => Check installed libraries")
+    status_file.log_check()
+    if not check_installed(cluster_id):
+        packages = json.loads(check_output(["conda", "list", "--json"]))
+        deps = {
+            p["name"]: p["version"]
+            for p in packages
+            if p["name"] in ["ipywidgets", "sidecar"]
+        }
 
-    print("\n* Installing databricks_jupyterlab, ipywidgets on remote driver")
-    install_libs(cluster_id,
-                 module_path,
-                 ipywidets_version=deps["ipywidgets"],
-                 sidecar_version=deps["sidecar"])
-
+        print("\n* Installing databricks_jupyterlab, ipywidgets on remote driver")
+        status_file.log_install_driver()
+        install_libs(cluster_id,
+                    module_path,
+                    ipywidets_version=deps["ipywidgets"],
+                    sidecar_version=deps["sidecar"])
+    status_file.log_done()
+    
 if args.kernelspec:
     print("\n* Create remote kernel spec")
     create_kernelspec(profile, args.organisation, host, cluster_id,
@@ -234,7 +240,7 @@ if args.kernelspec:
 
     print("\n* Setting global config of jupyter lab (autorestart, timeout)")
     write_config()
-
+ 
 if args.versioncheck:
     version_check()
 
