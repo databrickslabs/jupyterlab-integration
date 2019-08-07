@@ -291,10 +291,12 @@ def is_reachable(public_dns):
 def get_library_state(clusterId, host, token):
     libraries_api = Libraries(url=host, token=token)
     libraries = libraries_api.status(clusterId)
-    if libraries == {}:
+
+    if libraries.get("library_statuses", None) is None:
         return []
     else:
         return [lib["status"] for lib in libraries["library_statuses"]]
+
 
 def check_installed(host):
     packages = get_remote_packages(host)
