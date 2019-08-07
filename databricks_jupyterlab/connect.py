@@ -81,20 +81,21 @@ def dbcontext(progressbar=True):
 
     # Get the configuration injected by the client
     #
+    profile = os.environ.get("DBJL_PROFILE", None)
     host = os.environ.get("DBJL_HOST", None)
     clusterId = os.environ.get("DBJL_CLUSTER", None)
     organisation = os.environ.get("DBJL_ORG", None)
-    print("Databricks Host:", host)
-    print("Cluster Id:", clusterId)
+    # print("Databricks Host:", host)
+    # print("Cluster Id:", clusterId)
     if organisation is not None:
         print("Organisation:", organisation)
 
     # Create a Databricks virtual python environment and start thew py4j gateway
     #
-    token = getpass.getpass("Enter personal access token")
+    token = getpass.getpass("\nEnter personal access token for profile '%s'" % profile)
 
     command = Command(url=host, clusterId=clusterId, token=token)
-    print("Gateway created", end="", flush=True)
+    print("Gateway created for cluster '%s' " % (clusterId), end="", flush=True)
 
     # Fetch auth_token and gateway port ...
     #
@@ -107,7 +108,6 @@ def dbcontext(progressbar=True):
         time.sleep(1)
         print(".", end="", flush=True)
         result = command.status()
-    print("")
 
     auth_token, port = result["results"]["data"].split(" ")
     port = int(port)
@@ -121,8 +121,8 @@ def dbcontext(progressbar=True):
     # ... and connect to this gateway
     #
     gateway = get_existing_gateway(port, True, auth_token)
-    print("Connected to gateway")
-    print("Python interpreter: %s" % interpreter)
+    print(". connected")
+    # print("Python interpreter: %s" % interpreter)
 
     # Retrieve spark session, sqlContext and sparkContext
     #
@@ -204,7 +204,7 @@ def dbcontext(progressbar=True):
     # Setting up Spark progress bar
     #
     if progressbar:
-        print("Set up Spark progress bar")
+        # print("Set up Spark progress bar")
         load_progressbar(ip, sc, job_info)
         load_css()
 
