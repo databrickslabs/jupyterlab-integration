@@ -57,6 +57,18 @@ class JobInfo():
         self.group_id = None
 
 
+class DatabricksBrowser:
+    def __init__(self, spark, dbutils):
+        self.spark = spark
+        self.dbutils = dbutils
+
+    def dbfs(self):
+        Dbfs(self.dbutils).create()
+
+    def databases(self):
+        Databases(self.spark).create()
+
+
 def is_remote():
     return os.environ.get("DBJL_HOST", None) is not None
 
@@ -66,16 +78,26 @@ def is_azure():
 
 
 def dbcontext(progressbar=True):
-    ip = get_ipython()
+    def get_sparkui_url(host, organisation, clusterId):
+        if organisation is None:
+            sparkUi = "%s#/setting/clusters/%s/sparkUi" % (host, clusterId)
+        else:
+            sparkUi = "%s/?o=%s#/setting/clusters/%s/sparkUi" % (host, organisation, clusterId)
+        return sparkUi
 
-    if not is_remote():
-        return "This is not a remote Databricks kernel"
-
-    spark = ip.user_ns.get("spark")
-    if spark is not None:
-        print("Spark context already exists")
-        load_css()
-        return spark
+    def show_status(spark, sparkUi):
+        output = """
+        <div>
+            <dl>
+            <dt>Spark Version</dt><dd>{sc.version}</dd>
+            <dt>Spark Application</dt><dd>{sc.appName}</dd>
+            <dt>Spark UI</dt><dd><a href="{sparkUi}">go to ...</a></dd>
+            </dl>
+        </div>
+        """.format(sc=spark.sparkContext,
+                   sparkUi=get_sparkui_url(host, organisation, clusterId),
+                   num_executors=len(spark.sparkContext._jsc.sc().statusTracker().getExecutorInfos()))
+        display(HTML(output))
 
     # Get the configuration injected by the client
     #
@@ -83,10 +105,19 @@ def dbcontext(progressbar=True):
     host = os.environ.get("DBJL_HOST", None)
     clusterId = os.environ.get("DBJL_CLUSTER", None)
     organisation = os.environ.get("DBJL_ORG", None)
-    # print("Databricks Host:", host)
-    # print("Cluster Id:", clusterId)
-    if organisation is not None:
-        print("Organisation:", organisation)
+
+    sparkUi = get_sparkui_url(host, organisation, clusterId)
+
+    if not is_remote():
+        return "This is not a remote Databricks kernel"
+
+    ip = get_ipython()
+    spark = ip.user_ns.get("spark")
+    if spark is not None:
+        print("Spark context already exists")
+        load_css()
+        show_status(spark, sparkUi)
+        return None
 
     # Create a Databricks virtual python environment and start thew py4j gateway
     #
@@ -151,16 +182,12 @@ def dbcontext(progressbar=True):
                 <dl>
                   <dt>Version</dt><dd><code>v{sc.version}</code></dd>
                   <dt>AppName</dt><dd><code>{sc.appName}</code></dd>
+                  <dt>Master</dt><dd><code>{sc.master}</code></dd>
                 </dl>
             </div>
             """.format(sc=spark.sparkContext, uiWebUrl=uiWebUrl)
 
         return sc_repr_html
-
-    if organisation is None:
-        sparkUi = "%s#/setting/clusters/%s/sparkUi" % (host, clusterId)
-    else:
-        sparkUi = "%s/?o=%s#/setting/clusters/%s/sparkUi" % (host, organisation, clusterId)
 
     sc_repr_html = repr_html(sparkUi)
     sc._repr_html_ = sc_repr_html
@@ -236,18 +263,19 @@ def dbcontext(progressbar=True):
     ip.user_ns["sc"] = sc
     ip.user_ns["sqlContext"] = sqlContext
     ip.user_ns["dbutils"] = dbutils
+    ip.user_ns["dbbrowser"] = DatabricksBrowser(spark, dbutils)
 
     print("The following global variables have been created:")
     print("- spark       Spark session")
     print("- sc          Spark context")
     print("- sqlContext  Hive Context")
-    print("- dbutils     Databricks utilities\n")
-    print("")
-    print("Open dbfs browser:     import databricks_jupyterlab as dj; dj.browse_dbfs(dbutils)")
-    print("Open database browser: import databricks_jupyterlab as dj; dj.browse_databases(spark)")
-    print("")
+    print("- dbutils     Databricks utilities (filesystem access only)")
+    print("- dbbrowser   Allows to browse dbfs and databases:")
+    print("              - dbbrowser.dbfs()")
+    print("              - dbbrowser.databases()\n")
 
-    return spark
+    show_status(spark, sparkUi)
+    return None
 
 
 @line_cell_magic
