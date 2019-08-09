@@ -1,6 +1,6 @@
 {
-  "name": "db-status",
-  "version": "0.1.0",
+  "name": "databricks-jupyterlab-status",
+  "version": "0.9.0",
   "description": "A JupyterLab extension.",
   "keywords": [
     "jupyter",

@@ -14,17 +14,6 @@
 
 import os
 
-
-def browse_dbfs(dbutils):
-    from .dbfs import Dbfs
-    Dbfs(dbutils).create()
-
-
-def browse_databases(spark):
-    from .database import Databases
-    Databases(spark).create()
-
-
 if os.environ.get("DBJL_HOST") is None:
 
     from databricks_jupyterlab.status import KernelHandler, DbStartHandler, DbStatusHandler
@@ -37,6 +26,6 @@ if os.environ.get("DBJL_HOST") is None:
         print("Loading server extension ...")
         KernelHandler.NBAPP = nbapp
         base_url = nbapp.web_app.settings['base_url']
-        status_route = url_path_join(base_url, '/db-status')
-        start_route = url_path_join(base_url, '/db-start')
+        status_route = url_path_join(base_url, '/databricks-jupyterlab-status')
+        start_route = url_path_join(base_url, '/databricks-jupyterlab-start')
         nbapp.web_app.add_handlers('.*', [(status_route, DbStatusHandler), (start_route, DbStartHandler)])

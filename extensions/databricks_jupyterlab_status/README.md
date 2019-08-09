@@ -1,4 +1,4 @@
-# db-status
+# databricks-jupyterlab-status
 
 A JupyterLab extension.
 
@@ -10,7 +10,7 @@ A JupyterLab extension.
 ## Install
 
 ```bash
-jupyter labextension install db-status
+jupyter labextension install databricks-jupyterlab-status
 ```
 
 ## Contributing
@@ -23,7 +23,7 @@ The `jlpm` command is JupyterLab's pinned version of
 
 ```bash
 # Clone the repo to your local environment
-# Move to db-status directory
+# Move to databricks-jupyterlab-status directory
 # Install dependencies
 jlpm
 # Build Typescript source
@@ -48,6 +48,6 @@ jupyter lab --watch
 ### Uninstall
 
 ```bash
-jupyter labextension uninstall db-status
+jupyter labextension uninstall databricks-jupyterlab-status
 ```
 

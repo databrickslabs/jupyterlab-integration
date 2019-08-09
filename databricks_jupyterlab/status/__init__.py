@@ -105,7 +105,7 @@ def _jupyter_server_extension_paths():
     Set up the server extension for collecting metrics
     """
     return [{
-        'module': 'db_status',
+        'module': 'databricks_jupyterlab',
     }]
 
 
