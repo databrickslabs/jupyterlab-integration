@@ -51,7 +51,7 @@ def conda_version():
 def write_config():
     config = {
         "c.KernelManager.autorestart": False,
-        "c.MappingKernelManager.kernel_info_timeout": 600
+        "c.MappingKernelManager.kernel_info_timeout": 120
     }
 
     config_file = os.path.expanduser("~/.jupyter/jupyter_notebook_config.py")
