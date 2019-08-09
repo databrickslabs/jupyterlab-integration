@@ -171,7 +171,7 @@ The quickest way to use *databricks-jupyterlab* is:
     This will execute the following steps:
 
     - Get host and token from `.databrickscfg` for the given profile
-    - In case `-i` is note used, show a list of clusters that have the correct SSH key (id_<profile>) configured
+    - In case `-i` is not used, show a list of clusters that have the correct SSH key (id_<profile>) configured
     - Installs `databricks_jupyterlab` and `ipywidgets` on the remote driver
     - Creates the remote kernel specification
 
