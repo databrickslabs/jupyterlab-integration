@@ -124,7 +124,12 @@ The quickest way to use *databricks-jupyterlab* is:
 
     - ![kernel ready](docs/kernel-ready.png)
 
-    If this isn't the case, the local Jupyter lab frontend and the remote kernel are out of sync. Save your notebook(s) and refresh the browser page.
+- **Notebook hung after cluster start or kernel change**
+
+    When this happens, usually the local Jupyter lab frontend and the remote kernel are out of sync. Try the following:
+
+    - Save your notebook(s) and refresh the browser page.
+    - If it still doesn't work, additinoally restart the kernel
 
 ### 3.2 Details
 
@@ -143,7 +148,7 @@ The quickest way to use *databricks-jupyterlab* is:
 
     PROFILE              HOST                                                         SSH KEY
     eastus2              https://eastus2.azuredatabricks.net                          MISSING
-    demo                 https://demo.cloud.databricks.com                            OK    
+    demo                 https://demo.cloud.databricks.com                            OK
     ```
 
     **Note:** If the column *SSH KEY* e.g. for *PROPFILE* "demo" says "MISSING", use
