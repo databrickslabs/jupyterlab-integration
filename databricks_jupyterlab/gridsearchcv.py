@@ -26,21 +26,17 @@ from databricks_jupyterlab.connect import is_remote
 
 
 class GridSearchCV():
-
     def __init__(self, estimator, param_grid, *args, spark=None, **kwargs):
         self.estimator = estimator
-        self.grid_size = reduce(lambda a, b: a * b,
-                                [len(p) for p in param_grid.values()])
+        self.grid_size = reduce(lambda a, b: a * b, [len(p) for p in param_grid.values()])
         self.results = None
 
         if is_remote():
             import spark_sklearn  # pylint: disable=import-error
-            self.gs = spark_sklearn.GridSearchCV(spark.sparkContext, estimator,
-                                                 param_grid, *args, **kwargs)
+            self.gs = spark_sklearn.GridSearchCV(spark.sparkContext, estimator, param_grid, *args, **kwargs)
         else:
             import sklearn.model_selection
-            self.gs = sklearn.model_selection.GridSearchCV(
-                estimator, param_grid, *args, **kwargs)
+            self.gs = sklearn.model_selection.GridSearchCV(estimator, param_grid, *args, **kwargs)
 
     def fit(self, x, y):
         if is_remote():
@@ -56,12 +52,10 @@ class GridSearchCV():
         cv_results = self.results.cv_results_
         best = self.results.best_index_
 
-        timestamp = datetime.datetime.now().isoformat().split(".")[0].replace(
-            ":", ".")
+        timestamp = datetime.datetime.now().isoformat().split(".")[0].replace(":", ".")
 
         num_runs = len(cv_results["rank_test_score"])
-        run_name = "run %d (best run of %d):" % (self.results.best_index_,
-                                                 num_runs)
+        run_name = "run %d (best run of %d):" % (self.results.best_index_, num_runs)
 
         if tracking_uri:
             mlflow.set_tracking_uri(tracking_uri)
@@ -78,10 +72,8 @@ class GridSearchCV():
                 mlflow.log_param(param, cv_results["param_%s" % param][best])
 
             print("Logging metrics")
-            mlflow.log_metric("mean_test_score",
-                              cv_results["mean_test_score"][best])
-            mlflow.log_metric("std_test_score",
-                              cv_results["std_test_score"][best])
+            mlflow.log_metric("mean_test_score", cv_results["mean_test_score"][best])
+            mlflow.log_metric("std_test_score", cv_results["std_test_score"][best])
 
             print("Logging model")
             mlflow.sklearn.log_model(self.results.best_estimator_, "model")
@@ -93,8 +85,7 @@ class GridSearchCV():
             csv = os.path.join(tempdir, filename)
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                pd.DataFrame(cv_results).sort_values(
-                    by='rank_test_score').to_csv(csv, index=False)
+                pd.DataFrame(cv_results).sort_values(by='rank_test_score').to_csv(csv, index=False)
 
             mlflow.log_artifact(csv, "cv_results")
 
@@ -104,15 +95,11 @@ class GridSearchCV():
         if is_remote():
             if os.environ.get("DBJL_ORG", None) is None:
                 display(
-                    HTML('<a href=%s/#mlflow/experiments/%s>Goto experiment</a>'
-                         % (os.environ["DBJL_HOST"], experiment_id)))
+                    HTML('<a href=%s/#mlflow/experiments/%s>Goto experiment</a>' %
+                         (os.environ["DBJL_HOST"], experiment_id)))
             else:
                 display(
-                    HTML(
-                        '<a href=%s?o=%s#mlflow/experiments/%s>Goto experiment</a>'
-                        % (os.environ["DBJL_HOST"], os.environ["DBJL_ORG"],
-                           experiment_id)))
+                    HTML('<a href=%s?o=%s#mlflow/experiments/%s>Goto experiment</a>' %
+                         (os.environ["DBJL_HOST"], os.environ["DBJL_ORG"], experiment_id)))
         else:
-            display(
-                HTML('<a href=%s/#/experiments/%s>Goto experiment</a>' %
-                     (tracking_uri, experiment_id)))
+            display(HTML('<a href=%s/#/experiments/%s>Goto experiment</a>' % (tracking_uri, experiment_id)))

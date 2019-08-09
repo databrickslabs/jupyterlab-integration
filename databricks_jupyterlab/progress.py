@@ -27,7 +27,6 @@ except:
 
 
 class Progress(object):
-
     def __init__(self, sc, job_info):
         self.sc = sc
         self.job_info = job_info
@@ -35,12 +34,10 @@ class Progress(object):
         self.progressbar_showing = False
 
     def worker(self):
-
         def cancel(b):
             self.sc.cancelJobGroup(self.job_info.group_id)
 
         def toggle(widget):
-
             def f(b):
                 for w in widget.children:
                     h = w.layout.height
@@ -60,15 +57,11 @@ class Progress(object):
 
         progressbars = VBox([])
 
-        cancel_button = Button(button_style='',
-                               tooltip='Cancel Spark Job',
-                               icon='window-close')
+        cancel_button = Button(button_style='', tooltip='Cancel Spark Job', icon='window-close')
         cancel_button.add_class("db-button")
         cancel_button.on_click(cancel)
 
-        toggle_button = Button(button_style='',
-                               tooltip='Toggle progress bar',
-                               icon='arrow-circle-right')
+        toggle_button = Button(button_style='', tooltip='Toggle progress bar', icon='arrow-circle-right')
         toggle_button.add_class("db-button")
         toggle_button.on_click(toggle(progressbars))
 
@@ -79,34 +72,29 @@ class Progress(object):
         while (self.running == 1):
             time.sleep(0.1)
             jobs = [(jobid, self.tracker.getJobInfo(jobid))
-                    for jobid in self.tracker.getJobIdsForGroup(
-                        self.job_info.group_id)
+                    for jobid in self.tracker.getJobIdsForGroup(self.job_info.group_id)
                     if self.tracker.getJobInfo(jobid).status == "RUNNING"]
 
             for j, job in jobs:
                 if bars.get(j, None) is None:
                     if lastJob is not None:
                         bars[lastJob].value = 100.0
-                    bars[j] = FloatProgress(
-                        value=0.0,
-                        min=0.0,
-                        max=100.0,
-                        description='Job: % 3d Stage: % 3d' % (j, 0),
-                        bar_style='info',
-                        orientation='horizontal',
-                        style=style)
+                    bars[j] = FloatProgress(value=0.0,
+                                            min=0.0,
+                                            max=100.0,
+                                            description='Job: % 3d Stage: % 3d' % (j, 0),
+                                            bar_style='info',
+                                            orientation='horizontal',
+                                            style=style)
                     bars[j].add_class("db-bar")
                     labels[j] = Label(value='',
                                       description='Code:',
                                       disabled=False,
-                                      layout=Layout(width="800px",
-                                                    height="100%",
-                                                    margin="0 0 0 5px"))
+                                      layout=Layout(width="800px", height="100%", margin="0 0 0 5px"))
                     labels[j].add_class("db-label")
 
                     progressbar = HBox([bars[j], labels[j]])
-                    progressbars.children = progressbars.children + (
-                        progressbar,)
+                    progressbars.children = progressbars.children + (progressbar, )
                     if not self.progressbar_showing:
                         self.progressbar_showing = True
                         display(indicator)
@@ -117,11 +105,9 @@ class Progress(object):
                     stageInfo = self.tracker.getStageInfo(s)
                     if stageInfo.numActiveTasks > 0:
                         bars[j].description = 'Job: %04d Stage: %04d' % (j, s)
-                        progress = int(100 * stageInfo.numCompletedTasks /
-                                       stageInfo.numTasks)
+                        progress = int(100 * stageInfo.numCompletedTasks / stageInfo.numTasks)
                         bars[j].value = progress
-                        labels[j].value = "code: '%s' / stages: %s" % (
-                            stageInfo.name, str(stageIds)[1:-1])
+                        labels[j].value = "code: '%s' / stages: %s" % (stageInfo.name, str(stageIds)[1:-1])
 
         if lastJob is not None and self.running == 0:
             bars[lastJob].value = 100.0
@@ -130,8 +116,7 @@ class Progress(object):
         # print("start_progressbar")
         self.sc.setLocalProperty("spark.scheduler.pool", self.job_info.pool_id)
         self.job_info.group_id = self.job_info.pool_id + "_" + uuid.uuid4().hex
-        self.sc.setJobGroup(self.job_info.group_id, "jupyterlab job group",
-                            True)
+        self.sc.setJobGroup(self.job_info.group_id, "jupyterlab job group", True)
 
         time.sleep(0.1)
 
@@ -144,8 +129,8 @@ class Progress(object):
         # print("stop_progressbar")
         def is_running():
             job_status = [
-                self.tracker.getJobInfo(jobid).status for jobid in
-                self.tracker.getJobIdsForGroup(self.job_info.group_id)
+                self.tracker.getJobInfo(jobid).status
+                for jobid in self.tracker.getJobIdsForGroup(self.job_info.group_id)
             ]
             return any(status == "RUNNING" for status in job_status)
 
@@ -196,10 +181,8 @@ def load_css():
 def load_progressbar(ip, sc, job_info):
     if has_ipywidgets:
         progress = Progress(sc, job_info)
-        for event, name, func in (('pre_run_cell', "start_progressbar",
-                                   progress.start_progressbar),
-                                  ('post_run_cell', "stop_progressbar",
-                                   progress.stop_progressbar)):
+        for event, name, func in (('pre_run_cell', "start_progressbar", progress.start_progressbar),
+                                  ('post_run_cell', "stop_progressbar", progress.stop_progressbar)):
             register = True
             for m in ip.events.callbacks["pre_run_cell"]:
                 if m.__name__ == name:

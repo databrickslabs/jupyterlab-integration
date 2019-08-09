@@ -292,16 +292,17 @@ def create_kernelspec(profile, organisation, host, cluster_id, cluster_name):
     if organisation is not None:
         env += " DBJL_ORG=%s" % organisation
     kernel_cmd = "sudo -H %s /databricks/python3/bin/python3 -m ipykernel -f {connection_file}" % env
-    add_kernel("ssh",
-               name="%s:%s" % (profile, cluster_name),
-               kernel_cmd=kernel_cmd,
-               language="python",
-               workdir="/home/ubuntu",
-               host="%s:2200" % cluster_id,
-#               ssh_init=json.dumps(["databricks-jupyterlab", profile, "-r", "-i", cluster_id]),
-               ssh_timeout="10",
-               no_passwords=True,
-               verbose=True)
+    add_kernel(
+        "ssh",
+        name="%s:%s" % (profile, cluster_name),
+        kernel_cmd=kernel_cmd,
+        language="python",
+        workdir="/home/ubuntu",
+        host="%s:2200" % cluster_id,
+        #               ssh_init=json.dumps(["databricks-jupyterlab", profile, "-r", "-i", cluster_id]),
+        ssh_timeout="10",
+        no_passwords=True,
+        verbose=True)
 
     print("   => Kernel specification 'SSH %s %s' created or updated" % (cluster_id, cluster_name))
 
@@ -320,6 +321,7 @@ def install_libs(host, module_path, ipywidets_version, sidecar_version):
     ssh(host, "sudo -H %s --upgrade %s/%s" % (PIP_INSTALL, target, os.path.basename(wheel)))
     ssh(host, "rm -f %s/* && rmdir %s" % (target, target))
     print("   Done")
+
 
 def mount_sshfs(host):
     ssh(host, "sudo mkdir -p /usr/lib/ssh")

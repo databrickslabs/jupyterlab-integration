@@ -25,13 +25,11 @@ class Dbfs(object):
     instance = None
 
     class __Dbfs(object):
-
         def __init__(self, dbutils):
             self.dbutils = dbutils
 
         def create(self):
-            self.sc = Sidecar(title="DBFS-%s" %
-                              os.environ["DBJL_CLUSTER"].split("-")[-1])
+            self.sc = Sidecar(title="DBFS-%s" % os.environ["DBJL_CLUSTER"].split("-")[-1])
             self.path = "/"
             self.flist = Select(options=[], rows=40, disabled=False)
             self.flist.observe(self.on_click, names='value')
@@ -44,10 +42,7 @@ class Dbfs(object):
             self.up.on_click(self.on_up)
 
             with self.sc:
-                display(
-                    VBox([
-                        HBox([self.up, self.refresh]), self.flist, self.output
-                    ]))
+                display(VBox([HBox([self.up, self.refresh]), self.flist, self.output]))
 
             self.update()
 
@@ -71,14 +66,10 @@ class Dbfs(object):
             fobjs = self.dbutils.fs.ls(self.path)
             self.show_path(self.path)
 
-            dirs = sorted([fobj.name for fobj in fobjs if fobj.isDir()],
-                          key=lambda x: x.lower())
-            files = sorted([
-                "%s (%d %s)" % ((fobj.name,) + self.convertBytes(fobj.size))
-                for fobj in fobjs
-                if not fobj.isDir()
-            ],
-                           key=lambda x: x[0].lower())
+            dirs = sorted([fobj.name for fobj in fobjs if fobj.isDir()], key=lambda x: x.lower())
+            files = sorted(
+                ["%s (%d %s)" % ((fobj.name, ) + self.convertBytes(fobj.size)) for fobj in fobjs if not fobj.isDir()],
+                key=lambda x: x[0].lower())
             self.flist.options = [""] + dirs + files
 
         def show_path(self, path):

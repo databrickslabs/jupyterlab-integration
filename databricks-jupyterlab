@@ -29,10 +29,8 @@ import pyperclip
 import jupyter_core.command
 
 import databricks_jupyterlab
-from databricks_jupyterlab.remote import (get_db_config, get_cluster, connect,
-                                          prepare_ssh_config, check_installed,
-                                          get_remote_packages, is_reachable,
-                                          create_kernelspec, install_libs,
+from databricks_jupyterlab.remote import (get_db_config, get_cluster, connect, prepare_ssh_config, check_installed,
+                                          get_remote_packages, is_reachable, create_kernelspec, install_libs,
                                           mount_sshfs, show_profiles, bye)
 
 
@@ -49,10 +47,7 @@ def conda_version():
 
 
 def write_config():
-    config = {
-        "c.KernelManager.autorestart": False,
-        "c.MappingKernelManager.kernel_info_timeout": 120
-    }
+    config = {"c.KernelManager.autorestart": False, "c.MappingKernelManager.kernel_info_timeout": 120}
 
     config_file = os.path.expanduser("~/.jupyter/jupyter_notebook_config.py")
     if os.path.exists(config_file):
@@ -87,24 +82,18 @@ def version_check():
     if str(args.versioncheck) == "all":
         scope = joint_keys
     elif str(args.versioncheck) == "same":
-        scope = [
-            key for key in joint_keys
-            if deps.get(key, None) == remote_deps.get(key, None)
-        ]
+        scope = [key for key in joint_keys if deps.get(key, None) == remote_deps.get(key, None)]
     else:
         scope = [
-            key for key in joint_keys
-            if deps.get(key, None) != remote_deps.get(key, None) and
-            deps.get(key, None) is not None and
-            remote_deps.get(key, None) is not None
+            key for key in joint_keys if deps.get(key, None) != remote_deps.get(key, None)
+            and deps.get(key, None) is not None and remote_deps.get(key, None) is not None
         ]
     for key in scope:
         if deps.get(key) == remote_deps.get(key):
             print('\033[92m', end="")
         else:
             print('\033[91m', end="")
-        print("%-30s %-10s  %-10s" %
-              (key, deps.get(key, "--"), remote_deps.get(key, "--")))
+        print("%-30s %-10s  %-10s" % (key, deps.get(key, "--"), remote_deps.get(key, "--")))
         print('\033[0m', end="")
 
 
@@ -117,47 +106,24 @@ class VCheck(Enum):
         return self.value
 
 
-parser = argparse.ArgumentParser(
-    description='Configure remote Databricks access with Jupyter Lab')
+parser = argparse.ArgumentParser(description='Configure remote Databricks access with Jupyter Lab')
 
-parser.add_argument('profile',
-                    nargs='?',
-                    type=str,
-                    default="",
-                    help='A databricks-cli profile')
+parser.add_argument('profile', nargs='?', type=str, default="", help='A databricks-cli profile')
 parser.add_argument('-c',
                     '--clipboard',
                     dest='clipboard',
                     action='store_true',
                     help='Copy the personal access token to the clipboard')
-parser.add_argument('-i',
-                    '--id',
-                    dest='cluster_id',
-                    help='The cluster_id to avoid manual selection')
-parser.add_argument('-k',
-                    '--kernelspec',
-                    dest='kernelspec',
-                    action='store_true',
-                    help='Create a kernel specification')
-parser.add_argument('-o',
-                    '--organisation',
-                    dest='organisation',
-                    help='The organisation for Azure Databricks')
+parser.add_argument('-i', '--id', dest='cluster_id', help='The cluster_id to avoid manual selection')
+parser.add_argument('-k', '--kernelspec', dest='kernelspec', action='store_true', help='Create a kernel specification')
+parser.add_argument('-o', '--organisation', dest='organisation', help='The organisation for Azure Databricks')
 parser.add_argument('-p',
                     '--profiles',
                     dest='profiles',
                     action='store_true',
                     help='Show all datbricks cli profiles and check SSH key')
-parser.add_argument('-r',
-                    '--restart',
-                    dest='restart',
-                    action='store_true',
-                    help='Restart cluster with id cluster_id')
-parser.add_argument('-s',
-                    '--sshfs',
-                    dest='sshfs',
-                    action='store_true',
-                    help='Mount remote filesystem via sshfs')
+parser.add_argument('-r', '--restart', dest='restart', action='store_true', help='Restart cluster with id cluster_id')
+parser.add_argument('-s', '--sshfs', dest='sshfs', action='store_true', help='Mount remote filesystem via sshfs')
 parser.add_argument('-v',
                     '--versioncheck',
                     dest='versioncheck',
@@ -179,9 +145,7 @@ else:
 module_path = os.path.dirname(databricks_jupyterlab.__file__)
 if args.profile == "" and not args.profiles:
     parser.print_help()
-    print(
-        "\ndatabricks-jupyterlab: error: the following arguments are required: profile\n"
-    )
+    print("\ndatabricks-jupyterlab: error: the following arguments are required: profile\n")
     sys.exit(1)
 
 if not args.profiles:
@@ -189,7 +153,9 @@ if not args.profiles:
     host, token = get_db_config(profile)
     if ("azuredatabricks.net" in host) and args.kernelspec and not args.organisation:
         parser.print_help()
-        print("\ndatabricks-jupyterlab: error: To configure an Azure Databricks cluster, the organization id (-o id) is required\n")
+        print(
+            "\ndatabricks-jupyterlab: error: To configure an Azure Databricks cluster, the organization id (-o id) is required\n"
+        )
         sys.exit(1)
 
 if args.clipboard:
@@ -200,8 +166,8 @@ started = False
 if args.kernelspec or args.restart or args.sshfs or args.versioncheck:
     print("\n* Select remote cluster")
     apiclient = connect(profile)
-    cluster_id, public_ip, cluster_name, started, status_file = get_cluster(
-        apiclient, profile, host, token, args.cluster_id)
+    cluster_id, public_ip, cluster_name, started, status_file = get_cluster(apiclient, profile, host, token,
+                                                                            args.cluster_id)
     if cluster_name is None:
         print("databricks-jupyterlab: error: cluster_id '%s' not found" % cluster_id)
         sys.exit(1)
@@ -213,9 +179,7 @@ if args.kernelspec or args.restart or args.sshfs or args.versioncheck:
     if not is_reachable(public_dns=public_ip):
         print("Cannot connect to remote cluster. Please check:")
         print("- whether port 2200 is open in cloud security group")
-        print(
-            "- whether VPN is enabled if you need one to connect to the cluster"
-        )
+        print("- whether VPN is enabled if you need one to connect to the cluster")
         sys.exit(1)
 
 if args.kernelspec or args.restart:
@@ -223,28 +187,20 @@ if args.kernelspec or args.restart:
     status_file.log_check()
     if not check_installed(cluster_id):
         packages = json.loads(check_output(["conda", "list", "--json"]))
-        deps = {
-            p["name"]: p["version"]
-            for p in packages
-            if p["name"] in ["ipywidgets", "sidecar"]
-        }
+        deps = {p["name"]: p["version"] for p in packages if p["name"] in ["ipywidgets", "sidecar"]}
 
         print("\n* Installing databricks_jupyterlab, ipywidgets on remote driver")
         status_file.log_install_driver()
-        install_libs(cluster_id,
-                    module_path,
-                    ipywidets_version=deps["ipywidgets"],
-                    sidecar_version=deps["sidecar"])
+        install_libs(cluster_id, module_path, ipywidets_version=deps["ipywidgets"], sidecar_version=deps["sidecar"])
     status_file.log_done()
-    
+
 if args.kernelspec:
     print("\n* Create remote kernel spec")
-    create_kernelspec(profile, args.organisation, host, cluster_id,
-                      cluster_name)
+    create_kernelspec(profile, args.organisation, host, cluster_id, cluster_name)
 
     print("\n* Setting global config of jupyter lab (autorestart, timeout)")
     write_config()
- 
+
 if args.versioncheck:
     version_check()
 

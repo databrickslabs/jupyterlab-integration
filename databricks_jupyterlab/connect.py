@@ -27,8 +27,7 @@ from IPython.display import HTML, display
 
 sys.path.insert(0, "/databricks/spark/python/lib/py4j-0.10.7-src.zip")
 sys.path.insert(0, "/databricks/spark/python")
-sys.path.insert(
-    0, "/databricks/jars/spark--driver--spark--resources-resources.jar")
+sys.path.insert(0, "/databricks/jars/spark--driver--spark--resources-resources.jar")
 
 # will only work on the Databricks side
 try:
@@ -53,7 +52,6 @@ from databricks_jupyterlab.info import Info
 
 
 class JobInfo():
-
     def __init__(self, pool_id):
         self.pool_id = pool_id
         self.group_id = None
@@ -145,7 +143,6 @@ def dbcontext(progressbar=True):
     # Patch the remote spark UI into the _repr_html_ call
     #
     def repr_html(uiWebUrl):
-
         def sc_repr_html():
             return """
             <div>
@@ -163,8 +160,7 @@ def dbcontext(progressbar=True):
     if organisation is None:
         sparkUi = "%s#/setting/clusters/%s/sparkUi" % (host, clusterId)
     else:
-        sparkUi = "%s/?o=%s#/setting/clusters/%s/sparkUi" % (host, organisation,
-                                                             clusterId)
+        sparkUi = "%s/?o=%s#/setting/clusters/%s/sparkUi" % (host, organisation, clusterId)
 
     sc_repr_html = repr_html(sparkUi)
     sc._repr_html_ = sc_repr_html
@@ -247,12 +243,8 @@ def dbcontext(progressbar=True):
     print("- sqlContext  Hive Context")
     print("- dbutils     Databricks utilities\n")
     print("")
-    print(
-        "Open dbfs browser:     import databricks_jupyterlab as dj; dj.browse_dbfs(dbutils)"
-    )
-    print(
-        "Open database browser: import databricks_jupyterlab as dj; dj.browse_databases(spark)"
-    )
+    print("Open dbfs browser:     import databricks_jupyterlab as dj; dj.browse_dbfs(dbutils)")
+    print("Open database browser: import databricks_jupyterlab as dj; dj.browse_databases(spark)")
     print("")
 
     return spark

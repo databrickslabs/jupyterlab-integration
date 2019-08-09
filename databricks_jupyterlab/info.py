@@ -22,7 +22,6 @@ class Info(object):
     instance = None
 
     class __Info(object):
-
         def __init__(self, spark):
             self.spark = spark
 

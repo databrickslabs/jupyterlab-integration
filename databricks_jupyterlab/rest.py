@@ -18,7 +18,6 @@ import requests
 
 
 class Rest(object):
-
     @classmethod
     def _json(cls, response, key=None):
         try:
@@ -37,21 +36,9 @@ class Rest(object):
         return Rest._json(response)
 
     @classmethod
-    def post(cls,
-             url,
-             api_version,
-             path,
-             token,
-             json=None,
-             data=None,
-             files=None,
-             key=None):
+    def post(cls, url, api_version, path, token, json=None, data=None, files=None, key=None):
         full_url = os.path.join(url, "api/%s" % api_version, path)
-        response = requests.post(full_url,
-                                 json=json,
-                                 data=data,
-                                 files=files,
-                                 auth=("token", token))
+        response = requests.post(full_url, json=json, data=data, files=files, auth=("token", token))
         return Rest._json(response, key)
 
 
@@ -60,7 +47,6 @@ class Context(object):
     instance = None
 
     class __Context(object):
-
         def __init__(self, url, clusterId, token):
             self.token = token
             self.url = url
@@ -69,26 +55,16 @@ class Context(object):
 
         def create(self):
             data = {"language": "python", "clusterId": self.clusterId}
-            self.id = Rest.post(self.url,
-                                "1.2",
-                                "contexts/create",
-                                data=data,
-                                token=self.token,
-                                key="id")
+            self.id = Rest.post(self.url, "1.2", "contexts/create", data=data, token=self.token, key="id")
             return self.id
 
         def status(self):
-            path = "contexts/status?contextId=%s&clusterId=%s" % (
-                self.id, self.clusterId)
+            path = "contexts/status?contextId=%s&clusterId=%s" % (self.id, self.clusterId)
             return Rest.get(self.url, "1.2", path, token=self.token)
 
         def destroy(self):
             data = {"contextId": self.id, "clusterId": self.clusterId}
-            return Rest.post(self.url,
-                             "1.2",
-                             "contexts/destroy",
-                             data=data,
-                             token=self.token)
+            return Rest.post(self.url, "1.2", "contexts/destroy", data=data, token=self.token)
 
     def __init__(self, url=None, clusterId=None, token=None):
         if not Context.instance:
@@ -99,7 +75,6 @@ class Context(object):
 
 
 class Command(object):
-
     def __init__(self, url, clusterId, token):
         self.token = token
         self.url = url
@@ -108,11 +83,7 @@ class Command(object):
         self.context.create()
 
     def execute(self, command):
-        data = {
-            "language": "python",
-            "contextId": self.context.id,
-            "clusterId": self.clusterId
-        }
+        data = {"language": "python", "contextId": self.context.id, "clusterId": self.clusterId}
         files = {"command": command}
         self.commandId = Rest.post(self.url,
                                    "1.2",
@@ -125,43 +96,30 @@ class Command(object):
 
     def status(self, commandId=None):
         cmdId = commandId or self.commandId
-        path = "commands/status?commandId=%s&contextId=%s&clusterId=%s" % (
-            cmdId, self.context.id, self.clusterId)
+        path = "commands/status?commandId=%s&contextId=%s&clusterId=%s" % (cmdId, self.context.id, self.clusterId)
         return Rest.get(self.url, "1.2", path, token=self.token)
 
 
 class Clusters(object):
-
     def __init__(self, url, token):
         self.url = url
         self.token = token
 
     def status(self, cluster_id):
-        result = Rest.get(self.url,
-                          "2.0",
-                          "clusters/get?cluster_id=%s" % cluster_id,
-                          token=self.token)
+        result = Rest.get(self.url, "2.0", "clusters/get?cluster_id=%s" % cluster_id, token=self.token)
         return result
 
     def start(self, cluster_id):
         data = {"cluster_id": cluster_id}
-        result = Rest.post(self.url,
-                           "2.0",
-                           "clusters/start",
-                           json=data,
-                           token=self.token)
+        result = Rest.post(self.url, "2.0", "clusters/start", json=data, token=self.token)
         return result
 
 
 class Libraries(object):
-
     def __init__(self, url, token):
         self.url = url
         self.token = token
 
     def status(self, cluster_id):
-        result = Rest.get(self.url,
-                          "2.0",
-                          "libraries/cluster-status?cluster_id=%s" % cluster_id,
-                          token=self.token)
+        result = Rest.get(self.url, "2.0", "libraries/cluster-status?cluster_id=%s" % cluster_id, token=self.token)
         return result

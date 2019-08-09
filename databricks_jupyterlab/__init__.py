@@ -14,6 +14,7 @@
 
 import os
 
+
 def browse_dbfs(dbutils):
     from .dbfs import Dbfs
     Dbfs(dbutils).create()
@@ -22,6 +23,7 @@ def browse_dbfs(dbutils):
 def browse_databases(spark):
     from .database import Databases
     Databases(spark).create()
+
 
 if os.environ.get("DBJL_HOST") is None:
 
