@@ -16,10 +16,11 @@ from databricks_jupyterlab.remote import (get_db_config, get_cluster, connect, p
 
 parser = argparse.ArgumentParser(description='Configure remote Databricks access with VS Code')
 
-parser.add_argument('profile', nargs=1, type=str, 
-                    help='A databricks-cli profile')
+parser.add_argument('profile', nargs=1, type=str, help='A databricks-cli profile')
 
-parser.add_argument('-s', '--sync-interval', dest='interval', 
+parser.add_argument('-s',
+                    '--sync-interval',
+                    dest='interval',
                     help='interval in seconds to sync local and remote folder')
 
 args = parser.parse_args()
@@ -35,7 +36,8 @@ host, token = get_db_config(profile)
 
 print("\n2. Select remote cluster")
 apiclient = connect(profile)
-cluster_id, public_ip, cluster_name = get_cluster(apiclient, profile, host, token)
+cluster_id, public_ip, cluster_name, started, status_file = get_cluster(apiclient, profile, host, token,
+                                                                        args.cluster_id)
 
 print("\n3. Configuring ssh config for remote cluster")
 prepare_ssh_config(cluster_id, profile, public_ip)
