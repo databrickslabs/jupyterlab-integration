@@ -73,9 +73,6 @@ class StatusFile:
     def log_start(self, indicator):
         self.log("Cluster starting" + indicator)
 
-    def log_started(self):
-        self.log("Cluster started")
-
     def log_install_cluster(self, indicator):
         self.log("Installing cluster libs" + indicator)
 
@@ -202,7 +199,7 @@ def get_cluster(apiclient, profile, host, token, cluster_id=None):
                 cluster = c
                 break
         if cluster is None:
-            return cluster_id, None, None, None
+            return cluster_id, None, None, None, None
 
     cluster_id = cluster["cluster_id"]
     cluster_name = cluster["cluster_name"]
@@ -301,11 +298,12 @@ def create_kernelspec(profile, organisation, host, cluster_id, cluster_name):
                language="python",
                workdir="/home/ubuntu",
                host="%s:2200" % cluster_id,
-               ssh_init=json.dumps(["databricks-jupyterlab", profile, "-r", "-i", cluster_id]),
+#               ssh_init=json.dumps(["databricks-jupyterlab", profile, "-r", "-i", cluster_id]),
+               ssh_timeout="10",
                no_passwords=True,
                verbose=True)
 
-    print("   => Kernel specification 'SSH %s:2200 %s' created or updated" % (cluster_id, cluster_name))
+    print("   => Kernel specification 'SSH %s %s' created or updated" % (cluster_id, cluster_name))
 
 
 def install_libs(host, module_path, ipywidets_version, sidecar_version):
