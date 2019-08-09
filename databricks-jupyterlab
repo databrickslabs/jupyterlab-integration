@@ -187,6 +187,10 @@ if args.profile == "" and not args.profiles:
 if not args.profiles:
     print("\n* Getting host and token from .databrickscfg")
     host, token = get_db_config(profile)
+    if ("azuredatabricks.net" in host) and args.kernelspec and not args.organisation:
+        parser.print_help()
+        print("\ndatabricks-jupyterlab: error: To configure an Azure Databricks cluster, the organization id (-o id) is required\n")
+        sys.exit(1)
 
 if args.clipboard:
     pyperclip.copy(token)
@@ -199,7 +203,7 @@ if args.kernelspec or args.restart or args.sshfs or args.versioncheck:
     cluster_id, public_ip, cluster_name, started, status_file = get_cluster(
         apiclient, profile, host, token, args.cluster_id)
     if cluster_name is None:
-        print("Error: cluster_id '%s' not found" % cluster_id)
+        print("databricks-jupyterlab: error: cluster_id '%s' not found" % cluster_id)
         sys.exit(1)
 
     print("\n* Configuring ssh config for remote cluster")
