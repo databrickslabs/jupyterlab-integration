@@ -7,7 +7,8 @@ wheel:
 envs:
 	dev_tools/create-env-files.sh
 
-install: wheel
-	pip install --upgrade .
+build: envs wheel 
 
-all: envs wheel 
+install: envs wheel
+	pip install --upgrade .
+	
