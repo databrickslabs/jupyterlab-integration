@@ -109,7 +109,7 @@ Databricks-jupyterlab:
 2) Create jupyter kernel for remote cluster
 
     Databricks on AWS:
-        databricks-jupyterlab <profile> -k
+        databricks-jupyterlab <profile> -k [-i cluster-id]
     
     Azure Databricks:
         databricks-jupyterlab <profile> -k -o <organisation>
@@ -124,7 +124,7 @@ Databricks-jupyterlab:
 
 5) Start jupyter lab to use the kernel(s) created in 2)
 
-    jupyter lab
+    databricks-jupyterlab <profile> -l [-i cluster-id]
 
 
 Currently available profiles (databricks-jupyterlab -p):
