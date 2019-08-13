@@ -66,7 +66,7 @@ echo "$ENV_NAME: $ENV_FILE"
 
 echo -e "\n\x1b[32m1 Install conda environment $envname\n\x1b[0m"
 
-conda env create -n $ENV_NAME -f "$ENV_FILE"
+conda env create -n $ENV_NAME -f "databricks_jupyterlab/env_files/$ENV_FILE"
 source $(conda info | awk '/base env/ {print $4}')/bin/activate "$ENV_NAME"
 
 echo -e "\n\x1b[32m2 Install jupyterlab extensions\n\x1b[0m"
