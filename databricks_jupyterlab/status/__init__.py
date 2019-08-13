@@ -93,7 +93,7 @@ class DbStartHandler(KernelHandler):
                              ipywidets_version=deps["ipywidgets"],
                              sidecar_version=deps["sidecar"])
             
-                kernel = self.get_kernel(kernel_id)
+            kernel = self.get_kernel(kernel_id)
             
             status_file.log_done()
             time.sleep(1)
