@@ -78,7 +78,7 @@ The quickest way to use *databricks-jupyterlab* is:
 
     When the cluster is already running the status bar of Jupyter lab should show
 
-    ![kernel ready](docs/kernel-ready.png) 
+    ![kernel ready](docs/connected.png) 
 
     To connect to the remote Spark context, enter the following two lines into a notebook cell:
 
@@ -91,7 +91,7 @@ The quickest way to use *databricks-jupyterlab* is:
 
     ```
         Fri Aug  9 09:58:04 2019 py4j imported
-        Enter personal access token for profile 'demo' |_______________________________________|
+        Enter personal access token for profile 'demo' |____________________________________|
     ```
 
     After pressing *Enter*, you will see
@@ -111,18 +111,24 @@ The quickest way to use *databricks-jupyterlab* is:
 
     Should the cluster auto terminate while the notebook is connected, the status bar will change to
 
-    - ![kernel disconnected](docs/kernel-disconnected.png) 
+    - ![kernel disconnected](docs/cluster-terminated.png) 
 
     Clicking on the status bar entry as indicated by the message will open a dialog box to confirm that the remote cluster should be started again. During restart the following status messages will be shown in this order:
 
-    - ![cluster-starting-2](docs/cluster-starting-2.png)
-    - ![installing-cluster-libs-2](docs/installing-cluster-libs-2.png)
+    - ![cluster-starting](docs/cluster-starting-2.png)
+    - ![installing-cluster-libs](docs/installing-cluster-libs.png)
     - ![checking-driver-libs](docs/checking-driver-libs.png)
     - ![installing-driver-libs](docs/installing-driver-libs.png)
 
-    It should end up again in 
+    If the cluster is up and running, however cannot be reached by `ssh` (e.g. VPN not running), then one would see
 
-    - ![kernel ready](docs/kernel-ready.png)
+    - ![cluster unreachable](docs/cluster-unreachable.png)
+
+    In this case check connectivity, e.g. by calling `ssh <cluster_id>` in a terminal window.
+
+    After successful start the status would again show:
+
+    - ![kernel ready](docs/connected.png)
 
 - **Notebook hung after cluster start or kernel change**
 
@@ -139,7 +145,7 @@ The quickest way to use *databricks-jupyterlab* is:
     (jlab-5.5-ml)$ databricks-jupyterlab -h
     ```
 
-2) **Currently available profiles (databricks-jupyterlab -p):**
+2) **Show currently available profiles (databricks-jupyterlab -p):**
 
     ```bash
     (jlab-5.5-ml)$ databricks-jupyterlab -p
@@ -180,7 +186,17 @@ The quickest way to use *databricks-jupyterlab* is:
     - Installs `databricks_jupyterlab` and `ipywidgets` on the remote driver
     - Creates the remote kernel specification
 
-4) **Copy Personal Access token for databricks workspace to the clipboard**
+4) **Safely start Jupyter Lab**
+
+    while you can start Jupyter Lab via `jupyter lab`, it is recommended to use the wrapper
+
+    ```bash
+    (jlab-5.5-ml)$ databricks-jupyterlab <profile> -l [-i <cluster name>]
+    ```
+
+    It will check whether the remote cluster is up and running, update the ssh info, check the availability of th relevant libs before starting jupyter Lab.
+
+5) **Copy Personal Access token for databricks workspace to the clipboard**
 
     This is the same command on AWS and Azure
 
@@ -188,7 +204,7 @@ The quickest way to use *databricks-jupyterlab* is:
     (jlab-5.5-ml)$ databricks-jupyterlab <profile> -c
     ```
 
-5) **Compare local and remote library versions (uses the locally activated canda environment)**
+6) **Compare local and remote library versions (uses the locally activated canda environment)**
 
     ```bash
     (jlab-5.5-ml)$ databricks-jupyterlab <profile> -v all|same|diff [-i <cluster name>]
