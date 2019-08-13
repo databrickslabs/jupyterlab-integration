@@ -168,7 +168,7 @@ if args.clipboard:
     print("   => Personal access token copied to clipboard")
 
 started = False
-if args.kernelspec or args.reconfigure or args.sshfs or args.versioncheck:
+if args.kernelspec or args.reconfigure or args.lab or args.sshfs or args.versioncheck:
     print("\n* Select remote cluster")
     apiclient = connect(profile)
     cluster_id, public_ip, cluster_name, started, status_file = get_cluster(apiclient, profile, host, token,
