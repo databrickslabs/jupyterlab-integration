@@ -43,7 +43,7 @@ class DbStatusHandler(KernelHandler):
             if kernel.is_alive():
                 status = "Connected"
             else:
-                status = "DISCONNECTED"
+                status = "TERMINATED"
 
         status_file = os.path.expanduser("~/.databricks-jupyterlab/%s_%s.starting" % (profile, cluster_id))
         status_file_exists = os.path.exists(status_file)
@@ -79,7 +79,7 @@ class DbStartHandler(KernelHandler):
         status_file.log_ssh()
         prepare_ssh_config(cluster_id, profile, public_ip)
         if not is_reachable(public_dns=public_ip):
-            status_file.log_error("ERROR: Cannot Connect to %s:%s" % (profile, cluster_id))
+            status_file.log_error("UNREACHABLE")
         else:
             status_file.log_check()
             if not check_installed(cluster_id):

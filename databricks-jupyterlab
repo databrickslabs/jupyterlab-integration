@@ -116,13 +116,18 @@ parser.add_argument('-c',
                     help='Copy the personal access token to the clipboard')
 parser.add_argument('-i', '--id', dest='cluster_id', help='The cluster_id to avoid manual selection')
 parser.add_argument('-k', '--kernelspec', dest='kernelspec', action='store_true', help='Create a kernel specification')
+parser.add_argument('-l', '--lab', dest='lab', action='store_true', help='Safely start Jupyter Lab')
 parser.add_argument('-o', '--organisation', dest='organisation', help='The organisation for Azure Databricks')
 parser.add_argument('-p',
                     '--profiles',
                     dest='profiles',
                     action='store_true',
                     help='Show all datbricks cli profiles and check SSH key')
-parser.add_argument('-r', '--restart', dest='restart', action='store_true', help='Restart cluster with id cluster_id')
+parser.add_argument('-r',
+                    '--reconfigure',
+                    dest='reconfigure',
+                    action='store_true',
+                    help='Reconfigure cluster with id cluster_id')
 parser.add_argument('-s', '--sshfs', dest='sshfs', action='store_true', help='Mount remote filesystem via sshfs')
 parser.add_argument('-v',
                     '--versioncheck',
@@ -182,7 +187,7 @@ if args.kernelspec or args.restart or args.sshfs or args.versioncheck:
         print("- whether VPN is enabled if you need one to connect to the cluster")
         sys.exit(1)
 
-if args.kernelspec or args.restart:
+if args.kernelspec or args.reconfigure or args.lab:
     print("   => Check installed libraries")
     status_file.log_check()
     if not check_installed(cluster_id):
@@ -193,6 +198,12 @@ if args.kernelspec or args.restart:
         status_file.log_install_driver()
         install_libs(cluster_id, module_path, ipywidets_version=deps["ipywidgets"], sidecar_version=deps["sidecar"])
     status_file.log_done()
+
+if args.lab:
+    import jupyterlab.labapp
+    sys.argv = sys.argv[:1]
+    print(sys.argv)
+    jupyterlab.labapp.main()
 
 if args.kernelspec:
     print("\n* Create remote kernel spec")

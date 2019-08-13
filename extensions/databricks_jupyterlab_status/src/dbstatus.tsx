@@ -39,16 +39,19 @@ export class DbStatus extends VDomRenderer<DbStatus.Model> {
    * Render the databricks status item.
    */
   render() {
+    console.log("render", this.model.currentStatus)
     if (!this.model) {
       return null;
     }
-   let text: string = this.model.currentStatus;
-    if (text == "DISCONNECTED") {
+    let text: string = this.model.currentStatus;
+    if (text === "TERMINATED") {
       text = "[ " + text + " ] (click here to start cluster)";
+    } else if (text === "UNREACHABLE") { 
+      text = "[ " + text + " ] (click here to reconfigure)";
     } else {
       text = "[ " + text + " ]";
     }
-    return <TextItem onClick={() => this.model.handleClick()} title="Current databricks status" source={text} />;
+    return <TextItem onClick={() => this.model.handleClick()} title="Current databricks status" source={text} />;    
   }
 }
 
@@ -128,37 +131,61 @@ export namespace DbStatus {
         var status = value.status;
         if (this.restarting) {
           status = "Restarting"
-          this._restarting_count *= 1;
         }
         this._statusAvailable = true;
         this._currentStatus = status;
       }
 
+      if ((this._currentStatus === "TERMINATED") || (this._currentStatus === "UNREACHABLE")) {
+        if (this._currentStatus !== oldCurrentStatus) {
+          this._terminate_count = 0;
+        } else {
+          this._terminate_count += 1;
+        }
+        if (this._terminate_count === 3) {
+          showDialog({
+            title: this._currentStatus,
+            body: "Note: The cluster is " + this._currentStatus.toLowerCase(),
+            buttons: [
+              Dialog.warnButton({ label: 'OK' })
+            ]
+          })
+        }
+      }
+  
       if (
         this._currentStatus !== oldCurrentStatus ||
         this._statusAvailable !== oldStatusAvailable
       ) {
         this.stateChanged.emit(void 0);
       }
-
-      // if (this._currentStatus !== oldCurrentStatus) {
-      //   if (this._currentStatus === "Cluster started") {
-      //     this._notebookTracker.currentWidget.session.kernel.restart();
-      //   }
-      // }
     }
 
     /**
      * Click handler
      */
     handleClick() {
-      if (this.currentStatus == "DISCONNECTED") {
+      var title = "";
+      var body = "";
+      var label = "";
+
+      if (this.currentStatus == "TERMINATED") {
+        title = "Cluster terminated";
+        body = "Start remote cluster?";
+        label = "Start Cluster";
+      } else if (this.currentStatus === "UNREACHABLE") {
+        title = "Cluster not reachable?";
+        body = "Check e.g. VPN and then reconfigure kernel?";
+        label = "Reconfigure cluster";
+      }
+      if ((this.currentStatus == "TERMINATED") || 
+          (this.currentStatus === "UNREACHABLE")) {
         showDialog({
-          title: 'Cluster disconnected',
-          body: "Start remote cluster?",
+          title: title,
+          body: body,
           buttons: [
             Dialog.cancelButton(),
-            Dialog.warnButton({ label: 'Start Cluster' })
+            Dialog.warnButton({ label: label })
           ]
         }).then(result => {
           if (result.button.accept) {
@@ -213,6 +240,7 @@ export namespace DbStatus {
     private _session: IClientSession;
     private _restarting = false;
     private _restarting_count = 0;
+    private _terminate_count = 0;
   }
 
   /**
