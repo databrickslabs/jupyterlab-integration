@@ -39,7 +39,7 @@ if [[ "$2" != "" ]]; then
 else
     PS3BAK=$PS3
     PS3="Select 1-$[${#OPTIONS[@]}+1]: "
-
+    echo "Which remote Databricks Runtime should be mirrored from a Daa Science library perspective?"
     select opt in "${OPTIONS[@]}" "quit"; do
         case $opt in
             "${OPTIONS[0]}")
