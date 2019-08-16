@@ -124,6 +124,9 @@ def dbcontext(progressbar=True):
     token = getpass.getpass("\nEnter personal access token for profile '%s'" % profile)
 
     command = Command(url=host, clusterId=clusterId, token=token)
+    if not command.is_valid_context:
+        return None
+
     print("Gateway created for cluster '%s' " % (clusterId), end="", flush=True)
 
     # Fetch auth_token and gateway port ...

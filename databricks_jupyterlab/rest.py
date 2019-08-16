@@ -15,9 +15,14 @@
 import os
 
 import requests
+import xml.etree.ElementTree
 
 
 class Rest(object):
+    @classmethod
+    def _remove_tags(cls, text):
+        return ''.join(xml.etree.ElementTree.fromstring(text).itertext()).replace("\n\n", "\n")
+
     @classmethod
     def _json(cls, response, key=None):
         try:
@@ -25,21 +30,29 @@ class Rest(object):
             if key is not None:
                 value = value[key]
             return value
-        except:
-            print("Error", response.text)
+        except Exception as ex:
+            print("Json Error:", response.text)
             return None
 
     @classmethod
     def get(cls, url, api_version, path, token):
         full_url = os.path.join(url, "api/%s" % api_version, path)
         response = requests.get(full_url, auth=("token", token))
-        return Rest._json(response)
+        if response.status_code in (200, 201):
+            return Rest._json(response)
+        else:
+            print(Rest._remove_tags(response.text))
+            return None
 
     @classmethod
     def post(cls, url, api_version, path, token, json=None, data=None, files=None, key=None):
         full_url = os.path.join(url, "api/%s" % api_version, path)
         response = requests.post(full_url, json=json, data=data, files=files, auth=("token", token))
-        return Rest._json(response, key)
+        if response.status_code in (200, 201):
+            return Rest._json(response, key)
+        else:
+            print(Rest._remove_tags(response.text))
+            return None
 
 
 class Context(object):
@@ -75,12 +88,15 @@ class Context(object):
 
 
 class Command(object):
-    def __init__(self, url, clusterId, token):
+    def __init__(self, url, clusterId, token, restart=False):
         self.token = token
         self.url = url
         self.clusterId = clusterId
         self.context = Context(url, clusterId, token)
-        self.context.create()
+        self.is_valid_context = True
+        if self.context.create() is None:
+            self.is_valid_context = False
+            Context.instance = None # delete singelton
 
     def execute(self, command):
         data = {"language": "python", "contextId": self.context.id, "clusterId": self.clusterId}
