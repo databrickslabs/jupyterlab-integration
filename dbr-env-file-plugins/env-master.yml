@@ -7,15 +7,15 @@ channels:
 dependencies:
   # Python
   - python=3.6
-  - pip=19.1.1
+  - pip=19.2.2
   # Jupyter
-  - ipykernel=5.1.1
+  - ipykernel=5.1.2
   - ipywidgets=7.5.1
   - jupyter=1.0.0
-  - jupyterlab=1.0.4
-  - nbconvert=5.5.0
+  - jupyterlab=1.0.5
+  - nbconvert=5.6.0
   - nodejs=10.13.0
-  - notebook=6.0.0
+  - notebook=5.7.8
   - tornado=6.0.3
   - zeromq=4.3.2
   - widgetsnbextension=3.5.1
