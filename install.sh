@@ -2,12 +2,14 @@
 set -e
 
 OPTIONS=(
+    "No Databricks Runtime (jupyter labs only)"
     "Databricks Runtime 5.5"
     "Databricks Runtime 5.5 ML"
     "Databricks Runtime 5.5 conda (beta)"
 )
 
 ENV_FILES=(
+    env-jupyter-only.yml
     env-dbr-5.5.yml
     env-dbr-5.5ml.yml
     env-dbr-5.5conda.yml
@@ -28,6 +30,7 @@ if [[ "$1" == "" ]]; then
 fi
 
 ENV_NAME=$1
+ALL_LABEXTS=1
 
 if [[ "$2" != "" ]]; then
     if [[ $2 < 1 || $2 > ${#OPTIONS[@]} ]]; then
@@ -44,6 +47,7 @@ else
         case $opt in
             "${OPTIONS[0]}")
                 ENV_FILE=${ENV_FILES[0]}
+                ALL_LABEXTS=0
                 break
                 ;;
             "${OPTIONS[1]}")
@@ -52,6 +56,10 @@ else
                 ;;
             "${OPTIONS[2]}")
                 ENV_FILE=${ENV_FILES[2]}
+                break
+                ;;
+            "${OPTIONS[3]}")
+                ENV_FILE=${ENV_FILES[3]}
                 break
                 ;;
             "quit")
@@ -64,6 +72,12 @@ fi
 
 echo "$ENV_NAME: $ENV_FILE"
 
+if [[ $ALL_LABEXTS == 0 ]]; then
+    LABEXTS=$(head -n 2 labextensions.txt | xargs)
+else
+    LABEXTS=$(cat labextensions.txt | xargs)
+fi
+echo $LABEXTS
 echo -e "\n\x1b[32m1 Install conda environment $envname\n\x1b[0m"
 
 conda env create -n $ENV_NAME -f "databricks_jupyterlab/env_files/$ENV_FILE"
@@ -71,7 +85,8 @@ source $(conda info | awk '/base env/ {print $4}')/bin/activate "$ENV_NAME"
 
 echo -e "\n\x1b[32m2 Install jupyterlab extensions\n\x1b[0m"
 
-jupyter labextension install --no-build $(cat labextensions.txt)
+jupyter labextension install --no-build $LABEXTS
+
 cd extensions/databricks_jupyterlab_status
 jupyter labextension install
 cd ../..
