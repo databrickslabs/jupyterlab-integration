@@ -77,7 +77,7 @@ if [[ $ALL_LABEXTS == 0 ]]; then
 else
     LABEXTS=$(cat labextensions.txt | xargs)
 fi
-echo $LABEXTS
+
 echo -e "\n\x1b[32m1 Install conda environment $envname\n\x1b[0m"
 
 conda env create -n $ENV_NAME -f "databricks_jupyterlab/env_files/$ENV_FILE"
