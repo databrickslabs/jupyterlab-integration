@@ -92,7 +92,7 @@ class DbStatusHandler(KernelHandler):
 
         result = {'status': "%s" % status}
         # print("start_status: '%s'; alive: '%s; status: '%s'" % (start_status, alive,result))
-        self.write(json.dumps(result))
+        self.finish(json.dumps(result))
 
 
 class DbStartHandler(KernelHandler):
@@ -105,7 +105,7 @@ class DbStartHandler(KernelHandler):
         tf.start()
 
         result = {'status': "ok"}
-        self.write(json.dumps(result))
+        self.finish(json.dumps(result))
 
     def start_cluster(self, profile, cluster_id, kernel_id):
         Status().set_status(profile, cluster_id, "Starting cluster")
