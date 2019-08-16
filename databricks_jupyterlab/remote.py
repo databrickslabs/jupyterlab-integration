@@ -41,65 +41,6 @@ PIP_INSTALL = "/databricks/python/bin/pip install -q --no-warn-conflicts --disab
 PIP_LIST = "/databricks/python/bin/pip list --disable-pip-version-check --format=json"
 
 
-class StatusFile:
-    def __init__(self, profile, cluster_id):
-
-        # create status file folder
-        status_path = os.path.expanduser("~/.databricks-jupyterlab")
-        try:
-            if not os.path.exists(status_path):
-                os.mkdir(status_path)
-            self.ok = True
-        except:
-            print("Warning: Cannot create %s, no Databricks cluster status in Jupyterlab" % status_path)
-            self.ok = False
-
-        # Clean up old startup files
-        try:
-            self.status_file = os.path.join(status_path, "%s_%s" % (profile, cluster_id))
-            os.remove(self.status_file)
-            os.remove("%s.starting" % self.status_file)
-        except:
-            pass
-
-    def log(self, msg):
-        if self.ok:
-            try:
-                with open("%s.starting" % self.status_file, "w") as fd:
-                    fd.write(msg)
-            except:
-                print("Warning: Cannot write to %s, no Databricks cluster status in Jupyterlab" % self.status_file)
-
-    def log_start(self, indicator):
-        self.log("Cluster starting" + indicator)
-
-    def log_install_cluster(self, indicator):
-        self.log("Installing cluster libs" + indicator)
-
-    def log_ssh(self):
-        self.log("Configuring SSH")
-
-    def log_check(self):
-        self.log("Checking driver libs")
-
-    def log_install_driver(self):
-        self.log("Installing driver libs")
-
-    def log_done(self):
-        self.log("Connected")
-        self.finish()
-
-    def log_error(self, msg):
-        self.log(msg)
-
-    def finish(self):
-        if self.ok:
-            try:
-                os.rename("%s.starting" % self.status_file, self.status_file)
-            except:
-                print("Warning: Cannot rename %s, no Databricks cluster status in Jupyterlab" % self.status_file)
-
-
 class Dark(Default):
     def __init__(self):
         super().__init__()
@@ -160,7 +101,7 @@ def connect(profile):
         bye("Token for profile '%s' is invalid" % profile)
 
 
-def get_cluster(apiclient, profile, host, token, cluster_id=None):
+def get_cluster(apiclient, profile, host, token, cluster_id=None, status=None):
     with open("%s/.ssh/id_%s.pub" % (expanduser("~"), profile)) as fd:
         try:
             ssh_pub = fd.read().strip()
@@ -204,8 +145,6 @@ def get_cluster(apiclient, profile, host, token, cluster_id=None):
     cluster_id = cluster["cluster_id"]
     cluster_name = cluster["cluster_name"]
 
-    status_file = StatusFile(profile, cluster_id)
-
     cluster_api = Clusters(url=host, token=token)
     response = cluster_api.status(cluster_id)
     state = response["state"]
@@ -214,39 +153,40 @@ def get_cluster(apiclient, profile, host, token, cluster_id=None):
     if not state in ["RUNNING", "RESIZING"]:
         if state == "TERMINATED":
             print("   => Starting cluster %s" % cluster_id)
-            status_file.log_start("")
+            if status is not None:
+                status.set_status(profile, cluster_id, "Cluster Starting")
             started = True
             response = cluster_api.start(cluster_id)
 
         print("   => Waiting for cluster %s being started (this can take up to 5 min)" % cluster_id)
         print("   ", end="", flush=True)
 
-        indicator = ""
         while not state in ("RUNNING", "RESIZING"):
+            if status is not None:
+                status.set_status(profile, cluster_id, "Cluster Starting", False)
             print(".", end="", flush=True)
             time.sleep(5)
-            indicator += "."
-            if len(indicator) == 5:
-                indicator = "."
-            status_file.log_start(indicator)
             response = cluster_api.status(cluster_id)
-            state = response["state"]
-
+            if response.get("error", None) is not None:
+                print("ERROR", response)
+                state = "UNKNOWN"
+            else: 
+                state = response["state"]
+        
+        status.set_status(profile, cluster_id, "Cluster started")
+        
         print("\n   => Waiting for libraries on cluster %s being installed (this can take some time)" % cluster_id)
         print("   ", end="", flush=True)
 
-        indicator = ""
         done = False
         while not done:
-            status_file.log_install_cluster(indicator)
             states = get_library_state(cluster_id, host=host, token=token)
             installing = any([s in ["PENDING", "RESOLVING", "INSTALLING"] for s in states])
             if installing:
+                if status is not None:
+                    status.set_status(profile, cluster_id, "Installing cluster libraries", False)
                 print(".", end="", flush=True)
                 time.sleep(5)
-                indicator += "."
-                if len(indicator) == 5:
-                    indicator = "."
             else:
                 done = True
                 print("\n   Done\n")
@@ -255,7 +195,7 @@ def get_cluster(apiclient, profile, host, token, cluster_id=None):
 
     print("   => Selected cluster: %s (%s)" % (cluster_name, public_ip))
 
-    return (cluster_id, public_ip, cluster_name, started, status_file)
+    return (cluster_id, public_ip, cluster_name, started)
 
 
 def prepare_ssh_config(cluster_id, profile, public_ip):

@@ -1,3 +1,4 @@
+from collections import defaultdict
 import json
 import os
 import subprocess
@@ -10,6 +11,38 @@ from collections import defaultdict
 import databricks_jupyterlab
 from databricks_jupyterlab.remote import (get_db_config, is_reachable, get_cluster, prepare_ssh_config, is_reachable,
                                           check_installed, install_libs, connect)
+
+
+class Status:
+    class __Status:
+        def __init__(self):
+            self.status = defaultdict(lambda : {})
+            self.dots = 0
+
+        def get_status(self, profile, cluster_id):
+            # print("get_status", profile, cluster_id, self.status[profile].get(cluster_id, None))
+            if self.status[profile] != {}:
+                return self.status[profile][cluster_id]
+            else:
+                return "unknown"
+
+        def set_status(self, profile, cluster_id, status, new_status=True):
+            # print("set_status", profile, cluster_id, status, new_status)
+            if new_status:
+                self.dots = 0
+            else:
+                self.dots = (self.dots + 1) % 6
+            # if status == "Connected":
+            #     self.dots = 0
+            self.status[profile][cluster_id] = status + ("."*self.dots)
+
+    instance = None
+    def __init__(self):
+        if not Status.instance:
+            Status.instance = Status.__Status()
+
+    def __getattr__(self, name):
+        return getattr(self.instance, name)
 
 
 class KernelHandler(IPythonHandler):
@@ -36,26 +69,29 @@ class DbStatusHandler(KernelHandler):
         cluster_id = self.get_argument('cluster_id', None, True)
         kernel_id = self.get_argument('id', None, True)
 
-        status = "Connected"
+        start_status = Status().get_status(profile, cluster_id)
 
-        kernel = self.get_kernel(kernel_id)
-        if kernel is not None:
-            if kernel.is_alive():
-                status = "Connected"
-            else:
-                status = "TERMINATED"
-
-        status_file = os.path.expanduser("~/.databricks-jupyterlab/%s_%s.starting" % (profile, cluster_id))
-        status_file_exists = os.path.exists(status_file)
-        if status_file_exists:
-            try:
-                with open(os.path.expanduser(status_file)) as fd:
-                    status = fd.read()
-            except:
-                print("Warning: could not read %s" % status_file)
-                status = "Unknown"
+        status = "unknown"
+        alive = "unknown"
+        if start_status == "Started":
+            status = "Connected"
+            Status().set_status(profile, cluster_id, status)
+        else:
+            kernel = self.get_kernel(kernel_id)
+            if kernel is not None:
+                if kernel.is_alive():
+                    alive = "True"
+                    status = "Connected"
+                else:
+                    alive = "False"
+                    status = "TERMINATED"
+                    if start_status in ["Connected", "unknown"]:
+                        Status().set_status(profile, cluster_id, status)
+                    else:
+                        status = start_status
 
         result = {'status': "%s" % status}
+        # print("start_status: '%s'; alive: '%s; status: '%s'" % (start_status, alive,result))
         self.write(json.dumps(result))
 
 
@@ -72,32 +108,33 @@ class DbStartHandler(KernelHandler):
         self.write(json.dumps(result))
 
     def start_cluster(self, profile, cluster_id, kernel_id):
+        Status().set_status(profile, cluster_id, "Starting cluster")
         host, token = get_db_config(profile)
         apiclient = connect(profile)
-        cluster_id, public_ip, cluster_name, started, status_file = get_cluster(apiclient, profile, host, token, cluster_id)
+        cluster_id, public_ip, cluster_name, started = get_cluster(apiclient, profile, host, token, cluster_id, Status())
 
-        status_file.log_ssh()
+        Status().set_status(profile, cluster_id, "Configuring SSH")
         prepare_ssh_config(cluster_id, profile, public_ip)
         if not is_reachable(public_dns=public_ip):
-            status_file.log_error("UNREACHABLE")
+            Status().set_status(profile, cluster_id, "UNREACHABLE")
         else:
-            status_file.log_check()
+            Status().set_status(profile, cluster_id, "Checking driver libs")
             if not check_installed(cluster_id):
                 packages = json.loads(subprocess.check_output(["conda", "list", "--json"]))
                 deps = {p["name"]: p["version"] for p in packages if p["name"] in ["ipywidgets", "sidecar"]}
 
-                status_file.log_install_driver()
+                Status().set_status(profile, cluster_id, "Installing driver libs")
                 module_path = os.path.dirname(databricks_jupyterlab.__file__)
                 install_libs(cluster_id,
                              module_path,
                              ipywidets_version=deps["ipywidgets"],
                              sidecar_version=deps["sidecar"])
-            
+
+            time.sleep(2)
             kernel = self.get_kernel(kernel_id)
-            
-            status_file.log_done()
-            time.sleep(1)
-            kernel.restart_kernel()
+            # kernel.shutdown_kernel(now=True)
+            kernel.restart_kernel(now=True)
+            Status().set_status(profile, cluster_id, "Started")
 
 
 def _jupyter_server_extension_paths():
@@ -107,5 +144,3 @@ def _jupyter_server_extension_paths():
     return [{
         'module': 'databricks_jupyterlab',
     }]
-
-

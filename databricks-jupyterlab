@@ -47,7 +47,7 @@ def conda_version():
 
 
 def write_config():
-    config = {"c.KernelManager.autorestart": False, "c.MappingKernelManager.kernel_info_timeout": 120}
+    config = {"c.KernelManager.autorestart": False, "c.MappingKernelManager.kernel_info_timeout": 600}
 
     config_file = os.path.expanduser("~/.jupyter/jupyter_notebook_config.py")
     if os.path.exists(config_file):
@@ -117,6 +117,7 @@ parser.add_argument('-c',
                     dest='clipboard',
                     action='store_true',
                     help='Copy the personal access token to the clipboard')
+# parser.add_argument('-e', '--environment', dest='environment', help='Create a new environment')
 parser.add_argument('-i', '--id', dest='cluster_id', help='The cluster_id to avoid manual selection')
 parser.add_argument('-k', '--kernelspec', dest='kernelspec', action='store_true', help='Create a kernel specification')
 parser.add_argument('-l', '--lab', dest='lab', action='store_true', help='Safely start Jupyter Lab')
@@ -140,6 +141,10 @@ parser.add_argument('-v',
                     help='Check version of local env with remote env')
 
 args = parser.parse_args()
+
+# if args.environment:
+#     subprocess.call()
+
 profile = args.profile
 
 version = conda_version()
@@ -151,6 +156,7 @@ else:
     sys.exit(1)
 
 module_path = os.path.dirname(databricks_jupyterlab.__file__)
+
 if args.profile == "" and not args.profiles:
     parser.print_help()
     print("\ndatabricks-jupyterlab: error: the following arguments are required: profile\n")
@@ -174,14 +180,13 @@ started = False
 if args.kernelspec or args.reconfigure or args.lab or args.sshfs or args.versioncheck:
     print("\n* Select remote cluster")
     apiclient = connect(profile)
-    cluster_id, public_ip, cluster_name, started, status_file = get_cluster(apiclient, profile, host, token,
+    cluster_id, public_ip, cluster_name, started = get_cluster(apiclient, profile, host, token,
                                                                             args.cluster_id)
     if cluster_name is None:
         print("databricks-jupyterlab: error: cluster_id '%s' not found" % cluster_id)
         sys.exit(1)
 
     print("\n* Configuring ssh config for remote cluster")
-    status_file.log_ssh()
     prepare_ssh_config(cluster_id, profile, public_ip)
     print("   => Testing whether cluster can be reached")
     if not is_reachable(public_dns=public_ip):
@@ -192,15 +197,12 @@ if args.kernelspec or args.reconfigure or args.lab or args.sshfs or args.version
 
 if args.kernelspec or args.reconfigure or args.lab:
     print("   => Check installed libraries")
-    status_file.log_check()
     if not check_installed(cluster_id):
         packages = json.loads(check_output(["conda", "list", "--json"]))
         deps = {p["name"]: p["version"] for p in packages if p["name"] in ["ipywidgets", "sidecar"]}
 
         print("\n* Installing databricks_jupyterlab, ipywidgets on remote driver")
-        status_file.log_install_driver()
         install_libs(cluster_id, module_path, ipywidets_version=deps["ipywidgets"], sidecar_version=deps["sidecar"])
-    status_file.log_done()
 
 if args.lab:
     import jupyterlab.labapp

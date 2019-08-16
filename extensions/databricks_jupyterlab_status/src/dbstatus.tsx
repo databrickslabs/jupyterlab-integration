@@ -39,7 +39,6 @@ export class DbStatus extends VDomRenderer<DbStatus.Model> {
    * Render the databricks status item.
    */
   render() {
-    console.log("render", this.model.currentStatus)
     if (!this.model) {
       return null;
     }
@@ -142,7 +141,7 @@ export namespace DbStatus {
         } else {
           this._terminate_count += 1;
         }
-        if (this._terminate_count === 3) {
+        if (this._terminate_count === 2) {
           showDialog({
             title: this._currentStatus,
             body: "Note: The cluster is " + this._currentStatus.toLowerCase(),
