@@ -30,7 +30,7 @@ class Rest(object):
             if key is not None:
                 value = value[key]
             return value
-        except Exception as ex:
+        except Exception:
             print("Json Error:", response.text)
             return None
 
