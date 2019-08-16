@@ -116,6 +116,33 @@ export namespace DbStatus {
       })
     }
 
+    private _restart_dialog(status:string) {
+      var title, body, label;
+      if (status == "TERMINATED") {
+        title = "Cluster terminated";
+        body = "Start remote cluster?";
+        label = "Start Cluster";
+      } else if (status === "UNREACHABLE") {
+        title = "Cluster not reachable?";
+        body = "Check e.g. VPN and then reconfigure kernel?";
+        label = "Reconfigure cluster";
+      }      
+      showDialog({
+        title: title,
+        body: body,
+        buttons: [
+          Dialog.cancelButton(),
+          Dialog.warnButton({ label: label })
+        ]
+      }).then(result => {
+        if (result.button.accept) {
+          let session = this._notebookTracker.currentWidget!.session;
+          let id = session.kernel.id;
+          let name = session.kernelDisplayName;
+          Private.request("/databricks-jupyterlab-start", name, id)
+        }
+      })      
+    }
     /**
      * Given the results of the status request, update model values.
      */
@@ -141,14 +168,8 @@ export namespace DbStatus {
         } else {
           this._terminate_count += 1;
         }
-        if (this._terminate_count === 2) {
-          showDialog({
-            title: this._currentStatus,
-            body: "Note: The cluster is " + this._currentStatus.toLowerCase(),
-            buttons: [
-              Dialog.warnButton({ label: 'OK' })
-            ]
-          })
+        if (this._terminate_count === 1) {
+          this._restart_dialog(this._currentStatus)
         }
       }
   
@@ -163,37 +184,10 @@ export namespace DbStatus {
     /**
      * Click handler
      */
-    handleClick() {
-      var title = "";
-      var body = "";
-      var label = "";
-
-      if (this.currentStatus == "TERMINATED") {
-        title = "Cluster terminated";
-        body = "Start remote cluster?";
-        label = "Start Cluster";
-      } else if (this.currentStatus === "UNREACHABLE") {
-        title = "Cluster not reachable?";
-        body = "Check e.g. VPN and then reconfigure kernel?";
-        label = "Reconfigure cluster";
-      }
+     handleClick() {
       if ((this.currentStatus == "TERMINATED") || 
           (this.currentStatus === "UNREACHABLE")) {
-        showDialog({
-          title: title,
-          body: body,
-          buttons: [
-            Dialog.cancelButton(),
-            Dialog.warnButton({ label: label })
-          ]
-        }).then(result => {
-          if (result.button.accept) {
-            let session = this._notebookTracker.currentWidget!.session;
-            let id = session.kernel.id;
-            let name = session.kernelDisplayName;
-            Private.request("/databricks-jupyterlab-start", name, id)
-          }
-        })
+          this._restart_dialog(this.currentStatus)
       }
     }
 
