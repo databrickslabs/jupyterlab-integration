@@ -1,4 +1,4 @@
-.PHONY: clean wheel envs install tests check_version dist check_dist upload_test upload dev_tools
+.PHONY: clean wheel envs install tests check_version dist check_dist upload_test upload dev_tools bump bump_ext
 
 PYCACHE := $(shell find . -name '__pycache__')
 EGGS := $(shell find . -name '*.egg-info')
@@ -32,7 +32,20 @@ else
 	exit 1
 endif
 
-# check library vesions
+bump_ext:
+ifdef part
+	$(eval cur_version=$(shell cd extensions/databrickslabs_jupyterlab_status/ && npm version $(part) --preid=rc))
+else
+ifdef version
+	$(eval cur_version := $(shell cd extensions/databrickslabs_jupyterlab_status/ && npm version $(version)))
+else
+	@echo "Provide part=major|minor|patch|prerelease or version=x.y.z..."
+	exit 1
+endif
+endif
+	@echo "New version: $(cur_version:v%=%)"
+
+# check dev tools
 
 check_version:
 ifdef env_file
@@ -42,9 +55,12 @@ else
 	exit 1
 endif
 
+dev_tools:
+	pip install twine bumpversion yapf pylint
+
 # pypi commands
 
-dist: namespace clean
+dist: clean
 	@python setup.py sdist bdist_wheel
 
 check_dist:
@@ -55,6 +71,3 @@ upload_test: dist
 
 upload: dist
 	@twine upload dist/*
-
-dev_tools:
-	pip install twine bumpversion yapf pylint
