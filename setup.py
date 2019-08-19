@@ -1,19 +1,12 @@
-from glob import glob
 import os
 from setuptools import setup, find_packages
-
-here = os.path.dirname(os.path.abspath(__file__))
-
-version_ns = {}
-with open(os.path.join(here, 'databrickslabs_jupyterlab', '_version.py')) as f:
-    exec(f.read(), {}, version_ns)
 
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(
     name = "databrickslabs_jupyterlab",
-    version = version_ns['__version__'],
+    version = "0.9.0",
     author = "Bernhard Walter",
     author_email = "bernhard.walter@databricks.com",
     description = ("Remote Jupyter Lab kernel for Databricks"),
