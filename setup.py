@@ -17,7 +17,7 @@ setup(
     author = "Bernhard Walter",
     author_email = "bernhard.walter@databricks.com",
     description = ("Remote Jupyter Lab kernel for Databricks"),
-    license = "Apache 2.0",
+    license = "Databricks License",
     keywords = "databricks jupyter jupyterlab spark",
     packages=find_packages(),
     scripts=[
@@ -31,9 +31,9 @@ setup(
     include_package_data=True,
     long_description=read('Readme.md'),
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         "Topic :: Utilities",
-        "License :: OSI Approved :: Apache 2.0 License",
+        "License :: Other/Proprietary License :: Databricks License",
     ],
     zip_safe=False
 )
