@@ -10,16 +10,28 @@ from collections import defaultdict
 
 import databricks_jupyterlab
 from databricks_jupyterlab.remote import (get_db_config, is_reachable, get_cluster, prepare_ssh_config, is_reachable,
-                                          check_installed, install_libs, connect)
+                                          check_installed, install_libs)
 
 
 class Status:
+    """Singleton for the Status object"""
+
     class __Status:
+        """Status implementation"""
         def __init__(self):
             self.status = defaultdict(lambda : {})
             self.dots = 0
 
         def get_status(self, profile, cluster_id):
+            """Get current cluster start status for the jupyterlab status line
+            
+            Args:
+                profile (str): Databricks CLI profile string
+                cluster_id (str): Cluster ID
+            
+            Returns:
+                str: Cluster status or "unknown"
+            """
             # print("get_status", profile, cluster_id, self.status[profile].get(cluster_id, None))
             if self.status[profile] != {}:
                 return self.status[profile][cluster_id]
@@ -27,6 +39,14 @@ class Status:
                 return "unknown"
 
         def set_status(self, profile, cluster_id, status, new_status=True):
+            """Set Cluster start status for the jupyterlab status line
+            
+            Args:
+                profile (str): Databricks CLI profile string
+                cluster_id (str): Cluster ID
+                status (str): Status value
+                new_status (bool, optional): If True, number of progress dots is set to 0. Defaults to True.
+            """
             # print("set_status", profile, cluster_id, status, new_status)
             if new_status:
                 self.dots = 0
@@ -38,17 +58,28 @@ class Status:
 
     instance = None
     def __init__(self):
+        """Singleton initializer"""
         if not Status.instance:
             Status.instance = Status.__Status()
 
     def __getattr__(self, name):
+        """Singleton getattr overload"""
         return getattr(self.instance, name)
 
 
 class KernelHandler(IPythonHandler):
+    """Kernel handler to get jupyter kernel for given ker"""
     NBAPP = None
 
     def get_kernel(self, kernel_id):
+        """Get jupyter kernel for given kernel Id
+        
+        Args:
+            kernel_id (str): Internal jupyter kernel ID
+        
+        Returns:
+            KernelManager: KernelManager object
+        """
         km = KernelHandler.NBAPP.kernel_manager
 
         kernel_info = None
@@ -63,8 +94,10 @@ class KernelHandler(IPythonHandler):
 
 
 class DbStatusHandler(KernelHandler):
+    """Databricks cluster status handler"""
     @web.authenticated
     def get(self):
+        """GET handler to return the current Databricks cluster start status"""
         profile = self.get_argument('profile', None, True)
         cluster_id = self.get_argument('cluster_id', None, True)
         kernel_id = self.get_argument('id', None, True)
@@ -72,7 +105,6 @@ class DbStatusHandler(KernelHandler):
         start_status = Status().get_status(profile, cluster_id)
 
         status = "unknown"
-        alive = "unknown"
         if start_status == "Started":
             status = "Connected"
             Status().set_status(profile, cluster_id, status)
@@ -96,8 +128,10 @@ class DbStatusHandler(KernelHandler):
 
 
 class DbStartHandler(KernelHandler):
+    """Databricks cluster start handler"""
     @web.authenticated
     def get(self):
+        """GET handler to trigger cluster start in a separate thread"""
         profile = self.get_argument('profile', None, True)
         cluster_id = self.get_argument('cluster_id', None, True)
         kernel_id = self.get_argument('id', None, True)
@@ -108,10 +142,16 @@ class DbStartHandler(KernelHandler):
         self.finish(json.dumps(result))
 
     def start_cluster(self, profile, cluster_id, kernel_id):
+        """Start cluster in a separate thread
+        
+        Args:
+            profile (str): Databricks CLI profile string
+            cluster_id (str): Cluster ID
+            kernel_id (str): Internal jupyter kernel ID
+        """
         Status().set_status(profile, cluster_id, "Starting cluster")
         host, token = get_db_config(profile)
-        apiclient = connect(profile)
-        cluster_id, public_ip, cluster_name, started = get_cluster(apiclient, profile, host, token, cluster_id, Status())
+        cluster_id, public_ip, cluster_name, started = get_cluster(profile, host, token, cluster_id, Status())
 
         Status().set_status(profile, cluster_id, "Configuring SSH")
         prepare_ssh_config(cluster_id, profile, public_ip)
@@ -139,7 +179,7 @@ class DbStartHandler(KernelHandler):
 
 def _jupyter_server_extension_paths():
     """
-    Set up the server extension for collecting metrics
+    Set up the server extension for status handling
     """
     return [{
         'module': 'databricks_jupyterlab',
