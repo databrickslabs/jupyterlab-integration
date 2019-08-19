@@ -1,4 +1,2 @@
 @jupyter-widgets/jupyterlab-manager@1.0.2
 @jupyter-widgets/jupyterlab-sidecar@0.4.0
-jupyterlab_bokeh@1.0.0
-bqplot@v0.4.6

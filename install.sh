@@ -38,7 +38,6 @@ if [[ "$2" != "" ]]; then
         ENV_FILE=${ENV_FILES[$[$2-1]]}
     fi
 else
-    ALL_LABEXTS=1
     PS3BAK=$PS3
     PS3="Select 1-$[${#OPTIONS[@]}+1]: "
     echo "Which remote Databricks Runtime should be mirrored from a Data Science library perspective?"
@@ -46,7 +45,6 @@ else
         case $opt in
             "${OPTIONS[0]}")
                 ENV_FILE=${ENV_FILES[0]}
-                ALL_LABEXTS=0
                 break
                 ;;
             "${OPTIONS[1]}")
@@ -80,12 +78,6 @@ fi
 
 echo "$ENV_NAME: $ENV_FILE"
 
-if [[ $ALL_LABEXTS == 0 ]]; then
-    LABEXTS=$(head -n 2 labextensions.txt | xargs)
-else
-    LABEXTS=$(cat labextensions.txt | xargs)
-fi
-
 echo -e "\n\x1b[32m1 Install conda environment $envname\n\x1b[0m"
 
 conda env create -n $ENV_NAME -f "databrickslabs_jupyterlab/env_files/$ENV_FILE"
@@ -93,6 +85,7 @@ source $(conda info | awk '/base env/ {print $4}')/bin/activate "$ENV_NAME"
 
 echo -e "\n\x1b[32m2 Install jupyterlab extensions\n\x1b[0m"
 
+LABEXTS=$(cat labextensions.txt | xargs)
 jupyter labextension install --no-build $LABEXTS
 
 cd extensions/databrickslabs_jupyterlab_status
