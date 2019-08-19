@@ -12,6 +12,34 @@ from tensorflow.keras.callbacks import TensorBoard
 
 
 class AccLossPlot(LambdaCallback):
+    """Accuracy / Loss plot to dynamically show progress of tensorflow model 
+    in the notebook
+        
+    Args:
+        steps (int): number of steps
+        epochs (int): number of epochs
+        min_acc (float, optional): minmum accuracy shown on y axis. Defaults to 0.94.
+        max_loss (int, optional): max loss shown on y axis. Defaults to 20.
+        skip (int, optional): Number of steps to skip for plotting. Defaults to 10.
+        table (bool, optional): If True show accuracy/loss results per epoch. Defaults to False.
+        visual (bool, optional): If True show visual accuracy/loss progess plot. Defaults to False.
+        height (int, optional): height of each plot. Defaults to 400.
+        width (int, optional): width of each plot. Defaults to 800.
+
+    Attributess:
+        steps (int): number of steps
+        epochs (int): number of epochs
+        min_acc (float, optional): minmum accuracy shown on y axis. Defaults to 0.94.
+        max_loss (int, optional): max loss shown on y axis. Defaults to 20.
+        skip (int, optional): Number of steps to skip for plotting. Defaults to 10.
+        table (bool, optional): If True show accuracy/loss results per epoch. Defaults to False.
+        visual (bool, optional): If True show visual accuracy/loss progess plot. Defaults to False.
+        height (int, optional): height of each plot. Defaults to 400.
+        width (int, optional): width of each plot. Defaults to 800.
+        max_x (nt): maximum value on x axis (epochs*steps)
+        handle (str): bokeh graph handle for later updates
+        sources (ColumnDataSource): Bokeh ColumnDataSource of accuracy and loss values
+    """
     def __init__(self,
                  steps,
                  epochs,
@@ -38,15 +66,45 @@ class AccLossPlot(LambdaCallback):
         self.sources = {"Accuracy": {}, "Loss": {}}
 
     def _line(self, plot, x, y, source, color, legend=None):
+        """Plot a line
+        
+        Args:
+            plot (object): plot object
+            x (list): x values
+            y (list): y values
+            source (ColumnDataSource): bokeh ColumnDataSource
+            color (str): color of line
+            legend (str, optional): legend string. Defaults to None.
+        """
         plot.line(x, y, source=source, line_color=color, legend=legend)
 
     def _cline(self, plot, x, y, source, color, legend=None):
+        """Plot a line with circles
+        
+        Args:
+            plot (object): plot object
+            x (list): x values
+            y (list): y values
+            source (ColumnDataSource): bokeh ColumnDataSource
+            color (str): color of line
+            legend (str, optional): legend string. Defaults to None.
+        """
         plot.line(x, y, source=source, line_color=color, legend=legend)
         p = plot.circle(x, y, source=source, line_color=color, fill_color=color, legend=legend)
         # plot.add_tools(HoverTool(renderers=[p], tooltips=[("Epoch", "@Epoch"), (y, "@%s" % y)]))
         plot.add_tools(HoverTool(renderers=[p], tooltips=[("Epoch", "@Epoch"), ("Train", "@Train"), ("Val", "@Val")]))
 
     def _plot(self, kind, range_x, range_y):
+        """Create the actual plot
+        
+        Args:
+            kind (str): "Accuracy" or "Loss"
+            range_x (tuple): x axis range
+            range_y (tuple): y axis range
+        
+        Returns:
+            [type]: [description]
+        """
         self.sources[kind]["batch"] = ColumnDataSource({"Step": [], "Train": []})
         self.sources[kind]["epoch"] = ColumnDataSource({"Step": [], "Epoch": [], "Train": [], "Val": []})
 
@@ -65,6 +123,9 @@ class AccLossPlot(LambdaCallback):
         return plot
 
     def on_train_begin(self, logs=None):
+        """Tensorflow handler for begin training event
+        This will create the initial plots
+        """
         if self.visual:
             output_notebook()
 
@@ -78,6 +139,12 @@ class AccLossPlot(LambdaCallback):
             print("Epoch \t train-acc \t train-loss \t val-acc \t val-loss ")
 
     def on_batch_end(self, batch, logs=None):
+        """Tensorflow handler for batch end event
+        This will plot the line for this batch if not skipped
+        
+        Args:
+            logs (dict, optional): include loss, and optionally acc. Defaults to None.
+        """
         if self.visual:
             if batch % self.skip == 0:
                 step = self.steps * self.epoch + batch
@@ -86,9 +153,22 @@ class AccLossPlot(LambdaCallback):
                 push_notebook(handle=self.handle)
 
     def on_epoch_begin(self, epoch, logs=None):
+        """Tensorflow handler for epoch begin event
+        This will start taking time.
+        
+        Args:
+            logs (dict, optional): include acc and loss. Defaults to None.
+        """
         self.time = time.time()
 
     def on_epoch_end(self, epoch, logs=None):
+        """Tensorflow handler for epoch begin event
+        This will stop taking time and plot epoch results
+        Optionally writes accuracy/loss table
+        
+        Args:
+            logs (dict, optional): include acc and loss. Defaults to None.
+        """
         if self.table:
             print("% 5d\t" % epoch, end="")
             for k in ["acc", "loss", "val_acc", "val_loss"]:
@@ -115,6 +195,13 @@ class AccLossPlot(LambdaCallback):
 
 
 class VisualModel(object):
+    """Class for starting tensorflow in visual mode
+        
+    Args:
+        data ([type]): [description]
+        batch_size (int): batch size
+        epochs (int): number of epochs
+    """
     def __init__(self, data, batch_size, epochs):
         self.data = data
         self.batch_size = batch_size
@@ -125,6 +212,18 @@ class VisualModel(object):
         self.classes = self.data.num_classes
 
     def callback(self, min_acc=0.95, max_loss=5, skip=10, table=False, visual=False):
+        """Callback to use Accuracy Loss Plot
+        
+        Args:
+            min_acc (float, optional): minmum accuracy shown on y axis. Defaults to 0.94.
+            max_loss (int, optional): max loss shown on y axis. Defaults to 20.
+            skip (int, optional): Number of steps to skip for plotting. Defaults to 10.
+            table (bool, optional): If True show accuracy/loss results per epoch. Defaults to False.
+            visual (bool, optional): If True show visual accuracy/loss progess plot. Defaults to False.
+
+        Returns:
+            object: AccLossplot object
+        """
         return AccLossPlot(steps=int(self.data.train_images.shape[0] / self.batch_size),
                            epochs=self.epochs,
                            min_acc=min_acc,
@@ -134,6 +233,7 @@ class VisualModel(object):
                            visual=visual)
 
     def tbCallback(self):
+        """TensorBoard callback"""
         return TensorBoard(log_dir='./Graph',
                            histogram_freq=0,
                            write_grads=False,

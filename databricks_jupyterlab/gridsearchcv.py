@@ -12,6 +12,13 @@ from databricks_jupyterlab.connect import is_remote
 
 
 class GridSearchCV():
+    """Abstracts away the differences between spark_sklearn and scikit-learn GridSearch
+        
+    Args:
+        estimator (Scikit Learn Estimator): Estimator used in the model
+        param_grid (dict): Dictionary of the paramter grid for grid search
+        spark (SparkSession, optional): SparkSession object. Defaults to None.
+    """
     def __init__(self, estimator, param_grid, *args, spark=None, **kwargs):
         self.estimator = estimator
         self.grid_size = reduce(lambda a, b: a * b, [len(p) for p in param_grid.values()])
@@ -25,6 +32,15 @@ class GridSearchCV():
             self.gs = sklearn.model_selection.GridSearchCV(estimator, param_grid, *args, **kwargs)
 
     def fit(self, x, y):
+        """Fitting routine for grid search
+        
+        Args:
+            x (list, pandas Dataframe): The features x
+            y (list, pandas Dataframe): The target y
+        
+        Returns:
+            Scikit-learn model: The model created by fitting the data
+        """
         if is_remote():
             print("Remote crossvalidation,", end=" ")
         else:
@@ -35,6 +51,14 @@ class GridSearchCV():
         return self.results
 
     def log_cv(self, experiment, name, tracking_uri=None):
+        """Logging of cross validation results to mlflow tracking server
+        
+        Args:
+            experiment (str): experiment ID
+            name (str): Name of the experiment artifact (prefix)
+            tracking_uri (str, optional): URI of the tracking server. 
+                                         Defaults to None, which will use remote tracking in remote case
+        """
         cv_results = self.results.cv_results_
         best = self.results.best_index_
 
