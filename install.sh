@@ -121,8 +121,8 @@ Prerequisites:
   add the public key to the cluster SSH configuration
 
 
-Databricks-jupyterlab:
-----------------------
+databrickslabs-jupyterlab:
+--------------------------
 
 1) Show help
 
