@@ -1,17 +1,3 @@
-#   Copyright 2019 Bernhard Walter
-#
-#   Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-
 import atexit
 import base64
 import configparser
@@ -44,7 +30,7 @@ try:
 except:
     pass
 
-from databricks_jupyterlab.rest import Command, Context
+from databricks_jupyterlab.rest import Command, DatabricksApiException
 from databricks_jupyterlab.progress import load_progressbar, load_css
 from databricks_jupyterlab.dbfs import Dbfs
 from databricks_jupyterlab.database import Databases
@@ -52,32 +38,64 @@ from databricks_jupyterlab.info import Info
 
 
 class JobInfo():
+    """Job info class for Spark jobs
+    Args:
+        pool_id (str): Pool ID to separate Spark jobs from each other
+        group_id (str): Group ID to enable killing jobs and progress bar
+    """
     def __init__(self, pool_id):
         self.pool_id = pool_id
         self.group_id = None
 
 
 class DatabricksBrowser:
+    """[summary]
+    Args:
+        spark (SparkSession): Spark Session object
+        dbutils (DBUtils): DbUtils object
+    """
     def __init__(self, spark, dbutils):
         self.spark = spark
         self.dbutils = dbutils
 
     def dbfs(self):
+        """Start dbfs browser"""
         Dbfs(self.dbutils).create()
 
     def databases(self):
+        """Start Database browser"""
         Databases(self.spark).create()
 
 
 def is_remote():
+    """Check whether the current context is on the remote cluster
+    
+    Returns:
+        bool: True if remote else False
+    """
     return os.environ.get("DBJL_HOST", None) is not None
 
 
 def is_azure():
+    """Check whether the current context is on Azure Databricks
+    
+    Returns:
+        bool: True if Azure Databricks else False
+    """
     return os.environ.get("DBJL_ORG", None) is not None
 
 
 def dbcontext(progressbar=True):
+    """Create a databricks context
+    The following objects will be created
+    - Spark Session
+    - Spark Context
+    - Spark Hive Context
+    - DBUtils (fs module only)
+    
+    Args:
+        progressbar (bool, optional): If True the spark progressbar will be installed. Defaults to True.
+    """
     def get_sparkui_url(host, organisation, clusterId):
         if organisation is None:
             sparkUi = "%s#/setting/clusters/%s/sparkUi" % (host, clusterId)
@@ -123,8 +141,10 @@ def dbcontext(progressbar=True):
     #
     token = getpass.getpass("\nEnter personal access token for profile '%s'" % profile)
 
-    command = Command(url=host, clusterId=clusterId, token=token)
-    if not command.is_valid_context:
+    try:
+        command = Command(url=host, cluster_id=clusterId, token=token)
+    except DatabricksApiException as ex:
+        print(ex)
         return None
 
     print("Gateway created for cluster '%s' " % (clusterId), end="", flush=True)
@@ -132,14 +152,26 @@ def dbcontext(progressbar=True):
     # Fetch auth_token and gateway port ...
     #
     cmd = 'c=sc._gateway.client.gateway_client; print(c.gateway_parameters.auth_token, c.port)'
-    command.execute(cmd)
-
-    result = command.status()
-
-    while result["status"] != "Finished":
-        time.sleep(1)
+    try:
+        command_id = command.execute(cmd)
+    except DatabricksApiException as ex:
+        print(ex)
+        return None    
+    
+    finished = False
+    while not finished:
         print(".", end="", flush=True)
-        result = command.status()
+        time.sleep(1)
+        try:
+            result = command.status(command_id)
+        except DatabricksApiException as ex:
+            print(ex)
+            return None    
+        finished = result["status"] == "Finished"
+    
+    if result["resultType"] == "error":
+        print(result["results"]["cause"])
+        return None
 
     auth_token, port = result["results"]["data"].split(" ")
     port = int(port)
@@ -241,24 +273,27 @@ def dbcontext(progressbar=True):
     # Ensure that the virtual python environment and py4j gateway gets shut down
     # when the python interpreter shuts down
     #
-    def shutdown_kernel():
-        from IPython import get_ipython
-        ip = get_ipython()
+    def shutdown_kernel(context):
+        def handler():
+            from IPython import get_ipython
+            ip = get_ipython()
 
-        ip = get_ipython()
-        if ip.user_ns.get("spark", None) is not None:
-            del ip.user_ns["spark"]
-        if ip.user_ns.get("sc", None) is not None:
-            del ip.user_ns["sc"]
-        if ip.user_ns.get("sqlContext", None) is not None:
-            del ip.user_ns["sqlContext"]
-        if ip.user_ns.get("dbutils", None) is not None:
-            del ip.user_ns["dbutils"]
+            ip = get_ipython()
+            if ip.user_ns.get("spark", None) is not None:
+                del ip.user_ns["spark"]
+            if ip.user_ns.get("sc", None) is not None:
+                del ip.user_ns["sc"]
+            if ip.user_ns.get("sqlContext", None) is not None:
+                del ip.user_ns["sqlContext"]
+            if ip.user_ns.get("dbutils", None) is not None:
+                del ip.user_ns["dbutils"]
+            # Context is a singleton
+            context.destroy()
 
-        # Context is a singleton
-        Context().destroy()
+        return handler
 
-    atexit.register(shutdown_kernel)
+
+    atexit.register(shutdown_kernel(command.context))
 
     # Forward spark variables to the user namespace
     #
@@ -283,6 +318,15 @@ def dbcontext(progressbar=True):
 
 @line_cell_magic
 def sql(line, cell=None):
+    """Cell magic th execute SQL commands
+    
+    Args:
+        line (str): line behind %sql
+        cell (str, optional): cell below %sql. Defaults to None.
+    
+    Returns:
+        DataFrame: DataFrame of the SQL result
+    """
     ip = get_ipython()
     spark = ip.user_ns["spark"]
     if cell == None:

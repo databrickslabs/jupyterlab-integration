@@ -1,17 +1,3 @@
-#   Copyright 2019 Bernhard Walter
-#
-#   Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-
 import configparser
 import json
 import os
@@ -35,25 +21,40 @@ from databricks_cli.clusters.api import ClusterApi
 from remote_ikernel.manage import show_kernel, add_kernel
 from remote_ikernel.compat import kernelspec as ks
 
-from databricks_jupyterlab.rest import Clusters, Libraries, Command
+from databricks_jupyterlab.rest import Clusters, Libraries, DatabricksApiException
 
 PIP_INSTALL = "/databricks/python/bin/pip install -q --no-warn-conflicts --disable-pip-version-check"
 PIP_LIST = "/databricks/python/bin/pip list --disable-pip-version-check --format=json"
 
 
 class Dark(Default):
+    """Dark Theme for inquirer"""
     def __init__(self):
         super().__init__()
         self.List.selection_color = term.cyan
 
 
 def bye(msg=None):
+    """Standard exit function
+    
+    Args:
+        msg (str, optional): Exit message to be printed. Defaults to None.
+    """
     if msg is not None:
         print(msg)
     sys.exit(1)
 
 
 def ssh(host, cmd):
+    """Execute an ssh command
+    
+    Args:
+        host (str): Hostname or ssh host alias
+        cmd (str): Command to execute
+    
+    Returns:
+        str: Commend result or in error case None
+    """
     try:
         return subprocess.check_output(["ssh", "-o", "StrictHostKeyChecking=no", host, cmd])
     except:
@@ -62,6 +63,13 @@ def ssh(host, cmd):
 
 
 def scp(host, file, target):
+    """Copy a file to the remote host via scp
+    
+    Args:
+        host (str): Hostname or ssh host alias
+        file (str): file name of the file to be copied
+        target (str): target folder or path
+    """
     try:
         subprocess.run(["scp", "-q", "-o", "StrictHostKeyChecking=no", "%s" % file, "%s:%s" % (host, target)])
     except:
@@ -69,15 +77,31 @@ def scp(host, file, target):
 
 
 def run(cmd):
+    """Run a shell command
+    
+    Args:
+        cmd (str): shell command
+    """
     try:
         subprocess.run(cmd)
     except:
         bye("Error running: %s" % cmd)
 
 
-def get_db_config(profile, verbose=True):
+def get_db_config(profile):
+    """Get Databricks configuration from ~/.databricks.cfg for given profile
+    
+    Args:
+        profile (str): Databricks CLI profile string
+    
+    Returns:
+        tuple: The tuple of host and personal access token from ~/.databrickscfg
+    """
     config = configparser.ConfigParser()
-    config.read(expanduser("~/.databrickscfg"))
+    configs = config.read(expanduser("~/.databrickscfg"))
+    if not configs:
+        bye("Cannot read ~/.databrickscfg")
+    
     profiles = config.sections()
     if not profile in profiles:
         print(" The profile '%s' is not available in ~/.databrickscfg:" % profile)
@@ -87,12 +111,18 @@ def get_db_config(profile, verbose=True):
     else:
         host = config[profile]["host"]
         token = config[profile]["token"]
-        if verbose:
-            print("   => host: %s" % (host))
         return host, token
 
 
 def connect(profile):
+    """Initialize Databricks API client
+    
+    Args:
+        profile (str): Databricks CLI profile string
+    
+    Returns:
+        ApiClient: Databricks ApiClient object
+    """
     config = ProfileConfigProvider(profile).get_config()
     verify = config.insecure is None
     if config.is_valid_with_token:
@@ -101,13 +131,27 @@ def connect(profile):
         bye("Token for profile '%s' is invalid" % profile)
 
 
-def get_cluster(apiclient, profile, host, token, cluster_id=None, status=None):
+def get_cluster(profile, host, token, cluster_id=None, status=None):
+    """Get the cluster configuration from remote
+    
+    Args:
+        profile (str): Databricks CLI profile string
+        host (str): host from databricks cli config for given profile string
+        token (str): token from databricks cli config for given profile stringf
+        cluster_id (str, optional): If cluster_id is given, the user will not be asked to select one. Defaults to None.
+        status (Status, optional): A Status class providing set_status. Defaults to None.
+    
+    Returns:
+        tuple: Cluster configs: cluster_id, public_ip, cluster_name and a flag whether it was started
+    """
     with open("%s/.ssh/id_%s.pub" % (expanduser("~"), profile)) as fd:
         try:
             ssh_pub = fd.read().strip()
         except:
             print("ssh key for profile 'id_%s.pub' does not exist in %s/.ssh" % (profile, expanduser("~")))
             bye()
+
+    apiclient = connect(profile)
     client = ClusterApi(apiclient)
     clusters = client.list_clusters()
     my_clusters = [
@@ -146,7 +190,12 @@ def get_cluster(apiclient, profile, host, token, cluster_id=None, status=None):
     cluster_name = cluster["cluster_name"]
 
     cluster_api = Clusters(url=host, token=token)
-    response = cluster_api.status(cluster_id)
+    try:
+        response = cluster_api.status(cluster_id)
+    except DatabricksApiException as ex:
+        print(ex)
+        return None
+
     state = response["state"]
 
     started = False
@@ -156,7 +205,11 @@ def get_cluster(apiclient, profile, host, token, cluster_id=None, status=None):
             if status is not None:
                 status.set_status(profile, cluster_id, "Cluster Starting")
             started = True
-            response = cluster_api.start(cluster_id)
+            try:
+                response = cluster_api.start(cluster_id)
+            except DatabricksApiException as ex:
+                print(ex)
+                return None
 
         print("   => Waiting for cluster %s being started (this can take up to 5 min)" % cluster_id)
         print("   ", end="", flush=True)
@@ -166,21 +219,31 @@ def get_cluster(apiclient, profile, host, token, cluster_id=None, status=None):
                 status.set_status(profile, cluster_id, "Cluster Starting", False)
             print(".", end="", flush=True)
             time.sleep(5)
-            response = cluster_api.status(cluster_id)
+            try:
+                response = cluster_api.status(cluster_id)
+            except DatabricksApiException as ex:
+                print(ex)
+                return None
+
             if response.get("error", None) is not None:
                 print("ERROR", response)
                 state = "UNKNOWN"
             else: 
                 state = response["state"]
         
-        status.set_status(profile, cluster_id, "Cluster started")
+        if status is not None:
+            status.set_status(profile, cluster_id, "Cluster started")
         
         print("\n   => Waiting for libraries on cluster %s being installed (this can take some time)" % cluster_id)
         print("   ", end="", flush=True)
 
         done = False
         while not done:
-            states = get_library_state(cluster_id, host=host, token=token)
+            try:
+                states = get_library_state(cluster_id, host=host, token=token)
+            except DatabricksApiException as ex:
+                print(ex)
+                return None
             installing = any([s in ["PENDING", "RESOLVING", "INSTALLING"] for s in states])
             if installing:
                 if status is not None:
@@ -199,6 +262,13 @@ def get_cluster(apiclient, profile, host, token, cluster_id=None, status=None):
 
 
 def prepare_ssh_config(cluster_id, profile, public_ip):
+    """Add/edit the ssh configuration belonging to the given cluster in ~/.ssh/config
+    
+    Args:
+        cluster_id (str): Cluster ID
+        profile (str): Databricks CLI profile string
+        public_ip (str): Public IP address
+    """
     config = os.path.join(expanduser("~"), ".ssh/config")
     try:
         sc = SSHConfig.load(config)
@@ -227,6 +297,15 @@ def prepare_ssh_config(cluster_id, profile, public_ip):
 
 
 def create_kernelspec(profile, organisation, host, cluster_id, cluster_name):
+    """Create or edit the remote_ikernel specification for jupyter lab
+    
+    Args:
+        profile (str): Databricks CLI profile string    
+        organisation (str): In case of Azure, the organization ID, else None
+        host (str): host from databricks cli config for given profile string
+        cluster_id (str): Cluster ID
+        cluster_name (str): Cluster name
+    """
     print("   Creating kernel specification for profile '%s'" % profile)
     env = "DBJL_PROFILE=%s DBJL_HOST=%s DBJL_CLUSTER=%s" % (profile, host, cluster_id)
     if organisation is not None:
@@ -248,7 +327,14 @@ def create_kernelspec(profile, organisation, host, cluster_id, cluster_name):
 
 
 def install_libs(host, module_path, ipywidets_version, sidecar_version):
-
+    """Install ipywidgets, sidecar and databricks_jupyterlab libraries on the driver
+    
+    Args:
+        host (str): host from databricks cli config for given profile string
+        module_path (str): The local module path where databricks_jupyterlab is installed
+        ipywidets_version (str): The version of ipywidgets used locally
+        sidecar_version (str): The version of ipywidgets used locally
+    """
     wheel = glob.glob("%s/lib/*.whl" % module_path)[0]
     target = "/home/ubuntu/%s" % str(uuid.uuid4())
 
@@ -264,6 +350,12 @@ def install_libs(host, module_path, ipywidets_version, sidecar_version):
 
 
 def mount_sshfs(host):
+    """Mount remote driver filesystem via sshfs
+    Needs Fuse running on local machine
+    
+    Args:
+        host (str): host from databricks cli config for given profile string
+    """
     ssh(host, "sudo mkdir -p /usr/lib/ssh")
     ssh(host, "sudo ln -s /usr/lib/openssh/sftp-server /usr/lib/ssh/sftp-server")
     run(["mkdir", "-p", "./remotefs/%s" % host])
@@ -275,6 +367,7 @@ def mount_sshfs(host):
 
 
 def show_profiles():
+    """Show locally configured Databricks CLI profile"""
     template = "%-20s %-60s %s"
     print("")
     print(template % ("PROFILE", "HOST", "SSH KEY"))
@@ -283,25 +376,51 @@ def show_profiles():
     profiles = config.sections()
 
     for profile in profiles:
-        host, _ = get_db_config(profile, verbose=False)
+        host, _ = get_db_config(profile)
         ssh_ok = "OK" if os.path.exists(os.path.expanduser("~/.ssh/id_%s") % profile) else "MISSING"
         print(template % (profile, host, ssh_ok))
 
 
 def get_remote_packages(host):
+    """List all packages installed on remote cluster
+    
+    Args:
+        host (str): host from databricks cli config for given profile string
+    
+    Returns:
+        list(dict): List of pip list --format=json
+    """
     return json.loads(ssh(host, PIP_LIST))
 
 
 def is_reachable(public_dns):
+    """Check whether a remote cluster is reachable
+    
+    Args:
+        public_dns (str): Public IP address or DNS name
+    
+    Returns:
+        bool: True if reachable else False
+    """
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(3)
     result = sock.connect_ex((public_dns, 2200))
     return result == 0
 
 
-def get_library_state(clusterId, host, token):
+def get_library_state(cluster_id, host, token):
+    """Get the state of the library installation on the remote cluster
+    
+    Args:
+        cluster_id (str): Cluster ID
+        host (str): host from databricks cli config for given profile string
+        token (str): token from databricks cli config for given profile stringf
+    
+    Returns:
+        list: list of installation status for each custom library
+    """
     libraries_api = Libraries(url=host, token=token)
-    libraries = libraries_api.status(clusterId)
+    libraries = libraries_api.status(cluster_id)
 
     if libraries.get("library_statuses", None) is None:
         return []
@@ -310,6 +429,14 @@ def get_library_state(clusterId, host, token):
 
 
 def check_installed(host):
+    """Check whether databricks_jupyterlab is installed on the remote host
+    
+    Args:
+    host (str): host from databricks cli config for given profile string
+    
+    Returns:
+        bool: True if installed else False
+    """
     packages = get_remote_packages(host)
     found = False
     for p in packages:

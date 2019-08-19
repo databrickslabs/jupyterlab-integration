@@ -1,141 +1,292 @@
-#   Copyright 2019 Bernhard Walter
-#
-#   Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-
 import os
 
 import requests
 import xml.etree.ElementTree
 
 
+class DatabricksApiException(Exception):
+    """Exception class for Databricks API errors
+    
+    Args:
+        status_code (int): HTTP status code
+        error_code (int): Error specific code
+        error_message (str): Error message
+
+    Attributes:
+        status_code (int): HTTP status code
+        error_code (int): Error specific code
+        error_message (str): Error message
+    """
+    def __init__(self, status_code, error_code, error_message):
+        self.status_code = status_code
+        self.error_code = error_code
+        self.error_message = error_message
+
+
 class Rest(object):
-    @classmethod
-    def _remove_tags(cls, text):
-        return ''.join(xml.etree.ElementTree.fromstring(text).itertext()).replace("\n\n", "\n")
+    """Rest class to execute REST get and post calls.
+    JSON Results will automatically be converted to dicts
+    """
+    def _rest_error(self, status_code, error_code, message):
+        """Create a stabdard REST error message
+        
+        Args:
+            status_code (str): HTTP status code
+            error_code (str): Error code
+            message (str): Error message
+        
+        Returns:
+            dict: Dictionary with status_code, error_code and message
+        """
+        return {"status_code": status_code, "error_code": error_code, "message": message}
 
-    @classmethod
-    def _json(cls, response, key=None):
+    def _remove_tags(self, text):
+        """Very simple routine to get rid of HTML tags of error responses
+        
+        Args:
+            text (str): HTML error message
+        
+        Returns:
+            str: The error message without HTML tags
+        """
         try:
-            value = response.json()
-            if key is not None:
-                value = value[key]
-            return value
-        except Exception:
-            print("Json Error:", response.text)
-            return None
+            result = ''.join(xml.etree.ElementTree.fromstring(text).itertext()).replace("\n\n", "\n")
+        except:
+            result = text
+        return result
 
-    @classmethod
-    def get(cls, url, api_version, path, token):
+    def _json(self, response):
+        """Convert a JSON response to dict.
+        
+        Args:
+            response (object): Response object as returned by requests
+        
+        Returns:
+            dict: A dict representing the JSON input or None in error case
+        """
+        try:
+            return response.json()
+        except Exception:
+            raise DatabricksApiException(403, 3, "Invalid json message: %s" % self._remove_tags(response.text))
+
+    def get(self, url, api_version, path, token):
+        """REST GET function
+        
+        Args:
+            url (str): URL for the request
+            api_version (str): "1.2" (command execution) or "2.0" for all other API calls
+            path (str): Additional path for the request
+            token (str): Authentication token
+        
+        Returns:
+            dict: A dict representing the JSON result of the call 
+                  or in error case with keys status_code, error_code, message.
+        """
         full_url = os.path.join(url, "api/%s" % api_version, path)
         response = requests.get(full_url, auth=("token", token))
         if response.status_code in (200, 201):
-            return Rest._json(response)
+            return self._json(response)
         else:
-            print(Rest._remove_tags(response.text))
-            return None
+            raise DatabricksApiException(response.status_code, 1, self._remove_tags(response.text))
 
-    @classmethod
-    def post(cls, url, api_version, path, token, json=None, data=None, files=None, key=None):
+    def post(self, url, api_version, path, token, json=None, data=None, files=None):
+        """REST POST function
+        
+        Args:
+            url (str): URL for the request
+            api_version (str): "1.2" (command execution) or "2.0" for all other API calls
+            path (str): Additional path for the request
+            token (str): Authentication token
+            json (str, optional): json data to send in the body of the request. Defaults to None.
+            data ([type], optional): Dictionary, list of tuples, bytes, or file-like object to send in 
+                                     the body of the request. Defaults to None.
+            files ([type], optional): Files to send with the request. Defaults to None.
+            key (str, optional): Key to select from the converted JSON string. Defaults to None.
+        
+        Returns:
+            dict: A dict representing the JSON result of the call 
+            or in error case with keys status_code, error_code, message.
+        """
         full_url = os.path.join(url, "api/%s" % api_version, path)
         response = requests.post(full_url, json=json, data=data, files=files, auth=("token", token))
         if response.status_code in (200, 201):
-            return Rest._json(response, key)
+            return self._json(response)
         else:
-            print(Rest._remove_tags(response.text))
-            return None
+            raise DatabricksApiException(response.status_code, 2, self._remove_tags(response.text))
 
 
-class Context(object):
+class Context(Rest):
+    """Execution Context for Databricks
 
-    instance = None
+    Context is derived from ``Rest`` and uses Databricks REST API 1.2 
+    
+    Args:
+        url (str): Databricks workspace URL
+        cluster_id (str): Cluster ID
+        token (str): Authentication token
 
-    class __Context(object):
-        def __init__(self, url, clusterId, token):
-            self.token = token
-            self.url = url
-            self.clusterId = clusterId
-            self.id = None
-
-        def create(self):
-            data = {"language": "python", "clusterId": self.clusterId}
-            self.id = Rest.post(self.url, "1.2", "contexts/create", data=data, token=self.token, key="id")
-            return self.id
-
-        def status(self):
-            path = "contexts/status?contextId=%s&clusterId=%s" % (self.id, self.clusterId)
-            return Rest.get(self.url, "1.2", path, token=self.token)
-
-        def destroy(self):
-            data = {"contextId": self.id, "clusterId": self.clusterId}
-            return Rest.post(self.url, "1.2", "contexts/destroy", data=data, token=self.token)
-
-    def __init__(self, url=None, clusterId=None, token=None):
-        if not Context.instance:
-            Context.instance = Context.__Context(url, clusterId, token)
-
-    def __getattr__(self, name):
-        return getattr(self.instance, name)
-
-
-class Command(object):
-    def __init__(self, url, clusterId, token, restart=False):
+    Attributes:
+        url (str): Databricks workspace URL
+        cluster_id (str): Cluster ID
+        token (str): Authentication token
+        id (str): Context ID
+    """
+    def __init__(self, url, cluster_id, token):
         self.token = token
         self.url = url
-        self.clusterId = clusterId
-        self.context = Context(url, clusterId, token)
-        self.is_valid_context = True
-        if self.context.create() is None:
-            self.is_valid_context = False
-            Context.instance = None # delete singelton
+        self.cluster_id = cluster_id
+        self.id = None
+
+    def create(self):
+        """Create an Execution Context
+        
+        Returns:
+            str: Context ID
+        """
+        data = {"language": "python", "clusterId": self.cluster_id}
+        response = self.post(self.url, "1.2", "contexts/create", data=data, token=self.token)
+        self.id = response.get("id", None)
+        if self.id is None:
+            raise DatabricksApiException(403, 4, "Context ID missing")
+
+    def status(self):
+        """Get status of Execution Context
+        
+        Returns:
+            dict: Dictionary with context id and status
+        """
+        path = "contexts/status?contextId=%s&clusterId=%s" % (self.id, self.cluster_id)
+        return self.get(self.url, "1.2", path, token=self.token)
+
+    def destroy(self):
+        """Destroy Execution Context
+        
+        Returns:
+            dict: Dictionary with context id
+        """
+        data = {"contextId": self.id, "clusterId": self.cluster_id}
+        return self.post(self.url, "1.2", "contexts/destroy", data=data, token=self.token)
+
+
+class Command(Rest):
+    """Command execution on Databricks
+
+    Command is derived from ``Rest`` and uses Databricks REST API 1.2 
+        
+    Args:
+        url (str): Databricks workspace URL
+        clusterId (str): Cluster ID
+        token (str): Authentication token
+
+    Attributes:
+        url (str): Databricks workspace URL
+        cluster_id (str): Cluster ID
+        token (str): Authentication token
+        context (Context): The Execution Context for the commands
+    """
+    def __init__(self, url, cluster_id, token):
+        self.token = token
+        self.url = url
+        self.cluster_id = cluster_id
+        self.context = Context(url, cluster_id, token)
+        self.context.create()
 
     def execute(self, command):
-        data = {"language": "python", "contextId": self.context.id, "clusterId": self.clusterId}
+        """Execute a python command under the given Execution Context
+        
+        Args:
+            command (str): One line of python code
+        
+        Returns:
+            str: The ID of the command
+        """
+        data = {"language": "python", "contextId": self.context.id, "clusterId": self.cluster_id}
         files = {"command": command}
-        self.commandId = Rest.post(self.url,
-                                   "1.2",
-                                   "commands/execute",
-                                   data=data,
-                                   files=files,
-                                   token=self.token,
-                                   key="id")
-        return self.commandId
+        response = self.post(self.url, "1.2", "commands/execute", data=data, files=files, token=self.token)
+        command_id = response.get("id", None)
+        if command_id is None:
+            raise DatabricksApiException(403, 4, "Command ID missing")
+        else:
+            return command_id
 
-    def status(self, commandId=None):
-        cmdId = commandId or self.commandId
-        path = "commands/status?commandId=%s&contextId=%s&clusterId=%s" % (cmdId, self.context.id, self.clusterId)
-        return Rest.get(self.url, "1.2", path, token=self.token)
+    def status(self, command_id):
+        """Check the status of the command execution
+        
+        Args:
+            commandId (str): The command ID
+        
+        Returns:
+            dict: Dictionary with context id and status
+        """
+        path = "commands/status?commandId=%s&contextId=%s&clusterId=%s" % (command_id, self.context.id, self.cluster_id)
+        return self.get(self.url, "1.2", path, token=self.token)
 
 
-class Clusters(object):
+class Clusters(Rest):
+    """Databricks Clusters API
+
+    Clusters is derived from ``Rest`` and uses Databricks REST API 2.0
+        
+    Args:
+        url (str): Databricks workspace URL
+        token (str): Authentication token
+
+    Attributes:
+        url (str): Databricks workspace URL
+        token (str): Authentication token
+    """
     def __init__(self, url, token):
         self.url = url
         self.token = token
 
     def status(self, cluster_id):
-        result = Rest.get(self.url, "2.0", "clusters/get?cluster_id=%s" % cluster_id, token=self.token)
-        return result
+        """Status of cluster
+        
+        Args:
+            cluster_id (str): Cluster ID
+        
+        Returns:
+            dict:  Cluster Response Dictionary (https://docs.databricks.com/api/latest/clusters.html#clustergetclusterresponse)
+        """
+        return self.get(self.url, "2.0", "clusters/get?cluster_id=%s" % cluster_id, token=self.token)
 
     def start(self, cluster_id):
+        """Start a cluster on Databricks
+        
+        Args:
+            cluster_id (str): Cluster ID of cluster to start
+        
+        Returns:
+            dict:  Cluster Response Dictionary (https://docs.databricks.com/api/latest/clusters.html#clustergetclusterresponse)
+        """
         data = {"cluster_id": cluster_id}
-        result = Rest.post(self.url, "2.0", "clusters/start", json=data, token=self.token)
-        return result
+        return self.post(self.url, "2.0", "clusters/start", json=data, token=self.token)
 
 
-class Libraries(object):
+class Libraries(Rest):
+    """Databricks Library API
+
+    Libraries is derived from ``Rest`` and uses Databricks REST API 2.0
+        
+    Args:
+        url (str): Databricks workspace URL
+        token (str): Authentication token
+
+    Attributes:
+        url (str): Databricks workspace URL
+        token (str): Authentication token
+    """
     def __init__(self, url, token):
         self.url = url
         self.token = token
 
     def status(self, cluster_id):
-        result = Rest.get(self.url, "2.0", "libraries/cluster-status?cluster_id=%s" % cluster_id, token=self.token)
-        return result
+        """Status of library installation
+        
+        Args:
+            cluster_id (str): Cluster ID
+        
+        Returns:
+            dict:  Library Response Dictionary (https://docs.databricks.com/api/latest/clusters.html#clustergetclusterresponse)
+        """
+        return self.get(self.url, "2.0", "libraries/cluster-status?cluster_id=%s" % cluster_id, token=self.token)
