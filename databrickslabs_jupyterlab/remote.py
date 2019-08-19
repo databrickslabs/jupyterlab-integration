@@ -357,7 +357,6 @@ def install_libs(host, module_path, ipywidets_version, sidecar_version):
     scp(host, wheel, target)
     ssh(host, "sudo -H %s --upgrade %s/%s" % (PIP_INSTALL, target, os.path.basename(wheel)))
     ssh(host, "rm -f %s/* && rmdir %s" % (target, target))
-    print("   Done")
 
 
 def mount_sshfs(host):

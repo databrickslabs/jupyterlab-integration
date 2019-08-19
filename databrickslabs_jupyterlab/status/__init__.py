@@ -169,7 +169,14 @@ class DbStartHandler(KernelHandler):
                              module_path,
                              ipywidets_version=deps["ipywidgets"],
                              sidecar_version=deps["sidecar"])
-
+            
+            # Recheck in case something went wrong
+            if check_installed(cluster_id):
+                Status().set_status(profile, cluster_id, "Driver libs installed")
+            else:
+                Status().set_status(profile, cluster_id, "ERROR: Driver libs not installed")
+                return
+                
             time.sleep(2)
             kernel = self.get_kernel(kernel_id)
             # kernel.shutdown_kernel(now=True)

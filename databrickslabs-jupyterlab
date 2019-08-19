@@ -192,6 +192,13 @@ if args.kernelspec or args.reconfigure or args.lab:
 
         print("\n* Installing databrickslabs_jupyterlab, ipywidgets on remote driver")
         install_libs(cluster_id, module_path, ipywidets_version=deps["ipywidgets"], sidecar_version=deps["sidecar"])
+    
+    # Recheck in case something went wrong
+    if check_installed(cluster_id):
+        print("   Done")
+    else:
+        print("databrickslabs_jupyterlabs is not installed on the remote cluster")
+        sys.exit(1)
 
 if args.lab:
     import jupyterlab.labapp
