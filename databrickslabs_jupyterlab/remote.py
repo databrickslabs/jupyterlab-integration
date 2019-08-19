@@ -132,6 +132,31 @@ def connect(profile):
     else:
         bye("Token for profile '%s' is invalid" % profile)
 
+def _select_cluster(clusters):
+    """Build a list of clusters for the user to select one
+    
+    Args:
+        clusters (list): list of clusters
+    
+    Returns:
+        dict: Cluster config of selected cluster
+    """
+    def entry(i, cluster):
+        if cluster.get("autoscale", None) is None:
+            return "%s: %s (id: %s, state: %s, workers: %d)" % (i, cluster["cluster_name"], cluster["cluster_id"],
+                                                                cluster["state"], cluster["num_workers"])
+        else:
+            return "%s: %s (id: %s, state: %s, scale: %d-%d)" % (
+                i, cluster["cluster_name"], cluster["cluster_id"], cluster["state"],
+                cluster["autoscale"]["min_workers"], cluster["autoscale"]["max_workers"])
+
+    choice = [
+        inquirer.List('cluster_id',
+                        message='Which cluster to connect to?',
+                        choices=[entry(i, cluster) for i, cluster in enumerate(clusters)])
+    ]
+    answer = inquirer.prompt(choice, theme=Dark())
+    return clusters[int(answer["cluster_id"].split(":")[0])]
 
 def get_cluster(profile, host, token, cluster_id=None, status=None):
     """Get the cluster configuration from remote
@@ -162,23 +187,7 @@ def get_cluster(profile, host, token, cluster_id=None, status=None):
     ]
 
     if cluster_id is None:
-
-        def entry(i, cluster):
-            if cluster.get("autoscale", None) is None:
-                return "%s: %s (id: %s, state: %s, workers: %d)" % (i, cluster["cluster_name"], cluster["cluster_id"],
-                                                                    cluster["state"], cluster["num_workers"])
-            else:
-                return "%s: %s (id: %s, state: %s, scale: %d-%d)" % (
-                    i, cluster["cluster_name"], cluster["cluster_id"], cluster["state"],
-                    cluster["autoscale"]["min_workers"], cluster["autoscale"]["max_workers"])
-
-        choice = [
-            inquirer.List('cluster_id',
-                          message='Which cluster to connect to?',
-                          choices=[entry(i, cluster) for i, cluster in enumerate(my_clusters)])
-        ]
-        answer = inquirer.prompt(choice, theme=Dark())
-        cluster = my_clusters[int(answer["cluster_id"].split(":")[0])]
+        cluster = _select_cluster(my_clusters)
     else:
         cluster = None
         for c in my_clusters:
