@@ -1,0 +1,14 @@
+databrickslabs-jupyterlab
+
+Copyright (2019) Databricks, Inc.
+
+
+This Software includes software developed at Databricks (https://www.databricks.com/) and its use is subject to the included LICENSE file.
+
+
+Additionally, this Software contains code from the following open source projects:
+
+    remote_ikernel - BSD-2-Clause
+    mlflow - Apache 2.0
+    pyspark - Apache 2.0
+    nbresuse - BSD-2-Clause
