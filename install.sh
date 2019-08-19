@@ -74,7 +74,7 @@ if [[ "$ENV_NAME" == "" ]]; then
     ENV_NAME=${ENV_NAME#env-}
     read -p "Provide cond environment name ($ENV_NAME): " NEW_ENV_NAME
     if [[ "$NEW_ENV_NAME" != "" ]]; then
-        ENV_NAME = "$NEW_ENV_NAME"
+        ENV_NAME="$NEW_ENV_NAME"
     fi
 fi
 
