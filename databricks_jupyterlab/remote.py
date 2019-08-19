@@ -124,6 +124,8 @@ def connect(profile):
         ApiClient: Databricks ApiClient object
     """
     config = ProfileConfigProvider(profile).get_config()
+    if config is None:
+        bye("Cannot initialize ApiClient")
     verify = config.insecure is None
     if config.is_valid_with_token:
         return ApiClient(host=config.host, token=config.token, verify=verify)
