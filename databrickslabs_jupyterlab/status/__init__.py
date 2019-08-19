@@ -135,8 +135,9 @@ class DbStartHandler(KernelHandler):
         profile = self.get_argument('profile', None, True)
         cluster_id = self.get_argument('cluster_id', None, True)
         kernel_id = self.get_argument('id', None, True)
-        tf = threading.Thread(target=self.start_cluster, args=(profile, cluster_id, kernel_id))
-        tf.start()
+        thread = threading.Thread(target=self.start_cluster, args=(profile, cluster_id, kernel_id))
+        thread.daemon = True
+        thread.start()
 
         result = {'status': "ok"}
         self.finish(json.dumps(result))
