@@ -1,17 +1,3 @@
-#   Copyright 2019 Bernhard Walter
-#
-#   Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-
 import os
 import re
 
@@ -21,14 +7,21 @@ from IPython.display import display
 
 
 class Dbfs(object):
+    """Singleton for the DBFS object"""
 
     instance = None
 
     class __Dbfs(object):
+        """Database browser implementation
+            
+        Args:
+            dbutils (DBUtils): DBUtils object (for fs only)
+        """
         def __init__(self, dbutils):
             self.dbutils = dbutils
 
         def create(self):
+            """Create the sidecar view"""
             self.sc = Sidecar(title="DBFS-%s" % os.environ["DBJL_CLUSTER"].split("-")[-1])
             self.path = "/"
             self.flist = Select(options=[], rows=40, disabled=False)
@@ -47,6 +40,14 @@ class Dbfs(object):
             self.update()
 
         def convertBytes(self, fsize):
+            """Convert bytes to largest unit
+            
+            Args:
+                fsize (int): Size in bytes
+            
+            Returns:
+                tuple: size of largest unit, largest unit
+            """
             size = fsize
             unit = "B"
             if size > 1024 * 1024 * 1024 * 10:
@@ -61,6 +62,7 @@ class Dbfs(object):
             return (size, unit)
 
         def update(self):
+            """Update the view when an element was selected"""
             with self.output:
                 print("updating ...")
             fobjs = self.dbutils.fs.ls(self.path)
@@ -73,20 +75,41 @@ class Dbfs(object):
             self.flist.options = [""] + dirs + files
 
         def show_path(self, path):
+            """Show path in output widget
+            
+            Args:
+                path (str): Currently selected path
+            """
             self.output.clear_output()
             with self.output:
                 print("dbfs:" + re.sub(r"\s\(.*?\)$", "", path))
 
         def on_refresh(self, b):
+            """Refresh handler
+            
+            Args:
+                b (ipywidgets.Button): clicked button
+            """
             self.update()
 
         def on_up(self, b):
+            """Up handler
+            
+            Args:
+                b (ipywidgets.Button): clicked button
+            """
             new_path = os.path.dirname(self.path.rstrip("/"))
             if new_path != self.path:
                 self.path = new_path
             self.update()
 
         def on_click(self, change):
+            """Click handler providing db and parent as context
+            
+            Args:
+                db (str): database name
+                parent (object): parent object
+            """
             new_path = os.path.join(self.path, change["new"])
             if change["old"] is not None:
                 if change["new"][-1] == "/":
@@ -96,11 +119,18 @@ class Dbfs(object):
                     self.show_path(new_path)
 
         def close(self):
+            """Close view"""
             self.sc.close()
 
     def __init__(self, dbutils=None):
+        """Singleton initializer
+        
+        Args:
+            dbutils (DBUtils, optional): DBUtils object. Defaults to None.
+        """
         if not Dbfs.instance:
             Dbfs.instance = Dbfs.__Dbfs(dbutils)
 
     def __getattr__(self, name):
+        """Singleton getattr overload"""
         return getattr(self.instance, name)

@@ -1,17 +1,3 @@
-#   Copyright 2019 Bernhard Walter
-#
-#   Licensed under the Apache License, Version 2.0 (the "License");
-#   you may not use this file except in compliance with the License.
-#   You may obtain a copy of the License at
-#
-#       http://www.apache.org/licenses/LICENSE-2.0
-#
-#   Unless required by applicable law or agreed to in writing, software
-#   distributed under the License is distributed on an "AS IS" BASIS,
-#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#   See the License for the specific language governing permissions and
-#   limitations under the License.
-
 import os
 from sidecar import Sidecar
 from ipywidgets import Accordion, Select, VBox, Button, Output, Layout
@@ -19,14 +5,21 @@ from IPython.display import display, HTML
 
 
 class Databases(object):
+    """Singleton for the Databases object"""
 
     instance = None
 
     class __Databases(object):
+        """Database browser implementation
+            
+        Args:
+            spark (SparkSession): Spark Session object
+        """
         def __init__(self, spark):
             self.spark = spark
 
         def create(self):
+            """Create the sidecar view"""
             self.sc = Sidecar(title="Databases-%s" % os.environ["DBJL_CLUSTER"].split("-")[-1],
                               layout=Layout(width="300px"))
             self.refresh = Button(description="refresh")
@@ -43,10 +36,16 @@ class Databases(object):
             self.set_css()
 
         def on_refresh(self, b):
+            """Refresh handler
+            
+            Args:
+                b (ipywidgets.Button): clicked button
+            """
             self.selects = []
             self.update()
 
         def update(self):
+            """Update the view when an element was selected"""
             tables = {}
             for obj in self.spark.sql("show tables").rdd.collect():
                 db = obj[0]
@@ -70,6 +69,12 @@ class Databases(object):
                 self.accordion.set_title(i, db)
 
         def on_click(self, db, parent):
+            """Click handler providing db and parent as context
+            
+            Args:
+                db (str): database name
+                parent (object): parent object
+            """
             def f(change):
                 if change["old"] is not None:
                     parent.output.clear_output()
@@ -93,10 +98,12 @@ class Databases(object):
             return f
 
         def close(self):
+            """Close view"""
             self.selects = []
             self.sc.close()
 
         def set_css(self):
+            """Set CSS"""
             display(
                 HTML("""
             <style>
@@ -107,8 +114,14 @@ class Databases(object):
             """))
 
     def __init__(self, spark=None):
+        """Singleton initializer
+        
+        Args:
+            spark (SparkSession, optional): Spark Session object. Defaults to None.
+        """
         if not Databases.instance:
             Databases.instance = Databases.__Databases(spark)
 
     def __getattr__(self, name):
+        """Singleton getattr overload"""
         return getattr(self.instance, name)
