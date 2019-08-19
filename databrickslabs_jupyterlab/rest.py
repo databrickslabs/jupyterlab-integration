@@ -83,7 +83,10 @@ class Rest(object):
                   or in error case with keys status_code, error_code, message.
         """
         full_url = os.path.join(url, "api/%s" % api_version, path)
-        response = requests.get(full_url, auth=("token", token))
+        try:
+            response = requests.get(full_url, auth=("token", token))
+        except Exception as ex:
+            raise DatabricksApiException(0, 5, str(ex))
         if response.status_code in (200, 201):
             return self._json(response)
         else:
@@ -108,7 +111,10 @@ class Rest(object):
             or in error case with keys status_code, error_code, message.
         """
         full_url = os.path.join(url, "api/%s" % api_version, path)
-        response = requests.post(full_url, json=json, data=data, files=files, auth=("token", token))
+        try:
+            response = requests.post(full_url, json=json, data=data, files=files, auth=("token", token))
+        except Exception as ex:
+            raise DatabricksApiException(0, 5, str(ex))
         if response.status_code in (200, 201):
             return self._json(response)
         else:
