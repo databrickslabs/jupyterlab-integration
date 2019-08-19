@@ -1,7 +1,7 @@
 {
   "NotebookApp": {
     "nbserver_extensions": {
-      "databricks_jupyterlab": true
+      "databrickslabs_jupyterlab": true
     }
   }
 }

@@ -4,5 +4,5 @@ prefix=dbr-env-file-plugins
 
 for plugin in $(ls $prefix/*.yml-plugin); do
     filename=$(basename $plugin)
-    cat $prefix/env-master.yml $plugin > "databricks_jupyterlab/env_files/env-${filename%.*}.yml"
+    cat $prefix/env-master.yml $plugin > "databrickslabs_jupyterlab/env_files/env-${filename%.*}.yml"
 done

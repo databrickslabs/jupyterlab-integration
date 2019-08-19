@@ -28,7 +28,7 @@ The local conda environment should resemble the remote Databricks Runtime (DBR) 
 2. `env-dbr-5.5ml.yml`: Databricks Runtime 5.5 ML
 3. `env-dbr-5.5conda.yml`: Databricks Runtime 5.5 conda (beta)
 
-Select a conda environment name (e.g. *jlab-5.5-ml*) and install databricks-jupyterlab by calling `install.sh`. The script will show you the available DBR environment options to select from:
+Select a conda environment name (e.g. *jlab-5.5-ml*) and install databrickslabs-jupyterlab by calling `install.sh`. The script will show you the available DBR environment options to select from:
 
 ```bash
 (base)$ ./install.sh jlab-5.5-ml
@@ -44,13 +44,13 @@ The installation comprises of 3 parts and can take a few minutes:
 
 1. Install conda environment
 2. Install jupyterlab extensions
-3. Install databricks-jupyterlab
+3. Install databrickslabs-jupyterlab
 
 It finishes with an overview of the usage
 
 ## 3 Usage
 
-Activate the conda environment for *databricks-jupyterlab*
+Activate the conda environment for *databrickslabs-jupyterlab*
 
 ```bash
 (base)$ conda activate jlab-5.5-ml
@@ -58,14 +58,14 @@ Activate the conda environment for *databricks-jupyterlab*
 
 ### 3.1 Quick Start
 
-The quickest way to use *databricks-jupyterlab* is:
+The quickest way to use *databrickslabs-jupyterlab* is:
 
 - **Command line**
 
     Create a kernel specification and copy token to clipboard (needs to be done once for each new cluster):
 
     ```bash
-    (jlab-5.5-ml)$ databricks-jupyterlab <profile> -k -c
+    (jlab-5.5-ml)$ databrickslabs-jupyterlab <profile> -k -c
     ```
 
     Start Jupyter Lab the usual way (a new kernel is available in the kernel change menu)
@@ -83,7 +83,7 @@ The quickest way to use *databricks-jupyterlab* is:
     To connect to the remote Spark context, enter the following two lines into a notebook cell:
 
     ```python
-    [1] from databricks_jupyterlab.connect import dbcontext, is_remote
+    [1] from databrickslabs_jupyterlab.connect import dbcontext, is_remote
         dbcontext()
     ```
 
@@ -105,7 +105,7 @@ The quickest way to use *databricks-jupyterlab* is:
         - dbutils     Databricks utilities
     ```
 
-    Note: `databricks-jupyterlab <profile> -c` let's you quickly copy the token to the clipboard so that you can simply paste the token to the input box.
+    Note: `databrickslabs-jupyterlab <profile> -c` let's you quickly copy the token to the clipboard so that you can simply paste the token to the input box.
 
 - **Cluster Auto-Termination**
 
@@ -142,13 +142,13 @@ The quickest way to use *databricks-jupyterlab* is:
 1) **Show help**
 
     ```bash
-    (jlab-5.5-ml)$ databricks-jupyterlab -h
+    (jlab-5.5-ml)$ databrickslabs-jupyterlab -h
     ```
 
-2) **Show currently available profiles (databricks-jupyterlab -p):**
+2) **Show currently available profiles (databrickslabs-jupyterlab -p):**
 
     ```bash
-    (jlab-5.5-ml)$ databricks-jupyterlab -p
+    (jlab-5.5-ml)$ databrickslabs-jupyterlab -p
 
     Valid version of conda detected: 4.7.10
 
@@ -170,20 +170,20 @@ The quickest way to use *databricks-jupyterlab* is:
     - Databricks on AWS:
 
         ```bash
-        (jlab-5.5-ml)$ databricks-jupyterlab <profile> -k [-i <cluster name>]
+        (jlab-5.5-ml)$ databrickslabs-jupyterlab <profile> -k [-i <cluster name>]
         ```
 
     - Azure:
 
         ```bash
-        (jlab-5.5-ml)$ databricks-jupyterlab <profile> -k -o <organisation> [-i <cluster name>]
+        (jlab-5.5-ml)$ databrickslabs-jupyterlab <profile> -k -o <organisation> [-i <cluster name>]
         ```
 
     This will execute the following steps:
 
     - Get host and token from `.databrickscfg` for the given profile
     - In case `-i` is not used, show a list of clusters that have the correct SSH key (id_<profile>) configured
-    - Installs `databricks_jupyterlab` and `ipywidgets` on the remote driver
+    - Installs `databrickslabs_jupyterlab` and `ipywidgets` on the remote driver
     - Creates the remote kernel specification
 
 4) **Safely start Jupyter Lab**
@@ -191,7 +191,7 @@ The quickest way to use *databricks-jupyterlab* is:
     while you can start Jupyter Lab via `jupyter lab`, it is recommended to use the wrapper
 
     ```bash
-    (jlab-5.5-ml)$ databricks-jupyterlab <profile> -l [-i <cluster name>]
+    (jlab-5.5-ml)$ databrickslabs-jupyterlab <profile> -l [-i <cluster name>]
     ```
 
     It will check whether the remote cluster is up and running, update the ssh info, check the availability of th relevant libs before starting jupyter Lab.
@@ -201,13 +201,13 @@ The quickest way to use *databricks-jupyterlab* is:
     This is the same command on AWS and Azure
 
     ```bash
-    (jlab-5.5-ml)$ databricks-jupyterlab <profile> -c
+    (jlab-5.5-ml)$ databrickslabs-jupyterlab <profile> -c
     ```
 
 6) **Compare local and remote library versions (uses the locally activated canda environment)**
 
     ```bash
-    (jlab-5.5-ml)$ databricks-jupyterlab <profile> -v all|same|diff [-i <cluster name>]
+    (jlab-5.5-ml)$ databrickslabs-jupyterlab <profile> -v all|same|diff [-i <cluster name>]
     ```
 
 ## 4 Test notebooks

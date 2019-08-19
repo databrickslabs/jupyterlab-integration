@@ -8,8 +8,8 @@ from notebook.base.handlers import IPythonHandler
 from tornado import web
 from collections import defaultdict
 
-import databricks_jupyterlab
-from databricks_jupyterlab.remote import (get_db_config, is_reachable, get_cluster, prepare_ssh_config, is_reachable,
+import databrickslabs_jupyterlab
+from databrickslabs_jupyterlab.remote import (get_db_config, is_reachable, get_cluster, prepare_ssh_config, is_reachable,
                                           check_installed, install_libs)
 
 
@@ -164,7 +164,7 @@ class DbStartHandler(KernelHandler):
                 deps = {p["name"]: p["version"] for p in packages if p["name"] in ["ipywidgets", "sidecar"]}
 
                 Status().set_status(profile, cluster_id, "Installing driver libs")
-                module_path = os.path.dirname(databricks_jupyterlab.__file__)
+                module_path = os.path.dirname(databrickslabs_jupyterlab.__file__)
                 install_libs(cluster_id,
                              module_path,
                              ipywidets_version=deps["ipywidgets"],
@@ -182,5 +182,5 @@ def _jupyter_server_extension_paths():
     Set up the server extension for status handling
     """
     return [{
-        'module': 'databricks_jupyterlab',
+        'module': 'databrickslabs_jupyterlab',
     }]

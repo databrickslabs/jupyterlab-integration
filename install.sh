@@ -24,14 +24,12 @@ function usage {
     exit 1
 }
 
-if [[ "$1" == "" ]]; then
-    echo -e "\nMissing name of new environment (env-name)"
-    usage
+ENV_NAME=""
+if [[ "$1" != "" ]]; then
+    ENV_NAME=$1
 fi
 
-ENV_NAME=$1
-ALL_LABEXTS=1
-
+ENV_FILE=""
 if [[ "$2" != "" ]]; then
     if [[ $2 < 1 || $2 > ${#OPTIONS[@]} ]]; then
         echo -e "\nWrong DBR runtime id (env-file-id)"
@@ -40,9 +38,10 @@ if [[ "$2" != "" ]]; then
         ENV_FILE=${ENV_FILES[$[$2-1]]}
     fi
 else
+    ALL_LABEXTS=1
     PS3BAK=$PS3
     PS3="Select 1-$[${#OPTIONS[@]}+1]: "
-    echo "Which remote Databricks Runtime should be mirrored from a Daa Science library perspective?"
+    echo "Which remote Databricks Runtime should be mirrored from a Data Science library perspective?"
     select opt in "${OPTIONS[@]}" "quit"; do
         case $opt in
             "${OPTIONS[0]}")
@@ -70,6 +69,15 @@ else
     PS3=$PS3BAK
 fi
 
+if [[ "$ENV_NAME" == "" ]]; then
+    ENV_NAME=${ENV_FILE%.yml}
+    ENV_NAME=${ENV_NAME#env-}
+    read -p "Provide cond environment name ($ENV_NAME): " NEW_ENV_NAME
+    if [[ "$NEW_ENV_NAME" != "" ]]; then
+        ENV_NAME = "$NEW_ENV_NAME"
+    fi
+fi
+
 echo "$ENV_NAME: $ENV_FILE"
 
 if [[ $ALL_LABEXTS == 0 ]]; then
@@ -80,19 +88,19 @@ fi
 
 echo -e "\n\x1b[32m1 Install conda environment $envname\n\x1b[0m"
 
-conda env create -n $ENV_NAME -f "databricks_jupyterlab/env_files/$ENV_FILE"
+conda env create -n $ENV_NAME -f "databrickslabs_jupyterlab/env_files/$ENV_FILE"
 source $(conda info | awk '/base env/ {print $4}')/bin/activate "$ENV_NAME"
 
 echo -e "\n\x1b[32m2 Install jupyterlab extensions\n\x1b[0m"
 
 jupyter labextension install --no-build $LABEXTS
 
-cd extensions/databricks_jupyterlab_status
+cd extensions/databrickslabs_jupyterlab_status
 jupyter labextension install
 cd ../..
 echo
 
-echo -e "\n\x1b[32m3 Install databricks-jupyterlab\n\x1b[0m"
+echo -e "\n\x1b[32m3 Install databrickslabs-jupyterlab\n\x1b[0m"
 
 pip install --upgrade .
 
@@ -119,32 +127,32 @@ Databricks-jupyterlab:
 1) Show help
 
     conda activate $ENV_NAME
-    databricks-jupyterlab -h
+    databrickslabs-jupyterlab -h
 
 2) Create jupyter kernel for remote cluster
 
     Databricks on AWS:
-        databricks-jupyterlab <profile> -k [-i cluster-id]
+        databrickslabs-jupyterlab <profile> -k [-i cluster-id]
     
     Azure Databricks:
-        databricks-jupyterlab <profile> -k -o <organisation>
+        databrickslabs-jupyterlab <profile> -k -o <organisation>
 
 3) Compare local and remote python package versions
     
-    databricks-jupyterlab <profile> -v all|same|diff
+    databrickslabs-jupyterlab <profile> -v all|same|diff
 
 4) Copy Personal Access token for databricks cluster to cipboard (same on AWS and Azure)
 
-    databricks-jupyterlab <profile> -c
+    databrickslabs-jupyterlab <profile> -c
 
 5) Start jupyter lab to use the kernel(s) created in 2)
 
-    databricks-jupyterlab <profile> -l [-i cluster-id]
+    databrickslabs-jupyterlab <profile> -l [-i cluster-id]
 
 
-Currently available profiles (databricks-jupyterlab -p):
+Currently available profiles (databrickslabs-jupyterlab -p):
 
-$(databricks-jupyterlab -p)
+$(databrickslabs-jupyterlab -p)
 
 
 \x1b[0m"

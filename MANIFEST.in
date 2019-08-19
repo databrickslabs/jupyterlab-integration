@@ -1,1 +1,1 @@
-include databricks_jupyterlab/lib/*
+include databrickslabs_jupyterlab/lib/*

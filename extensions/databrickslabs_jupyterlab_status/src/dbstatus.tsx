@@ -77,7 +77,7 @@ export namespace DbStatus {
           interval: options.refreshRate,
           backoff: true
         },
-        name: 'statusbar-extension:databricks-jupyterlab#status'
+        name: 'statusbar-extension:databrickslabs-jupyterlab#status'
       });
 
       this._poll.ticked.connect(poll => {
@@ -139,7 +139,7 @@ export namespace DbStatus {
           let session = this._notebookTracker.currentWidget!.session;
           let id = session.kernel.id;
           let name = session.kernelDisplayName;
-          Private.request("/databricks-jupyterlab-start", name, id)
+          Private.request("/databrickslabs-jupyterlab-start", name, id)
         }
       })      
     }
@@ -292,7 +292,7 @@ namespace Private {
     if (counter === 10 || is_starting || tab_switch || parent.restarting) {
       counter = 0;
       
-      const response = await request("databricks-jupyterlab-status", name, id);
+      const response = await request("databrickslabs-jupyterlab-status", name, id);
 
       if (response.ok) {
         try {

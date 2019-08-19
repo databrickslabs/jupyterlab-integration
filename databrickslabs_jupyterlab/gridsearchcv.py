@@ -8,7 +8,7 @@ import datetime
 import tempfile
 import warnings
 from functools import reduce
-from databricks_jupyterlab.connect import is_remote
+from databrickslabs_jupyterlab.connect import is_remote
 
 
 class GridSearchCV():

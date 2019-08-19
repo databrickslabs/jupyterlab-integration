@@ -30,11 +30,10 @@ try:
 except:
     pass
 
-from databricks_jupyterlab.rest import Command, DatabricksApiException
-from databricks_jupyterlab.progress import load_progressbar, load_css
-from databricks_jupyterlab.dbfs import Dbfs
-from databricks_jupyterlab.database import Databases
-from databricks_jupyterlab.info import Info
+from databrickslabs_jupyterlab.rest import Command, DatabricksApiException
+from databrickslabs_jupyterlab.progress import load_progressbar, load_css
+from databrickslabs_jupyterlab.dbfs import Dbfs
+from databrickslabs_jupyterlab.database import Databases
 
 
 class JobInfo():
@@ -169,7 +168,7 @@ def dbcontext(progressbar=True):
             return None    
         finished = result["status"] == "Finished"
     
-    if result["resultType"] == "error":
+    if result["results"]["resultType"] == "error":
         print(result["results"]["cause"])
         return None
 

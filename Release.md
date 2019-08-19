@@ -4,11 +4,11 @@
 
 - **If backend changed, change version of python package**
 
-    Increase the version in `databricks_jupyterlab._version` This will automatically be used in `setup.py`
+    Increase the version in `databrickslabs_jupyterlab._version` This will automatically be used in `setup.py`
 
 - **If labextension changed, change version of typescript labextension**
 
-    Increase the version in `extensions/databricks_jupyterlab_status/package.json`
+    Increase the version in `extensions/databrickslabs_jupyterlab_status/package.json`
 
 - **New DBR plugin(s)**
 
@@ -16,7 +16,7 @@
 
 - **Wheel for remote installation**
 
-    Every install step will deploy databricks-jupyterlab via ssh onto the driver. Before publishing the latest wheel needs to added to the package and run `make wheel`
+    Every install step will deploy databrickslabs-jupyterlab via ssh onto the driver. Before publishing the latest wheel needs to added to the package and run `make wheel`
 
 ## Release
 

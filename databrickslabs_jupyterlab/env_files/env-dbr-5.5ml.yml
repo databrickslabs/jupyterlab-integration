@@ -1,0 +1,58 @@
+channels:
+  # - https://repo.anaconda.com/pkgs/free
+  - defaults
+  - conda-forge
+
+  # Use conda for the Jupyter lab environment
+dependencies:
+  # Python
+  - python=3.6
+  - pip=19.2.2
+  # Jupyter
+  - ipykernel=5.1.2
+  - ipywidgets=7.5.1
+  - jupyter=1.0.0
+  - jupyterlab=1.0.5
+  - nbconvert=5.6.0
+  - nodejs=10.13.0
+  - notebook=5.7.8
+  - tornado=6.0.3
+  - zeromq=4.3.2
+  - widgetsnbextension=3.5.1
+  # And pip for the compatibility with DBR
+  - pip:
+    # Patched remote kernel
+    - git+https://github.com/bernhard-42/remote_ikernel.git
+    # Other libs necessary for Databricks-jupyterlab
+    - inquirer==2.6.3
+    - jsonschema==3.0.2
+    - pyperclip==1.7.0
+    - requests==2.22.0
+    - sidecar==0.3.0
+    - ssh-config==0.0.12
+    - sysrsync==0.1.2
+    # DBR Data Science related
+    - bokeh==1.3.4
+    - bqplot==0.11.6
+    - cryptography==2.2.2
+    - hyperopt==0.1.2 # DBR 5.5 ML: 0.1.2.db6
+    - Keras-Applications==1.0.8
+    - Keras-Preprocessing==1.1.0
+    - Keras==2.2.4
+    - matplotlib==2.2.2
+    - mleap==0.8.1
+    - mlflow==1.0.0
+    - numpy==1.16.2
+    - pandas==0.23.0
+    - patsy==0.5.0
+    - pyarrow==0.13.0
+    - scikit-learn==0.20.3
+    - scipy==1.1.0
+    - seaborn==0.8.1
+    - statsmodels==0.9.0
+    - tensorboard==1.13.1
+    - tensorboardX==1.7
+    - tensorflow-estimator==1.13.0
+    - tensorflow==1.13.1
+    - torch==1.1.0
+    - torchvision==0.3.0    

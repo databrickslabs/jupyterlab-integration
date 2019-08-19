@@ -11,8 +11,8 @@ import sysrsync
 
 import jupyter_core.command
 
-import databricks_jupyterlab
-from databricks_jupyterlab.remote import (get_db_config, get_cluster, connect, prepare_ssh_config, bye)
+import databrickslabs_jupyterlab
+from databrickslabs_jupyterlab.remote import (get_db_config, get_cluster, connect, prepare_ssh_config, bye)
 
 parser = argparse.ArgumentParser(description='Configure remote Databricks access with VS Code')
 
