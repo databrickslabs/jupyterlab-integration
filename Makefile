@@ -67,7 +67,7 @@ install:
 check_dist:
 	@twine check dist/*
 
-upload: dist
+upload:
 	@twine upload dist/*
 
 # dev tools
