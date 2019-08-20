@@ -6,6 +6,7 @@ import time
 from os.path import expanduser
 import socket
 import subprocess
+import textwrap
 import uuid
 import glob
 
@@ -17,9 +18,6 @@ from inquirer.themes import Default, term
 from databricks_cli.configure.provider import get_config, ProfileConfigProvider
 from databricks_cli.sdk.api_client import ApiClient
 from databricks_cli.clusters.api import ClusterApi
-
-from remote_ikernel.manage import show_kernel, add_kernel
-from remote_ikernel.compat import kernelspec as ks
 
 from databrickslabs_jupyterlab.rest import Clusters, Libraries, DatabricksApiException
 
@@ -263,7 +261,7 @@ def get_cluster(profile, host, token, cluster_id=None, status=None):
                 time.sleep(5)
             else:
                 done = True
-                print("\n   Done\n")
+                print("\n   => Done\n")
 
     public_ip = response["driver"]["public_dns"]
 
@@ -289,8 +287,8 @@ def prepare_ssh_config(cluster_id, profile, public_ip):
     if cluster_id in hosts:
         host = sc.get(cluster_id)
         host.set("HostName", public_ip)
-        print("   => Added ssh config entry or modified IP address:")
-        print(host)
+        print("   => Added ssh config entry or modified IP address:\n")
+        print(textwrap.indent(str(host), "      "))
     else:
         attrs = {
             'HostName': public_ip,
@@ -301,8 +299,8 @@ def prepare_ssh_config(cluster_id, profile, public_ip):
             'ServerAliveCountMax': 2
         }
         host = Host(name=cluster_id, attrs=attrs)
-        print("Adding ssh config to ~/.ssh/config")
-        print(host)
+        print("Adding ssh config to ~/.ssh/config:\n")
+        print(textwrap.indent(str(host), "      "))
         sc.append(host)
     sc.write()
 
@@ -317,11 +315,14 @@ def create_kernelspec(profile, organisation, host, cluster_id, cluster_name):
         cluster_id (str): Cluster ID
         cluster_name (str): Cluster name
     """
-    print("   Creating kernel specification for profile '%s'" % profile)
+    from remote_ikernel.manage import show_kernel, add_kernel
+    from remote_ikernel.compat import kernelspec as ks
+
+    print("   => Creating kernel specification for profile '%s'" % profile)
     env = "DBJL_PROFILE=%s DBJL_HOST=%s DBJL_CLUSTER=%s" % (profile, host, cluster_id)
     if organisation is not None:
         env += " DBJL_ORG=%s" % organisation
-    kernel_cmd = "sudo -H %s /databricks/python3/bin/python3 -m ipykernel -f {connection_file}" % env
+    kernel_cmd = "sudo -H %s /databricks/python/bin/python -m ipykernel -f {connection_file}" % env
     add_kernel(
         "ssh",
         name="%s:%s" % (profile, cluster_name),
@@ -349,10 +350,10 @@ def install_libs(host, module_path, ipywidets_version, sidecar_version):
     wheel = glob.glob("%s/lib/*.whl" % module_path)[0]
     target = "/home/ubuntu/%s" % str(uuid.uuid4())
 
-    print("   Installing ipywidgets")
+    print("   => Installing ipywidgets")
     ssh(host, "sudo -H %s ipywidgets==%s sidecar==%s" % (PIP_INSTALL, ipywidets_version, sidecar_version))
 
-    print("   Installing databrickslabs_jupyterlab")
+    print("   => Installing databrickslabs_jupyterlab")
     ssh(host, "mkdir -p %s" % target)
     scp(host, wheel, target)
     ssh(host, "sudo -H %s --upgrade %s/%s" % (PIP_INSTALL, target, os.path.basename(wheel)))

@@ -1,4 +1,6 @@
+import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -7,21 +9,22 @@ import inquirer
 from inquirer.themes import Default, term
 
 import databrickslabs_jupyterlab
-from databrickslabs_jupyterlab.remote import Dark
+from databrickslabs_jupyterlab.remote import ssh, Dark, get_remote_packages
+
+# os.environ.get("DATABRICKS_RUNTIME_VERSION", None) == "5.5"
+# os.environ.get("CONDA_EXE", None) == "/databricks/conda/bin/conda"
+# os.environ.get("DATABRICKS_ROOT_CONDA_ENV", None) == "databricks-standard"
+
+WHITELIST = [
+    "hyperopt", "keras-applications", "keras-preprocessing", "keras", "matplotlib", "mleap", "mlflow", "numba", "numpy",
+    "pandas", "patsy", "pillow", "pyarrow", "python-dateutil", "pyparsing", "scikit-learn", "scipy", "seaborn",
+    "simplejson", "statsmodels", "tabulate", "tensorboard", "tensorboardx", "tensorflow-estimator", "tensorflow",
+    "torch", "torchvision"
+]
+
 
 def print_green(message):
-    print("\n\x1b[32m%s\x1b[0m")
-
-def get_env_file(module_path):
-    path = os.path.join(module_path, "env_files")
-    envs = [e[4:-4] for e in os.listdir(path) if e.startswith("env-")]
-
-    choice = [inquirer.List('env_id', message='Which environment do you want to mirror?', choices=envs)]
-    answer = inquirer.prompt(choice, theme=Dark())
-    env_file = os.path.join(path, "env-%s.yml" % (answer["env_id"]))
-    labext_file = os.path.join(path, "labextensions.txt")
-
-    return labext_file, env_file, answer["env_id"]
+    print("\n\x1b[32m%s\x1b[0m" % message)
 
 
 def execute(script, script_name, message):
@@ -36,36 +39,100 @@ def execute(script, script_name, message):
                 sys.exit(1)
         except Exception as ex:
             print(message, ex)
-            sys.exit(1)    
+            sys.exit(1)
 
 
-def install_env(env_file, env_name):
+def update_env(env_file):
+    script = """#!/bin/bash
+conda env update --file %s
+""" % (env_file)
+    print_green("Updating current conda environment")
+    execute(script, "update_env.sh", "Error while updating conda environment")
+
+
+def install_env(env_file, env_name=None):
     script = """#!/bin/bash
 conda env create -n %s -f %s
 source $(conda info | awk '/base env/ {print $4}')/bin/activate "%s" 
 pip install --upgrade .
 """ % (env_name, env_file, env_name)
-    print_green("Installing conda environment")
+
+    print_green("Installing conda environment %s" % env_name)
     execute(script, "install_env.sh", "Error while installing conda environment")
 
 
-def install_labextensions(labext_file, env_name):
-    script = """#!/bin/bash
+def install_labextensions(labext_file, env_name=None):
+    if env_name is None:
+        script = """#!/bin/bash
+jupyter labextension install $(cat %s)
+jupyter labextension install extensions/databrickslabs_jupyterlab_status
+""" % labext_file
+    else:
+        script = """#!/bin/bash
 source $(conda info | awk '/base env/ {print $4}')/bin/activate "%s" 
 jupyter labextension install $(cat %s)
 jupyter labextension install extensions/databrickslabs_jupyterlab_status
 """ % (env_name, labext_file)
+
     print_green("Installing jupyterlab extensions")
     execute(script, "install_labext.sh", "Error while installing jupyter labextensions")
 
 
-def install(env_name=None):
+def update_local():
     module_path = os.path.dirname(databrickslabs_jupyterlab.__file__)
-    labext_file, env_file, proposed_env_name = get_env_file(module_path)
-    if env_name is None:
-        env_name = proposed_env_name
-    install_env(env_file, env_name)
-    install_labextensions(labext_file, env_name)
+
+    env_file = os.path.join(module_path, "lib/env.yml")
+    update_env(env_file)
+
+    labext_file = os.path.join(module_path, "lib/labextensions.txt")
+    install_labextensions(labext_file)
+    usage(os.environ.get("CONDA_DEFAULT_ENV", "unknown"))
+
+
+def install(profile, cluster_id, cluster_name):
+    print("\n* Installation of local environment to mirror a remote Databricks cluster")
+
+    libs = get_remote_packages(cluster_id)
+    ds_libs = [lib for lib in libs if lib["name"].lower() in WHITELIST]
+
+    ds_yml = ""
+    for lib in ds_libs:
+        if lib["name"] == "hyperopt":
+            r = re.compile(r"(\d+\.\d+.\d+)(.*)")
+            version = r.match(lib["version"]).groups()[0]
+        else:
+            version = lib["version"]
+        ds_yml += ("    - %s==%s\n" % (lib["name"], version))
+    print("\n    Library versions being installed:")
+    print(ds_yml + "\n")
+
+    module_path = os.path.dirname(databrickslabs_jupyterlab.__file__)
+    env_file = os.path.join(module_path, "lib/env.yml")
+    with open(env_file, "r") as fd:
+        master_yml = fd.read()
+        
+    with tempfile.TemporaryDirectory() as tmpdir:
+        env_file = os.path.join(tmpdir, "env.yml")
+        with open(env_file, "w") as fd:
+            fd.write(master_yml)
+            fd.write("\n    # Data Science Libs\n")
+            fd.write(ds_yml)
+            fd.write("\n")
+
+        env_name = cluster_name.replace(" ", "_")
+        answer = input("    => Provide a conda environment name (default = %s): " % env_name)
+        if answer != "":
+            env_name = answer.replace(" ", "_")
+
+        install_env(env_file, env_name)
+
+        labext_file = os.path.join(module_path, "lib/labextensions.txt")
+        install_labextensions(labext_file, env_name)
+
+    usage(env_name)
+
+
+def usage(env_name):
     print_green("""
 = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
                               Q U I C K S T A R T

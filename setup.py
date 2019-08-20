@@ -14,7 +14,12 @@ setup(
     keywords = "databricks jupyter jupyterlab spark",
     packages=find_packages(),
     scripts=['databrickslabs-jupyterlab'],
-    install_requires=['notebook'],
+    install_requires=[
+        'notebook',
+        'inquirer',
+        'ssh_config',
+        'databricks_cli'
+    ],
     data_files=[
         ('etc/jupyter/jupyter_notebook_config.d', ['databrickslabs_jupyterlab/status/etc/serverextension.json']),
     ],
