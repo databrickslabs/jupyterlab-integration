@@ -1,4 +1,4 @@
-.PHONY: clean wheel envs install tests check_version dist check_dist upload_test upload dev_tools bump bump_ext
+.PHONY: clean wheel envs install tests check_version dist check_dist upload_test upload dev_tools bump bump_ext release
 
 NO_COLOR = \x1b[0m
 OK_COLOR = \x1b[32;01m
@@ -60,6 +60,12 @@ dist: clean envs
 	@python setup.py sdist bdist_wheel
 	@echo "$(OK_COLOR)=> Copying wheel into distributions$(NO_COLOR)"
 	@cp dist/databrickslabs_jupyterlab-*-py3-none-any.whl databrickslabs_jupyterlab/lib/
+
+release:
+	current_version := $(shell awk '/current_version/ {print $3}' .bumpversion.cfg)
+	git add .
+	git commit -m "Latest release: $(currrent_version)"
+	git tag -a v$(currrent_version) -m "Latest release: $(currrent_version)"
 
 install: dist
 	@echo "$(OK_COLOR)=> Installing databrickslabs_jupyterlab$(NO_COLOR)"
