@@ -85,7 +85,7 @@ source $(conda info | awk '/base env/ {print $4}')/bin/activate "$ENV_NAME"
 
 echo -e "\n\x1b[32m2 Install jupyterlab extensions\n\x1b[0m"
 
-LABEXTS=$(cat labextensions.txt | xargs)
+LABEXTS=$(cat databrickslabs_jupyterlab/env_files/labextensions.txt | xargs)
 jupyter labextension install --no-build $LABEXTS
 
 cd extensions/databrickslabs_jupyterlab_status
