@@ -10,6 +10,7 @@ setup(
     author = "Bernhard Walter",
     author_email = "bernhard.walter@databricks.com",
     description = ("Remote Jupyter Lab kernel for Databricks"),
+    long_description_content_type='text/markdown',
     license = "Databricks License",
     keywords = "databricks jupyter jupyterlab spark",
     packages=find_packages(),
