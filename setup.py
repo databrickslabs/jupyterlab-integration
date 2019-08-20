@@ -13,10 +13,7 @@ setup(
     license = "Databricks License",
     keywords = "databricks jupyter jupyterlab spark",
     packages=find_packages(),
-    scripts=[
-        'databrickslabs-jupyterlab', 
-        'databrickslabs-vscode'
-    ],
+    scripts=['databrickslabs-jupyterlab'],
     install_requires=['notebook'],
     data_files=[
         ('etc/jupyter/jupyter_notebook_config.d', ['databrickslabs_jupyterlab/status/etc/serverextension.json']),
