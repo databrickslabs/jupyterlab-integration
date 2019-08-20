@@ -8,7 +8,7 @@ PYCACHE := $(shell find . -name '__pycache__')
 EGGS := $(wildcard '*.egg-info')
 PLUGIN_DIR = ./dbr-env-file-plugins
 YML_PLUGINS := $(wildcard $(PLUGIN_DIR)/*.yml-plugin)
-CURRENT_VERSION := $(shell awk '/current_version/ {print $3}' .bumpversion.cfg)
+CURRENT_VERSION := $(shell awk '/current_version/ {print $$3}' .bumpversion.cfg)
 
 clean:
 	@echo "$(OK_COLOR)=> Cleaning$(NO_COLOR)"
@@ -64,6 +64,7 @@ dist: clean envs
 
 release:
 	git add .
+	git status
 	git commit -m "Latest release: $(CURRENT_VERSION)"
 	git tag -a v$(CURRENT_VERSION) -m "Latest release: $(CURRENT_VERSION)"
 
