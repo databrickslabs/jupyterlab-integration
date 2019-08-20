@@ -64,8 +64,8 @@ dist: clean envs
 
 release:
 	git add .
-	git commit -m "Latest release: $(CURRRENT_VERSION)"
-	git tag -a v$(CURRRENT_VERSION) -m "Latest release: $(CURRRENT_VERSION)"
+	git commit -m "Latest release: $(CURRENT_VERSION)"
+	git tag -a v$(CURRENT_VERSION) -m "Latest release: $(CURRENT_VERSION)"
 
 install: dist
 	@echo "$(OK_COLOR)=> Installing databrickslabs_jupyterlab$(NO_COLOR)"
