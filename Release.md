@@ -22,7 +22,19 @@
 
 - **Python package**
 
-    For the time being this is a pure github provided tool and available from `pypi.org`.
+    - Run tests
+
+        ```bash
+        make tests
+        ```
+
+    - Commit changes
+
+    - Bump version of databrickslabs_jupyterlab
+
+    - Create disrtibution
+
+    - Create and tag release
 
 - **Labextension**
 
