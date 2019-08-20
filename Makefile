@@ -8,6 +8,7 @@ PYCACHE := $(shell find . -name '__pycache__')
 EGGS := $(wildcard '*.egg-info')
 PLUGIN_DIR = ./dbr-env-file-plugins
 YML_PLUGINS := $(wildcard $(PLUGIN_DIR)/*.yml-plugin)
+CURRENT_VERSION := $(shell awk '/current_version/ {print $3}' .bumpversion.cfg)
 
 clean:
 	@echo "$(OK_COLOR)=> Cleaning$(NO_COLOR)"
@@ -62,10 +63,9 @@ dist: clean envs
 	@cp dist/databrickslabs_jupyterlab-*-py3-none-any.whl databrickslabs_jupyterlab/lib/
 
 release:
-	current_version := $(shell awk '/current_version/ {print $3}' .bumpversion.cfg)
 	git add .
-	git commit -m "Latest release: $(currrent_version)"
-	git tag -a v$(currrent_version) -m "Latest release: $(currrent_version)"
+	git commit -m "Latest release: $(CURRRENT_VERSION)"
+	git tag -a v$(CURRRENT_VERSION) -m "Latest release: $(CURRRENT_VERSION)"
 
 install: dist
 	@echo "$(OK_COLOR)=> Installing databrickslabs_jupyterlab$(NO_COLOR)"
