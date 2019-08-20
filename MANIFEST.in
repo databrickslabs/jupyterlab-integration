@@ -1,3 +1,4 @@
 include databrickslabs_jupyterlab/lib/*
 include NOTICE
 include LICENSE
+include databrickslabs_jupyterlab/env_files/*
