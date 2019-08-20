@@ -46,6 +46,8 @@ endif
 
 # Dist commands
 
+wheel:
+
 dist: clean
 	@echo "$(OK_COLOR)=> Creating Wheel$(NO_COLOR)"
 	@mkdir -p databrickslabs_jupyterlab/lib
@@ -53,6 +55,8 @@ dist: clean
 	@echo "$(OK_COLOR)=> Copying wheel into distributions$(NO_COLOR)"
 	@cp dist/databrickslabs_jupyterlab-*-py3-none-any.whl databrickslabs_jupyterlab/lib/
 	@cp env.yml labextensions.txt "databrickslabs_jupyterlab/lib/"
+	@echo "$(OK_COLOR)=> Creating final wheel$(NO_COLOR)"
+	@python setup.py sdist bdist_wheel
 
 release:
 	git add .
