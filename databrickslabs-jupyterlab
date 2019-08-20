@@ -18,6 +18,7 @@ import databrickslabs_jupyterlab
 from databrickslabs_jupyterlab.remote import (get_db_config, get_cluster, connect, prepare_ssh_config, check_installed,
                                           get_remote_packages, is_reachable, create_kernelspec, install_libs,
                                           mount_sshfs, show_profiles, bye)
+from databrickslabs_jupyterlab.install import install
 
 
 def conda_version():
@@ -98,6 +99,11 @@ class VCheck(Enum):
 parser = argparse.ArgumentParser(description='Configure remote Databricks access with Jupyter Lab')
 
 parser.add_argument('profile', nargs='?', type=str, default="", help='A databricks-cli profile')
+parser.add_argument('-b',
+                    '--bootstrap',
+                    dest='bootstrap',
+                    action='store_true',
+                    help='Bootstrap a databricks_jupyterlab environment')
 parser.add_argument('-c',
                     '--clipboard',
                     dest='clipboard',
@@ -133,8 +139,10 @@ parser.add_argument('-v',
 
 args = parser.parse_args()
 
-# if args.environment:
-#     subprocess.call()
+
+if args.bootstrap:
+    install()
+    sys.exit(1)
 
 profile = args.profile
 
