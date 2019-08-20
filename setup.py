@@ -28,7 +28,7 @@ setup(
     classifiers=[
         "Development Status :: 4 - Beta",
         "Topic :: Utilities",
-        "License :: Other/Proprietary License :: Databricks License",
+        "License :: Other/Proprietary License",
     ],
     zip_safe=False
 )
