@@ -10,15 +10,11 @@ from getpass import getpass
 from subprocess import check_output
 from enum import Enum
 
-import pyperclip
-
-import jupyter_core.command
-
 import databrickslabs_jupyterlab
 from databrickslabs_jupyterlab.remote import (get_db_config, get_cluster, connect, prepare_ssh_config, check_installed,
                                           get_remote_packages, is_reachable, create_kernelspec, install_libs,
                                           mount_sshfs, show_profiles, bye)
-from databrickslabs_jupyterlab.install import install
+from databrickslabs_jupyterlab.install import install, update_local
 
 
 def conda_version():
@@ -103,7 +99,12 @@ parser.add_argument('-b',
                     '--bootstrap',
                     dest='bootstrap',
                     action='store_true',
-                    help='Bootstrap a databricks_jupyterlab environment')
+                    help='Bootstrap the local databrickslabs-jupyterlab environment')
+parser.add_argument('-m',
+                    '--mirror',
+                    dest='mirror',
+                    action='store_true',
+                    help='Mirror a a remote Databricks environment')
 parser.add_argument('-c',
                     '--clipboard',
                     dest='clipboard',
@@ -129,7 +130,7 @@ parser.add_argument('-r',
                     dest='reconfigure',
                     action='store_true',
                     help='Reconfigure cluster with id cluster_id')
-parser.add_argument('-s', '--sshfs', dest='sshfs', action='store_true', help='Mount remote filesystem via sshfs')
+# parser.add_argument('-s', '--sshfs', dest='sshfs', action='store_true', help='Mount remote filesystem via sshfs')
 parser.add_argument('-v',
                     '--versioncheck',
                     dest='versioncheck',
@@ -141,8 +142,8 @@ args = parser.parse_args()
 
 
 if args.bootstrap:
-    install()
-    sys.exit(1)
+    update_local()
+    sys.exit(0)
 
 profile = args.profile
 
@@ -172,16 +173,20 @@ if not args.profiles:
         sys.exit(1)
 
 if args.clipboard:
+    import pyperclip
     pyperclip.copy(token)
     print("   => Personal access token copied to clipboard")
 
 started = False
-if args.kernelspec or args.reconfigure or args.lab or args.sshfs or args.versioncheck:
-    print("\n* Select remote cluster")
+# if args.kernelspec or args.reconfigure or args.lab or args.sshfs or args.versioncheck or args.mirror:
+if args.kernelspec or args.reconfigure or args.lab or args.versioncheck or args.mirror:
+    if args.cluster_id is None:
+        print("\n* Select remote cluster")
     cluster_id, public_ip, cluster_name, started = get_cluster(profile, host, token, args.cluster_id)
     if cluster_name is None:
         print("databrickslabs-jupyterlab: error: cluster_id '%s' not found" % cluster_id)
         sys.exit(1)
+    # print("  => Selected cluster: %s" % cluster_id)
 
     print("\n* Configuring ssh config for remote cluster")
     prepare_ssh_config(cluster_id, profile, public_ip)
@@ -191,6 +196,10 @@ if args.kernelspec or args.reconfigure or args.lab or args.sshfs or args.version
         print("- whether port 2200 is open in cloud security group")
         print("- whether VPN is enabled if you need one to connect to the cluster")
         sys.exit(1)
+
+if args.mirror:
+    install(profile, cluster_id, cluster_name)
+    sys.exit(0)
 
 if args.kernelspec or args.reconfigure or args.lab:
     print("   => Check installed libraries")
@@ -203,7 +212,7 @@ if args.kernelspec or args.reconfigure or args.lab:
     
     # Recheck in case something went wrong
     if check_installed(cluster_id):
-        print("   Done")
+        print("   => Done")
     else:
         print("databrickslabs_jupyterlabs is not installed on the remote cluster")
         sys.exit(1)
@@ -226,9 +235,9 @@ if args.kernelspec:
 if args.versioncheck:
     version_check()
 
-if args.sshfs:
-    print("\n* Mount remote filesystem to ./remotefs/%s", cluster_id)
-    mount_sshfs(cluster_id)
+# if args.sshfs:
+#     print("\n* Mount remote filesystem to ./remotefs/%s", cluster_id)
+#     mount_sshfs(cluster_id)
 
 if args.profiles:
     show_profiles()
