@@ -6,149 +6,250 @@ This package allows to connect to a remote Databricks cluster from a locally run
 
 ## 1 Prerequisites
 
-- Install Databricks CLI and configure profile(s) for your cluster(s)
+### 1.1 Databricks CLI
 
-  - AWS: https://docs.databricks.com/user-guide/dev-tools/databricks-cli.html)
-  - Azure: https://docs.azuredatabricks.net/user-guide/dev-tools/databricks-cli.html
+Install Databricks CLI and configure profile(s) for your cluster(s)
 
-- Create an ssh key pair called `~/.ssh/id_<profile>` for each cluster and add the public key to the cluster SSH configuration
+- AWS: https://docs.databricks.com/user-guide/dev-tools/databricks-cli.html)
+- Azure: https://docs.azuredatabricks.net/user-guide/dev-tools/databricks-cli.html
+
+**Note:** Whenever `$PROFILE` is used in this documentation, it refers to a valid Databricks CLI profile name, stored in a shell environment variable.
+
+### 1.2 SSH keys
+
+- Create an ssh key pair called `~/.ssh/id_$PROFILE` for each cluster
+- Add the public key to the cluster SSH configuration
+
+**Note**: Only clusters with valid ssh configuration can be accessed by *databrickslabs_jupyterlab*
 
 ## 2 Installation
 
-Clone the repository:
+- Create a new conda environment and install *databrickslabs_jupyterlab* with the following commands:
 
-```bash
-(base)$ git clone https://github.com/databrickslabs/Jupyterlab-Integration.git
-(base)$ cd Jupyterlab-Integration
-```
+    ```bash
+    (base)$ conda create -n db-jlab python=3.6
+    (base)$ conda activate db-jlab
+    (db-jlab)$ pip install .
+    ```
 
-The local conda environment should resemble the remote Databricks Runtime (DBR) as much as poossible. Therefore Databricks Jupyterlab comes with different environment configuration files for the newest DBRs:
+- Bootstrap the environment for *databrickslabs_jupyterlab* with the following command:
 
-1. `env-dbr-5.5.yml`: Databricks Runtime 5.5
-2. `env-dbr-5.5ml.yml`: Databricks Runtime 5.5 ML
-3. `env-dbr-5.5conda.yml`: Databricks Runtime 5.5 conda (beta)
+    ```bash
+    (db-jlab)$ databrickslabs-jupyterlab -b
+    ```
 
-Select a conda environment name (e.g. *jlab-5.5-ml*) and install databrickslabs-jupyterlab by calling `install.sh`. The script will show you the available DBR environment options to select from:
-
-```bash
-(base)$ ./install.sh jlab-5.5-ml
-
-1) Databricks Runtime 5.5       3) Databricks Runtime 5.5 conda (beta)
-2) Databricks Runtime 5.5 ML    4) quit
-Select 1-4: 2
-
-jlab-5.5-ml: env-dbr-5.5ml.yml
-```
-
-The installation comprises of 3 parts and can take a few minutes:
-
-1. Install conda environment
-2. Install jupyterlab extensions
-3. Install databrickslabs-jupyterlab
-
-It finishes with an overview of the usage
+    It finishes with an overview of the usage.
+    
 
 ## 3 Usage
 
-Activate the conda environment for *databrickslabs-jupyterlab*
+### 3.1 Starting Jupyter Lab
 
-```bash
-(base)$ conda activate jlab-5.5-ml
+- Activate the conda environment for *databrickslabs-jupyterlab* with the following command:
+
+    ```bash
+    (base)$ conda activate db-jlab
+    ```
+
+- Create a jupyter kernel specification for a databricks cli profile ($PROFILE) with the following command:
+
+    ```bash
+    (db-jlab)$ databrickslabs-jupyterlab $PROFILE -k
+    ```
+
+- Start Jupyter Lab the usual way: 
+
+    ```bash
+    (db-jlab)$ jupyter lab
+    ```
+
+    **Note:** A new kernel is available in the kernel change menu
+
+### 3.2 Using Spark in the Notebook
+
+#### Getting a remote Spark Session in the notebook
+
+When the cluster is already running the status bar of Jupyter lab should show
+
+![kernel ready](docs/connected.png) 
+
+To connect to the remote Spark context, enter the following two lines into a notebook cell:
+
+```python
+[1] from databrickslabs_jupyterlab.connect import dbcontext, is_remote
+    dbcontext()
 ```
 
-### 3.1 Quick Start
+This will request you to add the token copied to clipboard above:
 
-The quickest way to use *databrickslabs-jupyterlab* is:
+```text
+    Fri Aug  9 09:58:04 2019 py4j imported
+    Enter personal access token for profile 'demo' |____________________________________|
+```
 
-- **Command line**
+After pressing *Enter*, you will see
 
-    Create a kernel specification and copy token to clipboard (needs to be done once for each new cluster):
+```text
+    Gateway created for cluster '0806-143104-skirt84' ... connected
+    The following global variables have been created:
+    - spark       Spark session
+    - sc          Spark context
+    - sqlContext  Hive Context
+    - dbutils     Databricks utilities
+```
 
-    ```bash
-    (jlab-5.5-ml)$ databrickslabs-jupyterlab <profile> -k -c
-    ```
+**Note:** `databrickslabs-jupyterlab $PROFILE -c` let's you quickly copy the token to the clipboard so that you can simply paste the token to the input box.
 
-    Start Jupyter Lab the usual way (a new kernel is available in the kernel change menu)
+#### Restart after cluster auto-termination
 
-    ```bash
-    (jlab-5.5-ml)$ jupyter lab
-    ```
+Should the cluster auto terminate while the notebook is connected, the status bar will change to
 
-- **Notebook**
+- ![kernel disconnected](docs/cluster-terminated.png) 
 
-    When the cluster is already running the status bar of Jupyter lab should show
+Clicking on the status bar entry as indicated by the message will open a dialog box to confirm that the remote cluster should be started again. During restart the following status messages will be shown in this order:
 
-    ![kernel ready](docs/connected.png) 
+- ![cluster-starting](docs/cluster-starting-2.png)
+- ![installing-cluster-libs](docs/installing-cluster-libs.png)
+- ![checking-driver-libs](docs/checking-driver-libs.png)
+- ![installing-driver-libs](docs/installing-driver-libs.png)
 
-    To connect to the remote Spark context, enter the following two lines into a notebook cell:
+If the cluster is up and running, however cannot be reached by `ssh` (e.g. VPN not running), then one would see
 
-    ```python
-    [1] from databrickslabs_jupyterlab.connect import dbcontext, is_remote
-        dbcontext()
-    ```
+- ![cluster unreachable](docs/cluster-unreachable.png)
 
-    This will request you to add the token copied to clipboard above:
+In this case check connectivity, e.g. by calling `ssh <cluster_id>` in a terminal window.
 
-    ```
-        Fri Aug  9 09:58:04 2019 py4j imported
-        Enter personal access token for profile 'demo' |____________________________________|
-    ```
+After successful start the status would again show:
 
-    After pressing *Enter*, you will see
+- ![kernel ready](docs/connected.png)
 
-    ```
-        Gateway created for cluster '0806-143104-skirt84' ... connected
-        The following global variables have been created:
-        - spark       Spark session
-        - sc          Spark context
-        - sqlContext  Hive Context
-        - dbutils     Databricks utilities
-    ```
+#### Notebook hung after cluster start or kernel change
 
-    Note: `databrickslabs-jupyterlab <profile> -c` let's you quickly copy the token to the clipboard so that you can simply paste the token to the input box.
+When this happens, usually the local Jupyter lab frontend and the remote kernel are out of sync. Try the following:
 
-- **Cluster Auto-Termination**
+- Save your notebook(s) and refresh the browser page.
+- If it still doesn't work, additionally restart the kernel
 
-    Should the cluster auto terminate while the notebook is connected, the status bar will change to
+## 4 Creating a mirror of a remote Databricks cluster
 
-    - ![kernel disconnected](docs/cluster-terminated.png) 
+For the specific use case when the same notebook should run locally and remotely, a local mirror of the remote libraries and versions is needed. This can be achieved with *databrickslabs_jupyterlab* with the following command:
 
-    Clicking on the status bar entry as indicated by the message will open a dialog box to confirm that the remote cluster should be started again. During restart the following status messages will be shown in this order:
+```bash
+$(base) conda activate db-jlab
+$(db-jlab) databrickslabs-jupyterlab $PROFILE -m
+```
 
-    - ![cluster-starting](docs/cluster-starting-2.png)
-    - ![installing-cluster-libs](docs/installing-cluster-libs.png)
-    - ![checking-driver-libs](docs/checking-driver-libs.png)
-    - ![installing-driver-libs](docs/installing-driver-libs.png)
-
-    If the cluster is up and running, however cannot be reached by `ssh` (e.g. VPN not running), then one would see
-
-    - ![cluster unreachable](docs/cluster-unreachable.png)
-
-    In this case check connectivity, e.g. by calling `ssh <cluster_id>` in a terminal window.
-
-    After successful start the status would again show:
-
-    - ![kernel ready](docs/connected.png)
-
-- **Notebook hung after cluster start or kernel change**
-
-    When this happens, usually the local Jupyter lab frontend and the remote kernel are out of sync. Try the following:
-
-    - Save your notebook(s) and refresh the browser page.
-    - If it still doesn't work, additinoally restart the kernel
-
-### 3.2 Details
-
-1) **Show help**
+It will 
+- Ask for the cluster to mirror
 
     ```bash
-    (jlab-5.5-ml)$ databrickslabs-jupyterlab -h
+    Valid version of conda detected: 4.7.11
+
+    * Getting host and token from .databrickscfg
+
+    * Select remote cluster
+    [?] Which cluster to connect to?: 0: bernhard-5.5-ml (id: 0806-143104-skirt84, state: RUNNING, scale: 2-4)
+    > 0: bernhard-5.5-ml (id: 0815-32415-abcde42, state: RUNNING, scale: 2-4)
+
+    => Selected cluster: bernhard-5.5-ml (ec2-xxx-xxx-xxx-xxx.us-west-2.compute.amazonaws.com)
     ```
 
-2) **Show currently available profiles (databrickslabs-jupyterlab -p):**
+- Configure ssh access
 
     ```bash
-    (jlab-5.5-ml)$ databrickslabs-jupyterlab -p
+    * Configuring ssh config for remote cluster
+    => Added ssh config entry or modified IP address:
+
+        Host 0815-32415-abcde42
+            HostName ec2-xxx-xxx-xxx-xxx.us-west-2.compute.amazonaws.com
+            User ubuntu
+            Port 2200
+            IdentityFile ~/.ssh/id_demo
+            ServerAliveInterval 300
+
+    => Testing whether cluster can be reached
+    ```
+
+- Retrieve the necessary libraries to install locally.
+
+    ```bash
+    * Installation of local environment to mirror a remote Databricks cluster
+
+        Library versions being installed:
+        - hyperopt==0.1.2
+        - Keras==2.2.4
+        - Keras-Applications==1.0.8
+        - Keras-Preprocessing==1.1.0
+        - matplotlib==2.2.2
+        - mleap==0.8.1
+        ...
+        - tensorflow-estimator==1.13.0
+        - torch==1.1.0
+        - torchvision==0.3.0
+    ```
+
+- Ask for an environment name (default is the remote cluster name):
+
+    ```bash
+        => Provide a conda environment name (default = bernhard-5.5-ml):
+    ```
+
+- And finally installs the new environment:
+
+    ```bash
+    Installing conda environment bernhard-5.5-ml
+    ...
+    ```
+
+After switching into this environment via
+
+```bash
+conda activate bernhard-5.5-ml
+```
+
+follow the usage guide in section 3.
+
+## 5 Details
+
+- **Show help**
+
+    ```bash
+    (db-jlab)$ databrickslabs-jupyterlab -h
+
+    usage: databrickslabs-jupyterlab [-h] [-b] [-m] [-c] [-f] [-i CLUSTER_ID] [-k]
+                                 [-l] [-o ORGANISATION] [-p] [-r]
+                                 [-v {all,diff,same}]
+                                 [profile]
+
+    Configure remote Databricks access with Jupyter Lab
+
+    positional arguments:
+    profile               A databricks-cli profile
+
+    optional arguments:
+    -h, --help            show this help message and exit
+    -b, --bootstrap       Bootstrap the local databrickslabs-jupyterlab
+                            environment
+    -m, --mirror          Mirror a a remote Databricks environment
+    -c, --clipboard       Copy the personal access token to the clipboard
+    -f, --force           Force remote installation of databrickslabs_jupyterlab
+                            package
+    -i CLUSTER_ID, --id CLUSTER_ID
+                            The cluster_id to avoid manual selection
+    -k, --kernelspec      Create a kernel specification
+    -l, --lab             Safely start Jupyter Lab
+    -o ORGANISATION, --organisation ORGANISATION
+                            The organisation for Azure Databricks
+    -p, --profiles        Show all databricks cli profiles and check SSH key
+    -r, --reconfigure     Reconfigure cluster with id cluster_id
+    -v {all,diff,same}, --versioncheck {all,diff,same}
+                            Check version of local env with remote env
+    ```
+
+- **Show currently available profiles (databrickslabs-jupyterlab -p):**
+
+    ```bash
+    (db-jlab)$ databrickslabs-jupyterlab -p
 
     Valid version of conda detected: 4.7.10
 
@@ -160,61 +261,59 @@ The quickest way to use *databrickslabs-jupyterlab* is:
     **Note:** If the column *SSH KEY* e.g. for *PROPFILE* "demo" says "MISSING", use
 
     ```bash
-    (jlab-5.5-ml)$ ssh-keygen -f ~/.ssh/id_demo -N ""
+    (db-jlab)$ ssh-keygen -f ~/.ssh/id_demo -N ""
     ```
 
     and add `~/.ssh/id_demo.pub` to the SSH config of the respective cluster and restart it.
 
-3) **Create jupyter kernel for remote cluster**
+- **Create jupyter kernel for remote cluster**
 
     - Databricks on AWS:
 
         ```bash
-        (jlab-5.5-ml)$ databrickslabs-jupyterlab <profile> -k [-i <cluster name>]
+        (db-jlab)$ databrickslabs-jupyterlab $PROFILE -k [-i <cluster name>]
         ```
 
     - Azure:
 
         ```bash
-        (jlab-5.5-ml)$ databrickslabs-jupyterlab <profile> -k -o <organisation> [-i <cluster name>]
+        (db-jlab)$ databrickslabs-jupyterlab $PROFILE -k -o <organisation> [-i <cluster name>]
         ```
 
     This will execute the following steps:
 
     - Get host and token from `.databrickscfg` for the given profile
-    - In case `-i` is not used, show a list of clusters that have the correct SSH key (id_<profile>) configured
+    - In case `-i` is not used, show a list of clusters that have the correct SSH key (id_$PROFILE) configured
     - Installs `databrickslabs_jupyterlab` and `ipywidgets` on the remote driver
     - Creates the remote kernel specification
 
-4) **Safely start Jupyter Lab**
+- **Safely start Jupyter Lab**
 
     while you can start Jupyter Lab via `jupyter lab`, it is recommended to use the wrapper
 
     ```bash
-    (jlab-5.5-ml)$ databrickslabs-jupyterlab <profile> -l [-i <cluster name>]
+    (db-jlab)$ databrickslabs-jupyterlab $PROFILE -l [-i <cluster name>]
     ```
 
     It will check whether the remote cluster is up and running, update the ssh info, check the availability of th relevant libs before starting jupyter Lab.
 
-5) **Copy Personal Access token for databricks workspace to the clipboard**
+- **Copy Personal Access token for databricks workspace to the clipboard**
 
     This is the same command on AWS and Azure
 
     ```bash
-    (jlab-5.5-ml)$ databrickslabs-jupyterlab <profile> -c
+    (db-jlab)$ databrickslabs-jupyterlab $PROFILE -c
     ```
 
-6) **Compare local and remote library versions (uses the locally activated canda environment)**
+- **Compare local and remote library versions (uses the locally activated canda environment)**
 
     ```bash
-    (jlab-5.5-ml)$ databrickslabs-jupyterlab <profile> -v all|same|diff [-i <cluster name>]
+    (db-jlab)$ databrickslabs-jupyterlab $PROFILE -v all|same|diff [-i <cluster name>]
     ```
 
 ## 4 Test notebooks
 
 To work with the test notebooks in `./examples` the remote cluster needs to have the following libraries installed:
 
-- bokeh==1.2.0
-- bqplot==0.11.5
 - mlflow==1.0.0
 - spark-sklearn
