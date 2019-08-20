@@ -1,4 +1,4 @@
-.PHONY: clean wheel envs install tests check_version dist check_dist upload_test upload dev_tools bump bump_ext release
+.PHONY: clean wheel install tests check_version dist check_dist upload_test upload dev_tools bump bump_ext release
 
 NO_COLOR = \x1b[0m
 OK_COLOR = \x1b[32;01m
@@ -6,20 +6,11 @@ ERROR_COLOR = \x1b[31;01m
 
 PYCACHE := $(shell find . -name '__pycache__')
 EGGS := $(wildcard '*.egg-info')
-PLUGIN_DIR = ./dbr-env-file-plugins
-YML_PLUGINS := $(wildcard $(PLUGIN_DIR)/*.yml-plugin)
 CURRENT_VERSION := $(shell awk '/current_version/ {print $$3}' .bumpversion.cfg)
 
 clean:
 	@echo "$(OK_COLOR)=> Cleaning$(NO_COLOR)"
 	@rm -fr build dist $(EGGS) $(PYCACHE) databrickslabs_jupyterlab/lib/* databrickslabs_jupyterlab/env_files/*
-
-envs:
-	@echo "$(OK_COLOR)=> Creating conda environment files$(NO_COLOR)"
-	$(foreach P, $(YML_PLUGINS), \
-		$(shell cat $(PLUGIN_DIR)/env-master.yml $(P) > databrickslabs_jupyterlab/env_files/env-$(basename $(notdir $(P))).yml ) \
-	)
-	@cp "$(PLUGIN_DIR)/labextensions.txt" "databrickslabs_jupyterlab/env_files/"
 
 # Tests
 
@@ -55,12 +46,13 @@ endif
 
 # Dist commands
 
-dist: clean envs
+dist: clean
 	@echo "$(OK_COLOR)=> Creating Wheel$(NO_COLOR)"
 	@mkdir -p databrickslabs_jupyterlab/lib
 	@python setup.py sdist bdist_wheel
 	@echo "$(OK_COLOR)=> Copying wheel into distributions$(NO_COLOR)"
 	@cp dist/databrickslabs_jupyterlab-*-py3-none-any.whl databrickslabs_jupyterlab/lib/
+	@cp env.yml labextensions.txt "databrickslabs_jupyterlab/lib/"
 
 release:
 	git add .
@@ -68,15 +60,12 @@ release:
 	git commit -m "Latest release: $(CURRENT_VERSION)"
 	git tag -a v$(CURRENT_VERSION) -m "Latest release: $(CURRENT_VERSION)"
 
-install: dist
+install:
 	@echo "$(OK_COLOR)=> Installing databrickslabs_jupyterlab$(NO_COLOR)"
 	@pip install --upgrade .
 
 check_dist:
 	@twine check dist/*
-
-upload_test:
-	@twine upload --repository testpypi dist/*
 
 upload: dist
 	@twine upload dist/*
