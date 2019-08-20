@@ -1,24 +1,31 @@
 .PHONY: clean wheel envs install tests check_version dist check_dist upload_test upload dev_tools bump bump_ext
 
+NO_COLOR = \x1b[0m
+OK_COLOR = \x1b[32;01m
+ERROR_COLOR = \x1b[31;01m
+
 PYCACHE := $(shell find . -name '__pycache__')
-EGGS := $(shell find . -name '*.egg-info')
+EGGS := $(wildcard '*.egg-info')
+PLUGIN_DIR = ./dbr-env-file-plugins
+YML_PLUGINS := $(wildcard $(PLUGIN_DIR)/*.yml-plugin)
 
 clean:
-	rm -fr build dist $(EGGS) $(PYCACHE)
-
-wheel:
-	dev_tools/create-wheel.sh
+	@echo "$(OK_COLOR)=> Cleaning$(NO_COLOR)"
+	@rm -fr build dist $(EGGS) $(PYCACHE) databrickslabs_jupyterlab/lib/* databrickslabs_jupyterlab/env_files/*
 
 envs:
-	dev_tools/create-env-files.sh
+	@echo "$(OK_COLOR)=> Creating conda environment files$(NO_COLOR)"
+	$(foreach P, $(YML_PLUGINS), \
+		$(shell cat $(PLUGIN_DIR)/env-master.yml $(P) > databrickslabs_jupyterlab/env_files/env-$(basename $(notdir $(P))).yml ) \
+	)
+	@cp "$(PLUGIN_DIR)/labextensions.txt" "databrickslabs_jupyterlab/env_files/"
+
+# Tests
 
 tests: 
 	cd tests && python -m unittest
 
-install: envs wheel
-	pip install --upgrade .
-
-# version command
+# Version commands
 
 bump:
 ifdef part
@@ -28,7 +35,7 @@ else
 	bumpversion $(part) && grep current .bumpversion.cfg
 endif
 else
-	echo "Provide part=major|minor|patch|release|build and optionally version=x.y.z..."
+	@echo "$(ERROR_COLOR)Provide part=major|minor|patch|release|build and optionally version=x.y.z...$(NO_COLOR)"
 	exit 1
 endif
 
@@ -39,35 +46,44 @@ else
 ifdef version
 	$(eval cur_version := $(shell cd extensions/databrickslabs_jupyterlab_status/ && npm version $(version)))
 else
-	@echo "Provide part=major|minor|patch|prerelease or version=x.y.z..."
+	@echo "$(ERROR_COLOR)Provide part=major|minor|patch|prerelease or version=x.y.z...$(NO_COLOR)"
 	exit 1
 endif
 endif
-	@echo "New version: $(cur_version:v%=%)"
+	@echo "$(OK_COLOR)=> New version: $(cur_version:v%=%)$(NO_COLOR)"
 
-# check dev tools
+# Dist commands
+
+dist: clean envs
+	@echo "$(OK_COLOR)=> Creating Wheel$(NO_COLOR)"
+	@mkdir -p databrickslabs_jupyterlab/lib
+	@python setup.py sdist bdist_wheel
+	@echo "$(OK_COLOR)=> Copying wheel into distributions$(NO_COLOR)"
+	@cp dist/databrickslabs_jupyterlab-*-py3-none-any.whl databrickslabs_jupyterlab/lib/
+
+install: dist
+	@echo "$(OK_COLOR)=> Installing databrickslabs_jupyterlab$(NO_COLOR)"
+	@pip install --upgrade .
+
+check_dist:
+	@twine check dist/*
+
+upload_test:
+	@twine upload --repository testpypi dist/*
+
+upload: dist
+	@twine upload dist/*
+
+# dev tools
 
 check_version:
 ifdef env_file
 	dev_tools/check_versions $(env_file)
 else
-	echo "Provide env_file=databrickslabs_jupyterlab/env_files/env..."
+	@echo "$(ERROR_COLOR)Provide env_file=databrickslabs_jupyterlab/env_files/env...$(NO_COLOR)"
 	exit 1
 endif
 
 dev_tools:
 	pip install twine bumpversion yapf pylint
 
-# pypi commands
-
-dist: clean
-	@python setup.py sdist bdist_wheel
-
-check_dist:
-	@twine check dist/*
-
-upload_test: dist
-	@twine upload --repository testpypi dist/*
-
-upload: dist
-	@twine upload dist/*
