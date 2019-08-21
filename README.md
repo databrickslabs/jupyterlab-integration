@@ -20,7 +20,7 @@ Install Databricks CLI and configure profile(s) for your cluster(s)
 - Create an ssh key pair called `~/.ssh/id_$PROFILE` for each cluster
 - Add the public key to the cluster SSH configuration
 
-**Note**: Only clusters with valid ssh configuration can be accessed by *databrickslabs_jupyterlab*
+**Note:** Only clusters with valid ssh configuration can be accessed by *databrickslabs_jupyterlab*. This can also be done with *databrickslabs_jupyterlab*, see below
 
 ## 2 Installation
 
@@ -29,7 +29,7 @@ Install Databricks CLI and configure profile(s) for your cluster(s)
     ```bash
     (base)$ conda create -n db-jlab python=3.6
     (base)$ conda activate db-jlab
-    (base)$ pip install databrickslabs-jupyterlab
+    (base)$ pip install --upgrade databrickslabs-jupyterlab
     ```
 
 - Bootstrap the environment for *databrickslabs_jupyterlab* with the following command:
@@ -43,7 +43,24 @@ Install Databricks CLI and configure profile(s) for your cluster(s)
 
 ## 3 Usage
 
-### 3.1 Starting Jupyter Lab
+### 3.1 Configure ssh access to the cluster
+
+If the ssh connection with the cluster is not already configured, get the cluster ID from the cluster URL: 
+
+Select menu entry *Clusters* and then click on the cluster of choice. The URL in the browser address window should look like:
+
+- AWS: 
+`https://$PROFILE.cloud.databricks.com/#/setting/clusters/$CLUSTER_ID/configuration`
+- Azure: 
+`https://$PROFILE.azuredatabricks.net/?o=$ORG_ID#/setting/clusters/$CLUSTER_ID/configuration`
+
+and call:
+
+```bash
+(db-jlab)$ databrickslabs-jupyterlab $PROFILE -s -i $CLUSTER_ID
+```
+
+### 3.2 Starting Jupyter Lab
 
 - Activate the conda environment for *databrickslabs-jupyterlab* with the following command:
 
@@ -57,7 +74,7 @@ Install Databricks CLI and configure profile(s) for your cluster(s)
     (db-jlab)$ databrickslabs-jupyterlab $PROFILE -k
     ```
 
-- Start Jupyter Lab the usual way: 
+- Start Jupyter Lab the usual way:
 
     ```bash
     (db-jlab)$ jupyter lab
@@ -65,13 +82,14 @@ Install Databricks CLI and configure profile(s) for your cluster(s)
 
     **Note:** A new kernel is available in the kernel change menu
 
-### 3.2 Using Spark in the Notebook
+
+### 3.3 Using Spark in the Notebook
 
 #### Getting a remote Spark Session in the notebook
 
 When the cluster is already running the status bar of Jupyter lab should show
 
-![kernel ready](docs/connected.png) 
+![kernel ready](docs/connected.png)
 
 To connect to the remote Spark context, enter the following two lines into a notebook cell:
 
@@ -84,7 +102,7 @@ This will request you to add the token copied to clipboard above:
 
 ```text
     Fri Aug  9 09:58:04 2019 py4j imported
-    Enter personal access token for profile 'demo' |____________________________________|
+    Enter personal access token for profile 'demo' |_____________________________|
 ```
 
 After pressing *Enter*, you will see
@@ -253,9 +271,9 @@ follow the usage guide in section 3.
 
     Valid version of conda detected: 4.7.10
 
-    PROFILE              HOST                                                         SSH KEY
-    eastus2              https://eastus2.azuredatabricks.net                          MISSING
-    demo                 https://demo.cloud.databricks.com                            OK
+    PROFILE       HOST                                    SSH KEY
+    eastus2       https://eastus2.azuredatabricks.net     MISSING
+    demo          https://demo.cloud.databricks.com       OK
     ```
 
     **Note:** If the column *SSH KEY* e.g. for *PROPFILE* "demo" says "MISSING", use
