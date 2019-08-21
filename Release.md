@@ -8,7 +8,7 @@ In case the jupyter labextions has been changed:
 
 1. Commit changes
 
-2. Bump version of *databrickslabs_jupyterlab_status*
+2. Bump version of *databrickslabs_jupyterlab_statusbar*
 
     - A new release candidate with rc0
 
