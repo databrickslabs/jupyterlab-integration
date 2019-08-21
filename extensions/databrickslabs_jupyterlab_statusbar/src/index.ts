@@ -17,7 +17,7 @@ import {
 } from '@jupyterlab/notebook';
 
 export const dbStatusItem: JupyterFrontEndPlugin<void> = {
-  id: 'statusbar-extension:databrickslabs-jupyterlab#status',
+  id: 'statusbar-extension:databrickslabs-jupyterlab#statusbar',
   autoStart: true,
   requires: [IStatusBar, INotebookTracker, ILabShell],
   activate: (
@@ -29,7 +29,7 @@ export const dbStatusItem: JupyterFrontEndPlugin<void> = {
     let item = new DbStatus(labShell, notebookTracker);
 
     statusBar.registerStatusItem(
-      'statusbar-extension:databrickslabs-jupyterlab#status',
+      'statusbar-extension:databrickslabs-jupyterlab#statusbar',
       {
         item,
         align: 'left',
