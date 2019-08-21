@@ -6,7 +6,7 @@ def read(fname):
 
 setup(
     name = "databrickslabs_jupyterlab",
-    version = "1.0.0-rc0",
+    version = "1.0.0-rc1",
     author = "Bernhard Walter",
     author_email = "bernhard.walter@databricks.com",
     description = ("Remote Jupyter Lab kernel for Databricks"),
