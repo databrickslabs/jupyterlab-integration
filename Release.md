@@ -34,7 +34,8 @@ In case the jupyter labextions has been changed:
     make upload_ext
     ```
 
-4. Commit `labextensions.txt`and `extension/databrickslabs_jupyterlab_status/package.json` and process with **Python package** since labextensions.txt is changed!
+4. Process with **Python package** since labextensions.txt is changed!
+
 
 ### 2 Python package
 
