@@ -19,9 +19,6 @@ import databrickslabs_jupyterlab
 from databrickslabs_jupyterlab.rest import Clusters, Libraries, DatabricksApiException
 from databrickslabs_jupyterlab.local import (bye, print_ok, print_error, print_warning)
 
-PIP_INSTALL = "/databricks/python/bin/pip install -q --no-warn-conflicts --disable-pip-version-check"
-PIP_LIST = "/databricks/python/bin/pip list --disable-pip-version-check --format=json"
-
 
 class Dark(Default):
     """Dark Theme for inquirer"""
@@ -170,7 +167,7 @@ def get_cluster(profile, host, token, cluster_id=None, status=None):
             return (None, None, None, None)
     else:
         my_clusters = [
-            cluster for cluster in clusters["clusters"]
+            cluster for cluster in clusters
             if ssh_pub in [c.strip() for c in cluster.get("ssh_public_keys", [])]
         ]
 
@@ -259,6 +256,17 @@ def get_cluster(profile, host, token, cluster_id=None, status=None):
     return (cluster_id, public_ip, cluster_name, started)
 
 
+def get_pip(host, flags):
+    conda_env = ssh(host, "echo $DEFAULT_DATABRICKS_ROOT_CONDA_ENV").strip().decode("utf-8")
+    if len(conda_env) == 0: 
+        # no conda DBR
+        python_path = "/databricks/python3/bin/python"
+    else:
+        python_path = "/databricks/conda/envs/%s/bin/python" % conda_env
+
+    return "%s %s" % (python_path, flags)
+    
+    
 def install_libs(host):
     """Install ipywidgets, sidecar and databrickslabs_jupyterlab libraries on the driver
     
@@ -268,6 +276,9 @@ def install_libs(host):
         ipywidets_version (str): The version of ipywidgets used locally
         sidecar_version (str): The version of ipywidgets used locally
     """
+    pip_flags = "-m pip install -q --no-warn-conflicts --disable-pip-version-check"
+    pip = get_pip(host, pip_flags)
+
     module_path = os.path.dirname(databrickslabs_jupyterlab.__file__)
 
     wheel = glob.glob("%s/lib/*.whl" % module_path)[0]
@@ -276,12 +287,12 @@ def install_libs(host):
     print("   => Installing ipywidgets")
     packages = json.loads(subprocess.check_output(["conda", "list", "--json"]))
     deps = {p["name"]: p["version"] for p in packages if p["name"] in ["ipywidgets", "sidecar"]}
-    ssh(host, "sudo -H %s ipywidgets==%s sidecar==%s" % (PIP_INSTALL, deps["ipywidgets"], deps["sidecar"]))
+    ssh(host, "sudo -H %s ipywidgets==%s sidecar==%s" % (pip, deps["ipywidgets"], deps["sidecar"]))
 
     print("   => Installing databrickslabs_jupyterlab")
     ssh(host, "mkdir -p %s" % target)
     scp(host, wheel, target)
-    ssh(host, "sudo -H %s --upgrade %s/%s" % (PIP_INSTALL, target, os.path.basename(wheel)))
+    ssh(host, "sudo -H %s --upgrade %s/%s" % (pip, target, os.path.basename(wheel)))
     ssh(host, "rm -f %s/* && rmdir %s" % (target, target))
 
 
@@ -311,7 +322,9 @@ def get_remote_packages(host):
     Returns:
         list(dict): List of pip list --format=json
     """
-    return json.loads(ssh(host, PIP_LIST))
+    pip_flags = "-m pip list --disable-pip-version-check --format=json"
+    pip = get_pip(host, pip_flags)
+    return json.loads(ssh(host, pip))
 
 
 def is_reachable(public_dns):
@@ -410,11 +423,11 @@ def configure_ssh(profile, host, token, cluster_id):
     """
     sshkey_file = os.path.expanduser("~/.ssh/id_%s" % profile)
     if not os.path.exists(sshkey_file):
-        print("\n   => ssh key '%s' does not exist")
-        answer = input("    => Shall it be created (y/n)? (default = n): ")
+        print("\n   => ssh key '%s' does not exist" % sshkey_file)
+        answer = input("   => Shall it be created (y/n)? (default = n): ")
         if answer.lower() == "y":
             print("   => Creating ssh key %s" % sshkey_file)
-            subprocess.call(["ssh-keygen", "-b", "2048",  "-N", '""', "-f",  sshkey_file])
+            subprocess.call(["ssh-keygen", "-b", "2048",  "-N", "", "-f",  sshkey_file])
             print_ok("   => OK")
         else:
             bye()
@@ -437,14 +450,25 @@ def configure_ssh(profile, host, token, cluster_id):
         bye()
 
     request = {}
-    for key in ["cluster_id", "cluster_name", "num_workers", "spark_version", "node_type_id"]:
+    for key in ["cluster_id", "cluster_name", "spark_version", "node_type_id"]:
         request[key] = response[key]
+    
+    if response.get("num_workers", None) is not None:
+        request["num_workers"] = response["num_workers"]
+
+    if response.get("autoscale", None) is not None:
+        request["autoscale"] = response["autoscale"]
+
     request["ssh_public_keys"] = ssh_public_keys + [sshkey]
 
     print_warning("   => The ssh key will be added to the cluster. \n   Note: The cluster will be restarted immediately!")
     answer = input("   => Shall the ssh key be added and the cluster be restarted (y/n)? (default = n): ")
     if answer.lower() == "y":
-        response = cluster_api.edit(request)
+        try:
+            response = cluster_api.edit(request)
+        except DatabricksApiException as ex:
+            print_error(str(ex))
+            return None
         print_ok("   => OK")
     else:
         print_error("   => Cancelled")
