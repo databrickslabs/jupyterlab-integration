@@ -9,8 +9,8 @@ from tornado import web
 from collections import defaultdict
 
 import databrickslabs_jupyterlab
-from databrickslabs_jupyterlab.remote import (get_db_config, is_reachable, get_cluster, prepare_ssh_config, is_reachable,
-                                          check_installed, install_libs)
+from databrickslabs_jupyterlab.remote import (is_reachable, get_cluster, is_reachable, check_installed, install_libs)
+from databrickslabs_jupyterlab.local import (get_db_config, prepare_ssh_config)
 
 
 class Status:
@@ -112,10 +112,8 @@ class DbStatusHandler(KernelHandler):
             kernel = self.get_kernel(kernel_id)
             if kernel is not None:
                 if kernel.is_alive():
-                    alive = "True"
                     status = "Connected"
                 else:
-                    alive = "False"
                     status = "TERMINATED"
                     if start_status in ["Connected", "unknown"]:
                         Status().set_status(profile, cluster_id, status)
@@ -153,6 +151,9 @@ class DbStartHandler(KernelHandler):
         Status().set_status(profile, cluster_id, "Starting cluster")
         host, token = get_db_config(profile)
         cluster_id, public_ip, cluster_name, started = get_cluster(profile, host, token, cluster_id, Status())
+        if cluster_name is None:
+            Status().set_status(profile, cluster_id, "ERROR: Cluster could not be found")
+            return
 
         Status().set_status(profile, cluster_id, "Configuring SSH")
         prepare_ssh_config(cluster_id, profile, public_ip)
@@ -161,23 +162,16 @@ class DbStartHandler(KernelHandler):
         else:
             Status().set_status(profile, cluster_id, "Checking driver libs")
             if not check_installed(cluster_id):
-                packages = json.loads(subprocess.check_output(["conda", "list", "--json"]))
-                deps = {p["name"]: p["version"] for p in packages if p["name"] in ["ipywidgets", "sidecar"]}
-
                 Status().set_status(profile, cluster_id, "Installing driver libs")
-                module_path = os.path.dirname(databrickslabs_jupyterlab.__file__)
-                install_libs(cluster_id,
-                             module_path,
-                             ipywidets_version=deps["ipywidgets"],
-                             sidecar_version=deps["sidecar"])
-            
+                install_libs(cluster_id)
+
             # Recheck in case something went wrong
             if check_installed(cluster_id):
                 Status().set_status(profile, cluster_id, "Driver libs installed")
             else:
                 Status().set_status(profile, cluster_id, "ERROR: Driver libs not installed")
                 return
-                
+
             time.sleep(2)
             kernel = self.get_kernel(kernel_id)
             # kernel.shutdown_kernel(now=True)
