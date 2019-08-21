@@ -1,17 +1,13 @@
 {
   "name": "databrickslabs-jupyterlab-status",
   "version": "0.9.0",
-  "description": "A JupyterLab extension.",
+  "description": "A JupyterLab extension to show starting status of Databricks clusters.",
   "keywords": [
     "jupyter",
     "jupyterlab",
     "jupyterlab-extension"
   ],
-  "homepage": "https://github.com/my_name/myextension",
-  "bugs": {
-    "url": "https://github.com/my_name/myextension/issues"
-  },
-  "license": "BSD-3-Clause",
+  "license": "SEE LICENSE IN LICENSE",
   "author": "Bernhard Walter",
   "files": [
     "lib/**/*.{d.ts,eot,gif,html,jpg,js,js.map,json,png,svg,woff2,ttf}",
@@ -20,10 +16,6 @@
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "style": "style/index.css",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/my_name/myextension.git"
-  },
   "scripts": {
     "build": "tsc",
     "clean": "rimraf lib && rimraf tsconfig.tsbuildinfo",
@@ -32,8 +24,11 @@
   },
   "dependencies": {
     "@jupyterlab/application": "^1.0.0",
-    "@jupyterlab/statusbar": "^1.0.2",
-    "@jupyterlab/notebook": "^1.0.2"
+    "@jupyterlab/apputils": "^1.0.5",
+    "@jupyterlab/coreutils": "^3.0.1",
+    "@jupyterlab/notebook": "^1.0.2",
+    "@jupyterlab/services": "^4.0.5",
+    "@jupyterlab/statusbar": "^1.0.2"
   },
   "devDependencies": {
     "rimraf": "^2.6.1",
@@ -44,5 +39,8 @@
   ],
   "jupyterlab": {
     "extension": true
+  },
+  "directories": {
+    "lib": "lib"
   }
 }
