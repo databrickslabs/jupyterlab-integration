@@ -47,9 +47,15 @@ In case the jupyter labextions and/or the python code has been changed:
     make tests
     ```
 
-2. Commit changes
+2. Clean environment
 
-3. Bump version of databrickslabs_jupyterlab
+    ```bash
+    make clean
+    ```
+
+3. Commit changes
+
+4. Bump version of databrickslabs_jupyterlab
 
     - A new release candidate with rc0
 
@@ -75,19 +81,19 @@ In case the jupyter labextions and/or the python code has been changed:
       make bump part=major|minor|patch version=major.minor.patch
       ```
 
-4. Create distribution
+5. Create distribution
 
     ```bash
     make dist
     ```
 
-5. Create and tag release
+6. Create and tag release
 
     ```bash
     make release
     ```
 
-6. Deploy to pypi
+7. Deploy to pypi
 
     ```bash
     make upload

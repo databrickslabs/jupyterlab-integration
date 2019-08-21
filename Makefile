@@ -52,7 +52,7 @@ endif
 
 wheel:
 
-dist: clean
+dist: 
 	@echo "$(OK_COLOR)=> Creating Wheel$(NO_COLOR)"
 	@mkdir -p databrickslabs_jupyterlab/lib
 	@python setup.py sdist bdist_wheel
