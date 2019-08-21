@@ -77,7 +77,7 @@ upload:
 	@twine upload dist/*
 
 upload_ext:
-	$(shell cd extensions/databrickslabs_jupyterlab_status/ && npm publish)) 
+	$(shell cd extensions/databrickslabs_jupyterlab_status/ && npm publish)
 
 # dev tools
 
