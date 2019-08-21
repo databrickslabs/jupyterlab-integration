@@ -45,6 +45,8 @@ endif
 	@echo "$(OK_COLOR)=> New version: $(cur_version:v%=%)$(NO_COLOR)"
 	@sed -i.bak 's|databrickslabs-jupyterlab-status@.*|databrickslabs-jupyterlab-status@$(cur_version)|' labextensions.txt
 	cat labextensions.txt
+	git add labextensions.txt extensions/databrickslabs_jupyterlab_status/package.json
+	git commit -m "extension release $(cur_version)"
 
 # Dist commands
 
