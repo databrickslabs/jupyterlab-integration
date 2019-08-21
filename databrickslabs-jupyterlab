@@ -11,76 +11,12 @@ from subprocess import check_output
 from enum import Enum
 
 import databrickslabs_jupyterlab
-from databrickslabs_jupyterlab.remote import (get_db_config, get_cluster, connect, prepare_ssh_config, check_installed,
-                                          get_remote_packages, is_reachable, create_kernelspec, install_libs,
-                                          mount_sshfs, show_profiles, bye)
+from databrickslabs_jupyterlab.remote import (bye, check_installed, configure_ssh, connect, get_cluster,
+                                              get_remote_packages, install_libs, is_reachable, mount_sshfs,
+                                              version_check)
+from databrickslabs_jupyterlab.local import (bye, conda_version, create_kernelspec, get_db_config, prepare_ssh_config,
+                                             print_error, print_ok, show_profiles, write_config)
 from databrickslabs_jupyterlab.install import install, update_local
-
-
-def conda_version():
-    try:
-        result = check_output(["conda", "--version"])
-    except Exception as ex:
-        print(ex)
-        print("conda cannot be called. Is it properly installed?")
-        sys.exit(1)
-
-    result = result.strip().decode()
-    return tuple([int(v) for v in result.split(" ")[1].split(".")])
-
-
-def write_config():
-    config = {"c.KernelManager.autorestart": False, "c.MappingKernelManager.kernel_info_timeout": 600}
-
-    config_file = os.path.expanduser("~/.jupyter/jupyter_notebook_config.py")
-    if os.path.exists(config_file):
-        with open(config_file, "r") as fd:
-            lines = fd.read().split("\n")
-
-        with open(config_file, "w") as fd:
-            for line in lines:
-                kv = line.strip().split("=")
-                if len(kv) == 2:
-                    k, v = kv
-                    if config.get(k, None) is not None:
-                        fd.write("%s=%s\n" % (k, config[k]))
-                        del config[k]
-                    else:
-                        fd.write("%s\n" % line)
-            for k, v in config.items():
-                fd.write("%s=%s\n" % (k, v))
-    else:
-        with open(config_file, "w") as fd:
-            fd.write("\n".join(["%s=%s" % (k, v) for k, v in config.items()]))
-
-
-def version_check():
-    def normalize(key):
-        return key.lower().replace("-", "_")
-
-    packages = json.loads(check_output(["conda", "list", "--json"]))
-    deps = {normalize(p["name"]): p["version"] for p in packages}
-
-    remote_packages = get_remote_packages(cluster_id)
-    remote_deps = {normalize(p["name"]): p["version"] for p in remote_packages}
-    joint_keys = sorted(list(set(list(deps.keys()) + list(remote_deps.keys()))))
-    print("%-30s %-10s%-10s" % ("Package", "local", "remote"))
-    if str(args.versioncheck) == "all":
-        scope = joint_keys
-    elif str(args.versioncheck) == "same":
-        scope = [key for key in joint_keys if deps.get(key, None) == remote_deps.get(key, None)]
-    else:
-        scope = [
-            key for key in joint_keys if deps.get(key, None) != remote_deps.get(key, None)
-#            and deps.get(key, None) is not None and remote_deps.get(key, None) is not None
-        ]
-    for key in scope:
-        if deps.get(key) == remote_deps.get(key):
-            print('\033[92m', end="")
-        else:
-            print('\033[91m', end="")
-        print("%-30s %-10s  %-10s" % (key, deps.get(key, "--"), remote_deps.get(key, "--")))
-        print('\033[0m', end="")
 
 
 class VCheck(Enum):
@@ -90,7 +26,6 @@ class VCheck(Enum):
 
     def __str__(self):
         return self.value
-
 
 parser = argparse.ArgumentParser(description='Configure remote Databricks access with Jupyter Lab')
 
@@ -110,7 +45,6 @@ parser.add_argument('-c',
                     dest='clipboard',
                     action='store_true',
                     help='Copy the personal access token to the clipboard')
-# parser.add_argument('-e', '--environment', dest='environment', help='Create a new environment')
 parser.add_argument('-f',
                     '--force',
                     dest='force',
@@ -131,7 +65,17 @@ parser.add_argument('-r',
                     action='store_true',
                     help='Reconfigure cluster with id cluster_id')
 # parser.add_argument('-s', '--sshfs', dest='sshfs', action='store_true', help='Mount remote filesystem via sshfs')
+parser.add_argument('-s',
+                    '--ssh-config',
+                    dest='sshconfig',
+                    action='store_true',
+                    help='Configure SSH acces for a cluster')
 parser.add_argument('-v',
+                    '--version',
+                    dest='version',
+                    action='store_true',
+                    help='Check version of databrickslabs-jupyterlab')
+parser.add_argument('-V',
                     '--versioncheck',
                     dest='versioncheck',
                     type=VCheck,
@@ -140,13 +84,34 @@ parser.add_argument('-v',
 
 args = parser.parse_args()
 
+#
+# Print Version and exit
+#
+if args.version:
+    import databrickslabs_jupyterlab._version
+    print(databrickslabs_jupyterlab._version.__version__)
+    sys.exit(0)
 
+#
+# Bootstrap the initial environment and exit
+#
 if args.bootstrap:
     update_local()
     sys.exit(0)
 
+#
+# Show all configure profiles
+#
+if args.profiles:
+    show_profiles()
+    exit(0)
+
+
 profile = args.profile
 
+#
+# Check that at least conda 4.7.5 is installed. If not, exit
+#
 version = conda_version()
 if version[1] >= 4 and version[2] >= 5:
     print("Valid version of conda detected: %s.%s.%s" % version)
@@ -155,91 +120,114 @@ else:
     print("Please update conda to at least 4.7.5")
     sys.exit(1)
 
-module_path = os.path.dirname(databrickslabs_jupyterlab.__file__)
-
-if args.profile == "" and not args.profiles:
+#
+# Ensure profile argument is given
+#
+if args.profile == "":
     parser.print_help()
-    print("\ndatabrickslabs-jupyterlab: error: the following arguments are required: profile\n")
-    sys.exit(1)
+    print_error("\ndatabrickslabs-jupyterlab: error: the following arguments are required: profile\n")
+    bye(1)
 
-if not args.profiles:
-    print("\n* Getting host and token from .databrickscfg")
-    host, token = get_db_config(profile)
-    if ("azuredatabricks.net" in host) and args.kernelspec and not args.organisation:
-        parser.print_help()
-        print(
-            "\ndatabrickslabs-jupyterlab: error: To configure an Azure Databricks cluster, the organization id (-o id) is required\n"
-        )
-        sys.exit(1)
+#
+# Check the ssh key for the given profile and retrieve host and token from ~/.databrickscfg
+#
+if not os.path.exists(os.path.expanduser("~/.ssh/id_%s.pub" % profile)):
+    print_error("\n    Error: ssh key for profile '%s' is missing:" %profile)
+    print("    Use 'databrickslabs-jupyterlab %s -s' to configure ssh access" % profile)
+    bye(1)
 
+print("\n* Getting host and token from .databrickscfg")
+host, token = get_db_config(profile)
+if ("azuredatabricks.net" in host) and args.kernelspec and not args.organisation:
+    print_error("\n    Error: To configure an Azure Databricks cluster, " +
+                "the organization id (-o id) is required")
+    bye(1)
+
+#
+# Configure SSH for cluster
+#
+if args.sshconfig:
+    if not args.cluster_id:
+        print_error("   => Error: Provide '-i cluster_id' with '-s' ")
+        bye(1)
+    configure_ssh(profile, host, token, args.cluster_id)
+    bye()
+
+#
+# Copy PAT to clipboard. Can be combined with every other flag
+#
 if args.clipboard:
     import pyperclip
     pyperclip.copy(token)
-    print("   => Personal access token copied to clipboard")
+    print_ok("   => Personal access token copied to clipboard")
 
-started = False
-# if args.kernelspec or args.reconfigure or args.lab or args.sshfs or args.versioncheck or args.mirror:
+#
+# Select remote cluster if not given by either -i or being in the respective mirror environment
+#
 if args.kernelspec or args.reconfigure or args.lab or args.versioncheck or args.mirror:
-    if args.cluster_id is None:
-        print("\n* Select remote cluster")
+    print("\n* Select remote cluster")
     cluster_id, public_ip, cluster_name, started = get_cluster(profile, host, token, args.cluster_id)
     if cluster_name is None:
-        print("databrickslabs-jupyterlab: error: cluster_id '%s' not found" % cluster_id)
-        sys.exit(1)
-    # print("  => Selected cluster: %s" % cluster_id)
+        bye(1)
 
     print("\n* Configuring ssh config for remote cluster")
     prepare_ssh_config(cluster_id, profile, public_ip)
     print("   => Testing whether cluster can be reached")
     if not is_reachable(public_dns=public_ip):
-        print("Cannot connect to remote cluster. Please check:")
-        print("- whether port 2200 is open in cloud security group")
-        print("- whether VPN is enabled if you need one to connect to the cluster")
-        sys.exit(1)
+        print_error("Cannot connect to remote cluster. Please check:")
+        print_error("- whether port 2200 is open in cloud security group")
+        print_error("- whether VPN is enabled if you need one to connect to the cluster")
+        bye(1)
 
+#
+# Compare local and remote libray versions
+#
+if args.versioncheck:
+    version_check(cluster_id, args.versioncheck)
+    bye()
+
+
+#
+# Create a conda environment that mirrors the selected remote cluster and exit
+#
 if args.mirror:
     install(profile, cluster_id, cluster_name)
-    sys.exit(0)
+    bye()
 
+#
+# Install databrickslabs_jupyterlab libraries on the driver
+#
 if args.kernelspec or args.reconfigure or args.lab:
     print("   => Check installed libraries")
     if args.force or not check_installed(cluster_id):
-        packages = json.loads(check_output(["conda", "list", "--json"]))
-        deps = {p["name"]: p["version"] for p in packages if p["name"] in ["ipywidgets", "sidecar"]}
-
         print("\n* Installing databrickslabs_jupyterlab, ipywidgets on remote driver")
-        install_libs(cluster_id, module_path, ipywidets_version=deps["ipywidgets"], sidecar_version=deps["sidecar"])
-    
+        install_libs(cluster_id)
+
     # Recheck in case something went wrong
     if check_installed(cluster_id):
-        print("   => Done")
+        print_ok("   => OK")
     else:
-        print("databrickslabs_jupyterlabs is not installed on the remote cluster")
-        sys.exit(1)
+        print_error("databrickslabs_jupyterlabs is not installed on the remote cluster")
+        bye(1)
 
+#
+# Start Jupyter lab in a safely way with all prechecks from above
+#
 if args.lab:
     import jupyterlab.labapp
     sys.argv = sys.argv[:1]
     print(sys.argv)
     jupyterlab.labapp.main()
 
+#
+# Create a jupyter kernelspecification
+#
 if args.kernelspec:
     print("\n* Create remote kernel spec")
-    #create_kernelspec(profile, args.organisation, host, cluster_id, cluster_name)
     # Using local conda environment name avoids overwriting of kernelspecs from different environments
     create_kernelspec(profile, args.organisation, host, cluster_id, os.environ['CONDA_DEFAULT_ENV'])
 
     print("\n* Setting global config of jupyter lab (autorestart, timeout)")
     write_config()
-
-if args.versioncheck:
-    version_check()
-
-# if args.sshfs:
-#     print("\n* Mount remote filesystem to ./remotefs/%s", cluster_id)
-#     mount_sshfs(cluster_id)
-
-if args.profiles:
-    show_profiles()
 
 print("")
