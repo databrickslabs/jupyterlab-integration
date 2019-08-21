@@ -38,11 +38,13 @@ else
 ifdef version
 	$(eval cur_version := $(shell cd extensions/databrickslabs_jupyterlab_status/ && npm version $(version)))
 else
-	@echo "$(ERROR_COLOR)Provide part=major|minor|patch|prerelease or version=x.y.z...$(NO_COLOR)"
+	@echo "$(ERROR_COLOR)Provide part=major|minor|patch|premajor|preminor|prepatch|prerelease or version=x.y.z...$(NO_COLOR)"
 	exit 1
 endif
 endif
 	@echo "$(OK_COLOR)=> New version: $(cur_version:v%=%)$(NO_COLOR)"
+	@sed -i.bak 's|databrickslabs-jupyterlab-status@.*|databrickslabs-jupyterlab-status@$(cur_version)|' labextensions.txt
+	cat labextensions.txt
 
 # Dist commands
 
@@ -73,6 +75,9 @@ check_dist:
 
 upload:
 	@twine upload dist/*
+
+upload_ext:
+	$(shell cd extensions/databrickslabs_jupyterlab_status/ && npm publish)) 
 
 # dev tools
 
