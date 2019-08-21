@@ -268,6 +268,17 @@ class Clusters(Rest):
         data = {"cluster_id": cluster_id}
         return self.post(self.url, "2.0", "clusters/start", json=data, token=self.token)
 
+    def edit(self, data):
+        """Start a cluster on Databricks
+        
+        Args:
+            cluster_id (str): Cluster ID of cluster to start
+        
+        Returns:
+            dict:  Cluster Response Dictionary (https://docs.databricks.com/api/latest/clusters.html#clustergetclusterresponse)
+        """
+        return self.post(self.url, "2.0", "clusters/edit", json=data, token=self.token)
+
 
 class Libraries(Rest):
     """Databricks Library API
