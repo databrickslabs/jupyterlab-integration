@@ -10,5 +10,5 @@ A JupyterLab extension to show start progress of Databricks clusters in Jupyterl
 ## Install
 
 ```bash
-jupyter labextension install databrickslabs-jupyterlab-status
+jupyter labextension install databrickslabs-jupyterlab-statusbar
 ```

@@ -33,19 +33,19 @@ endif
 
 bump_ext:
 ifdef part
-	$(eval cur_version=$(shell cd extensions/databrickslabs_jupyterlab_status/ && npm version $(part) --preid=rc))
+	$(eval cur_version=$(shell cd extensions/databrickslabs_jupyterlab_statusbar/ && npm version $(part) --preid=rc))
 else
 ifdef version
-	$(eval cur_version := $(shell cd extensions/databrickslabs_jupyterlab_status/ && npm version $(version)))
+	$(eval cur_version := $(shell cd extensions/databrickslabs_jupyterlab_statusbar/ && npm version $(version)))
 else
 	@echo "$(ERROR_COLOR)Provide part=major|minor|patch|premajor|preminor|prepatch|prerelease or version=x.y.z...$(NO_COLOR)"
 	exit 1
 endif
 endif
 	@echo "$(OK_COLOR)=> New version: $(cur_version:v%=%)$(NO_COLOR)"
-	@sed -i.bak 's|databrickslabs-jupyterlab-status@.*|databrickslabs-jupyterlab-status@$(cur_version)|' labextensions.txt
+	@sed -i.bak 's|databrickslabs-jupyterlab-statusbar@.*|databrickslabs-jupyterlab-statusbar@$(cur_version)|' labextensions.txt
 	cat labextensions.txt
-	git add labextensions.txt extensions/databrickslabs_jupyterlab_status/package.json
+	git add labextensions.txt extensions/databrickslabs_jupyterlab_statusbar/package.json
 	git commit -m "extension release $(cur_version)"
 
 # Dist commands
@@ -79,7 +79,7 @@ upload:
 	@twine upload dist/*
 
 upload_ext:
-	$(shell cd extensions/databrickslabs_jupyterlab_status/ && npm publish)
+	cd extensions/databrickslabs_jupyterlab_statusbar && npm publish
 
 # dev tools
 
