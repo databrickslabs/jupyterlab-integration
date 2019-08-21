@@ -7,3 +7,4 @@ dist
 *.egg-info
 examples/artifacts
 TODO
+labextensions.txt.bak
