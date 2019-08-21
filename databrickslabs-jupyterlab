@@ -128,14 +128,6 @@ if args.profile == "":
     print_error("\ndatabrickslabs-jupyterlab: error: the following arguments are required: profile\n")
     bye(1)
 
-#
-# Check the ssh key for the given profile and retrieve host and token from ~/.databrickscfg
-#
-if not os.path.exists(os.path.expanduser("~/.ssh/id_%s.pub" % profile)):
-    print_error("\n    Error: ssh key for profile '%s' is missing:" %profile)
-    print("    Use 'databrickslabs-jupyterlab %s -s' to configure ssh access" % profile)
-    bye(1)
-
 print("\n* Getting host and token from .databrickscfg")
 host, token = get_db_config(profile)
 if ("azuredatabricks.net" in host) and args.kernelspec and not args.organisation:
@@ -152,6 +144,15 @@ if args.sshconfig:
         bye(1)
     configure_ssh(profile, host, token, args.cluster_id)
     bye()
+
+#
+# Check the ssh key for the given profile and retrieve host and token from ~/.databrickscfg
+#
+if not os.path.exists(os.path.expanduser("~/.ssh/id_%s.pub" % profile)):
+    print_error("\n    Error: ssh key for profile '%s' is missing:" %profile)
+    print("    Use 'databrickslabs-jupyterlab %s -s' to configure ssh access" % profile)
+    bye(1)
+
 
 #
 # Copy PAT to clipboard. Can be combined with every other flag
