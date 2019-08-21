@@ -54,7 +54,6 @@ def install_env(env_file, env_name=None):
     script = """#!/bin/bash
 conda env create -n %s -f %s
 source $(conda info | awk '/base env/ {print $4}')/bin/activate "%s" 
-pip install --upgrade .
 """ % (env_name, env_file, env_name)
 
     print_green("Installing conda environment %s" % env_name)
@@ -65,13 +64,11 @@ def install_labextensions(labext_file, env_name=None):
     if env_name is None:
         script = """#!/bin/bash
 jupyter labextension install $(cat %s)
-jupyter labextension install extensions/databrickslabs_jupyterlab_status
 """ % labext_file
     else:
         script = """#!/bin/bash
 source $(conda info | awk '/base env/ {print $4}')/bin/activate "%s" 
 jupyter labextension install $(cat %s)
-jupyter labextension install extensions/databrickslabs_jupyterlab_status
 """ % (env_name, labext_file)
 
     print_green("Installing jupyterlab extensions")
