@@ -81,6 +81,21 @@ parser.add_argument('-V',
                     type=VCheck,
                     choices=list(VCheck),
                     help='Check version of local env with remote env')
+parser.add_argument('-w',
+                    '--whitelist',
+                    dest='use_whitelist',
+                    action='store_true',
+                    help='Use a whitelist (include pkg) of packages to install instead of blacklist (exclude pkg)')
+parser.add_argument('-W',
+                    '--print-whitelist',
+                    dest='whitelist',
+                    action='store_true',
+                    help='Print whitelist (include pkg) of packages to install')
+parser.add_argument('-B',
+                    '--print-blacklist',
+                    dest='blacklist',
+                    action='store_true',
+                    help='Print blacklist (exclude pkg) of packages to install')
 
 args = parser.parse_args()
 
@@ -90,7 +105,25 @@ args = parser.parse_args()
 if args.version:
     import databrickslabs_jupyterlab._version
     print(databrickslabs_jupyterlab._version.__version__)
-    sys.exit(0)
+    bye()
+
+#
+# Print White list and exit
+#
+if args.whitelist:
+    import databrickslabs_jupyterlab.install
+    print("   => If package exists in mremote cluster an this list, it will be installed:")
+    print(databrickslabs_jupyterlab.install.WHITELIST)
+    bye()
+
+#
+# Print Black list and exit
+#
+if args.blacklist:
+    import databrickslabs_jupyterlab.install
+    print("   => These packages will note be installed:")
+    print(databrickslabs_jupyterlab.install.BLACKLIST)
+    bye()
 
 #
 # Bootstrap the initial environment and exit
@@ -195,7 +228,7 @@ if args.versioncheck:
 # Create a conda environment that mirrors the selected remote cluster and exit
 #
 if args.mirror:
-    install(profile, cluster_id, cluster_name)
+    install(profile, cluster_id, cluster_name, args.use_whitelist)
     bye()
 
 #

@@ -9,17 +9,33 @@ import inquirer
 from inquirer.themes import Default, term
 
 import databrickslabs_jupyterlab
-from databrickslabs_jupyterlab.remote import ssh, Dark, get_remote_packages
-
-# os.environ.get("DATABRICKS_RUNTIME_VERSION", None) == "5.5"
-# os.environ.get("CONDA_EXE", None) == "/databricks/conda/bin/conda"
-# os.environ.get("DATABRICKS_ROOT_CONDA_ENV", None) == "databricks-standard"
+from databrickslabs_jupyterlab.remote import ssh, Dark, get_python_path, get_remote_packages
 
 WHITELIST = [
     "hyperopt", "keras-applications", "keras-preprocessing", "keras", "matplotlib", "mleap", "mlflow", "numba", "numpy",
     "pandas", "patsy", "pillow", "pyarrow", "python-dateutil", "pyparsing", "scikit-learn", "scipy", "seaborn",
     "simplejson", "statsmodels", "tabulate", "tensorboard", "tensorboardx", "tensorflow-estimator", "tensorflow",
     "torch", "torchvision"
+]
+
+BLACKLIST = [
+    "absl-py", "ansi2html", "asn1crypto", "astor", "attrs", "backcall", "backports.shutil-get-terminal-size", "bcrypt",
+    "bleach", "blessings", "boto", "boto3", "botocore", "brewer2mpl", "certifi", "cffi", "chardet", "click", "colorama",
+    "configobj", "configparser", "cryptography", "cycler", "cython", "databricks-cli", "databrickslabs-jupyterlab",
+    "decorator", "defusedxml", "docker", "docopt", "docutils", "entrypoints", "enum34", "et-xmlfile", "flask",
+    "freetype-py", "funcsigs", "fusepy", "future", "gast", "gitdb2", "gitpython", "grpcio", "gunicorn", "h5py",
+    "horovod", "html5lib", "idna", "inquirer", "ipaddress", "ipykernel", "ipython", "ipython-genutils", "ipywidgets",
+    "itsdangerous", "jdcal", "jedi", "jinja2", "jmespath", "jsonschema", "jupyter-client", "jupyter-core", "llvmlite",
+    "lxml", "mako", "markdown", "markupsafe", "mistune", "mkl-fft", "mkl-random", "mock", "msgpack", "msgpack-python",
+    "nbconvert", "nbformat", "ndg-httpsclient", "networkx", "nose", "nose-exclude", "notebook", "olefile", "openpyxl",
+    "openpyxl", "packaging", "pandocfilters", "paramiko", "parso", "pathlib2", "pexpect", "pickleshare", "pip", "ply",
+    "prometheus-client", "prompt-toolkit", "protobuf", "psutil", "psycopg2", "ptyprocess", "py4j", "pyasn1",
+    "pycparser", "pycurl", "pygments", "pygobject", "pymongo", "pynacl", "pypng", "pysocks", "python-apt",
+    "python-dateutil", "python-editor", "python-geohash", "pyopenssl", "pytz", "pyyaml", "pyzmq", "querystring-parser",
+    "readchar", "requests", "scour", "send2trash", "setuptools", "sidecar", "simplegeneric", "simplejson",
+    "singledispatch", "six", "smmap2", "sqlparse", "ssh-config", "ssh-import-id", "tabulate", "termcolor", "terminado",
+    "testpath", "texttable", "tornado", "tqdm", "traitlets", "unattended-upgrades", "urllib3", "virtualenv", "wcwidth",
+    "webencodings", "websocket-client", "werkzeug", "wheel", "widgetsnbextension", "wrapt"
 ]
 
 
@@ -56,7 +72,7 @@ conda env create -n %s -f %s
 source $(conda info | awk '/base env/ {print $4}')/bin/activate "%s" 
 """ % (env_name, env_file, env_name)
 
-    print_green("Installing conda environment %s" % env_name)
+    print_green("   => Installing conda environment %s" % env_name)
     execute(script, "install_env.sh", "Error while installing conda environment")
 
 
@@ -71,7 +87,7 @@ source $(conda info | awk '/base env/ {print $4}')/bin/activate "%s"
 jupyter labextension install $(cat %s)
 """ % (env_name, labext_file)
 
-    print_green("Installing jupyterlab extensions")
+    print_green("   => Installing jupyterlab extensions")
     execute(script, "install_labext.sh", "Error while installing jupyter labextensions")
 
 
@@ -86,11 +102,17 @@ def update_local():
     usage(os.environ.get("CONDA_DEFAULT_ENV", "unknown"))
 
 
-def install(profile, cluster_id, cluster_name):
+def install(profile, cluster_id, cluster_name, use_whitelist):
     print("\n* Installation of local environment to mirror a remote Databricks cluster")
 
-    libs = get_remote_packages(cluster_id)
-    ds_libs = [lib for lib in libs if lib["name"].lower() in WHITELIST]
+    python_path = get_python_path(cluster_id)
+    libs = get_remote_packages(cluster_id, python_path)
+    if use_whitelist:
+        print_ok("   => Using whitelist to select packages")
+        ds_libs = [lib for lib in libs if lib["name"].lower() in WHITELIST]
+    else:
+        print_ok("   => Using blacklist to select packages")
+        ds_libs = [lib for lib in libs if lib["name"].lower() not in BLACKLIST]
 
     ds_yml = ""
     for lib in ds_libs:
@@ -107,7 +129,7 @@ def install(profile, cluster_id, cluster_name):
     env_file = os.path.join(module_path, "lib/env.yml")
     with open(env_file, "r") as fd:
         master_yml = fd.read()
-        
+
     with tempfile.TemporaryDirectory() as tmpdir:
         env_file = os.path.join(tmpdir, "env.yml")
         with open(env_file, "w") as fd:
