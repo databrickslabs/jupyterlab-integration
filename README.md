@@ -150,15 +150,34 @@ When this happens, usually the local Jupyter lab frontend and the remote kernel 
 
 ## 4 Creating a mirror of a remote Databricks cluster
 
-For the specific use case when the same notebook should run locally and remotely, a local mirror of the remote libraries and versions is needed. This can be achieved with *databrickslabs_jupyterlab* with the following command:
+For the specific use case when the same notebook should run locally and remotely, a local mirror of the remote libraries and versions is needed. There are two ways to achieve this:
+
+- White list
+    The packages mirrored are filtered via white list of Data Science focussed libraries (if the packages is installed on the remote cluster and is in the white list, it will be installed in the local mirror). The list can be printed with
+
+    ```bash
+    databrickslabs_jupyterlab -W
+    ```
+
+- Black list
+    The packages mirrored are filtered via black list of generic libraries (if the packages is installed on the remote cluster and is in the white list, it will *not* be installed in the local mirror). The list can be printed with
+
+    ```bash
+    databrickslabs_jupyterlab -B
+    ```
+
+A local mirror can be created via *databrickslabs_jupyterlab* with the following command:
 
 ```bash
 $(base) conda activate db-jlab
-$(db-jlab) databrickslabs-jupyterlab $PROFILE -m
+$(db-jlab) databrickslabs-jupyterlab $PROFILE -m     # filter via black list
+# OR
+$(db-jlab) databrickslabs-jupyterlab $PROFILE -m -w  # filter via white list
 ```
 
-It will 
-- Ask for the cluster to mirror
+The command will
+
+- ask for the cluster to mirror
 
     ```bash
     Valid version of conda detected: 4.7.11
@@ -172,9 +191,9 @@ It will
     => Selected cluster: bernhard-5.5-ml (ec2-xxx-xxx-xxx-xxx.us-west-2.compute.amazonaws.com)
     ```
 
-- Configure ssh access
+- configure ssh access
 
-    ```bash
+    ```text
     * Configuring ssh config for remote cluster
     => Added ssh config entry or modified IP address:
 
@@ -188,9 +207,9 @@ It will
     => Testing whether cluster can be reached
     ```
 
-- Retrieve the necessary libraries to install locally.
+- retrieve the necessary libraries to install locally.
 
-    ```bash
+    ```text
     * Installation of local environment to mirror a remote Databricks cluster
 
         Library versions being installed:
@@ -206,16 +225,16 @@ It will
         - torchvision==0.3.0
     ```
 
-- Ask for an environment name (default is the remote cluster name):
+- ask for an environment name (default is the remote cluster name):
 
-    ```bash
+    ```text
         => Provide a conda environment name (default = bernhard-5.5-ml):
     ```
 
-- And finally installs the new environment:
+- and finally install the new environment:
 
-    ```bash
-    Installing conda environment bernhard-5.5-ml
+    ```text
+    * Installing conda environment bernhard-5.5-ml
     ...
     ```
 
@@ -235,9 +254,9 @@ follow the usage guide in section 3.
     (db-jlab)$ databrickslabs-jupyterlab -h
 
     usage: databrickslabs-jupyterlab [-h] [-b] [-m] [-c] [-f] [-i CLUSTER_ID] [-k]
-                                 [-l] [-o ORGANISATION] [-p] [-r]
-                                 [-v {all,diff,same}]
-                                 [profile]
+                                    [-l] [-o ORGANISATION] [-p] [-r] [-s] [-v]
+                                    [-V {all,diff,same}] [-w] [-W] [-B]
+                                    [profile]
 
     Configure remote Databricks access with Jupyter Lab
 
@@ -260,8 +279,16 @@ follow the usage guide in section 3.
                             The organisation for Azure Databricks
     -p, --profiles        Show all databricks cli profiles and check SSH key
     -r, --reconfigure     Reconfigure cluster with id cluster_id
-    -v {all,diff,same}, --versioncheck {all,diff,same}
+    -s, --ssh-config      Configure SSH acces for a cluster
+    -v, --version         Check version of databrickslabs-jupyterlab
+    -V {all,diff,same}, --versioncheck {all,diff,same}
                             Check version of local env with remote env
+    -w, --whitelist       Use a whitelist (include pkg) of packages to install
+                            instead of blacklist (exclude pkg)
+    -W, --print-whitelist
+                            Print whitelist (include pkg) of packages to install
+    -B, --print-blacklist
+                            Print blacklist (exclude pkg) of packages to install
     ```
 
 - **Show currently available profiles (databrickslabs-jupyterlab -p):**
