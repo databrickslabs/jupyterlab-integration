@@ -150,7 +150,7 @@ def dbcontext(progressbar=True):
 
     # Fetch auth_token and gateway port ...
     #
-    cmd = 'c=sc._gateway.client.gateway_client; print(c.gateway_parameters.auth_token, c.port)'
+    cmd = 'c=sc._gateway.client.gateway_client; print(c.gateway_parameters.auth_token + "|" + str(c.port))'
     try:
         command_id = command.execute(cmd)
     except DatabricksApiException as ex:
@@ -172,7 +172,7 @@ def dbcontext(progressbar=True):
         print(result["results"]["cause"])
         return None
 
-    auth_token, port = result["results"]["data"].split(" ")
+    auth_token, port = result["results"]["data"].split("|")
     port = int(port)
 
     interpreter = "/databricks/python/bin/python"
