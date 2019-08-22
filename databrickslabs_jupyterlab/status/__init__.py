@@ -9,7 +9,8 @@ from tornado import web
 from collections import defaultdict
 
 import databrickslabs_jupyterlab
-from databrickslabs_jupyterlab.remote import (is_reachable, get_cluster, is_reachable, check_installed, install_libs)
+from databrickslabs_jupyterlab.remote import (is_reachable, get_cluster, get_python_path, is_reachable, check_installed,
+                                              install_libs)
 from databrickslabs_jupyterlab.local import (get_db_config, prepare_ssh_config)
 
 
@@ -33,8 +34,11 @@ class Status:
                 str: Cluster status or "unknown"
             """
             # print("get_status", profile, cluster_id, self.status[profile].get(cluster_id, None))
-            if self.status[profile] != {}:
-                return self.status[profile][cluster_id]
+            if self.status.get(profile, None) is not None:
+                status = self.status[profile].get(cluster_id, None)
+                if status is None:
+                    status = "unknown"
+                return status
             else:
                 return "unknown"
 
@@ -150,7 +154,7 @@ class DbStartHandler(KernelHandler):
         """
         Status().set_status(profile, cluster_id, "Starting cluster")
         host, token = get_db_config(profile)
-        cluster_id, public_ip, cluster_name, started = get_cluster(profile, host, token, cluster_id, Status())
+        cluster_id, public_ip, cluster_name, conda_env = get_cluster(profile, host, token, cluster_id, Status())
         if cluster_name is None:
             Status().set_status(profile, cluster_id, "ERROR: Cluster could not be found")
             return
@@ -160,13 +164,17 @@ class DbStartHandler(KernelHandler):
         if not is_reachable(public_dns=public_ip):
             Status().set_status(profile, cluster_id, "UNREACHABLE")
         else:
+            # print("   => Retrieving python path")
+            # python_path = get_python_path(cluster_id, conda_env)
+            python_path = get_python_path(cluster_id)
+
             Status().set_status(profile, cluster_id, "Checking driver libs")
-            if not check_installed(cluster_id):
+            if not check_installed(cluster_id, python_path):
                 Status().set_status(profile, cluster_id, "Installing driver libs")
-                install_libs(cluster_id)
+                install_libs(cluster_id, python_path)
 
             # Recheck in case something went wrong
-            if check_installed(cluster_id):
+            if check_installed(cluster_id, python_path):
                 Status().set_status(profile, cluster_id, "Driver libs installed")
             else:
                 Status().set_status(profile, cluster_id, "ERROR: Driver libs not installed")

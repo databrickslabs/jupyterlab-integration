@@ -201,14 +201,11 @@ def get_cluster(profile, host, token, cluster_id=None, status=None):
         return (None, None, None, None)
 
     state = response["state"]
-
-    started = False
     if not state in ["RUNNING", "RESIZING"]:
         if state == "TERMINATED":
             print("   => Starting cluster %s" % cluster_id)
             if status is not None:
                 status.set_status(profile, cluster_id, "Cluster Starting")
-            started = True
             try:
                 response = cluster_api.start(cluster_id)
             except DatabricksApiException as ex:
@@ -259,21 +256,36 @@ def get_cluster(profile, host, token, cluster_id=None, status=None):
                 done = True
                 print_ok("\n   => OK\n")
 
-    public_ip = response["driver"]["public_dns"]
+    # spark_envs = response.get("spark_env_vars", None)
+    # if spark_envs is None:
+    #     conda_env = None
+    # else:
+    #     conda_env = response["spark_env_vars"].get("DATABRICKS_ROOT_CONDA_ENV", None)
+    #     if conda_env is not None:
+    #         conda_env = conda_env.strip('"') # if variable was added with quotes in UI
+
+    public_ip = response["driver"].get("public_dns", None)
+    if public_ip is None:
+        print_error("   Error: Cluster does not have public DNS name")
+        return (None, None, None, None)
 
     print_ok("   => Selected cluster: %s (%s)" % (cluster_name, public_ip))
 
-    return (cluster_id, public_ip, cluster_name, started)
+    return (cluster_id, public_ip, cluster_name, None)
 
 
-def get_python_path(host):
-    conda_env = ssh(host, "echo $DEFAULT_DATABRICKS_ROOT_CONDA_ENV").strip().decode("utf-8")
-    if len(conda_env) == 0:
-        # no conda DBR
-        python_path = "/databricks/python3/bin"
-    else:
-        python_path = "/databricks/conda/envs/%s/bin" % conda_env
-    print("   => Python path:", python_path)
+def get_python_path(host, conda_env=None):
+    # conda_default_env = ssh(host, "echo $DEFAULT_DATABRICKS_ROOT_CONDA_ENV").strip().decode("utf-8")
+    # if conda_default_env == "":
+    #     python_path = "/databricks/python3/bin"
+    #     print_ok("   => %s (pip managed cluster)" % python_path)
+    # else:
+    #     if conda_env is None:  # if there is no conda environment variable, use default
+    #         conda_env = conda_default_env
+    #     python_path = "/databricks/conda/envs/%s/bin" % conda_env
+    #     print_ok("   => %s (conda managed cluster)" % python_path)
+
+    python_path = "/databricks/python/bin"
     return python_path
 
 
