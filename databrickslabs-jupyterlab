@@ -229,7 +229,8 @@ if args.lab:
 if args.kernelspec:
     print("\n* Creating remote kernel spec")
     # Using local conda environment name avoids overwriting of kernelspecs from different environments
-    create_kernelspec(profile, args.organisation, host, cluster_id, os.environ['CONDA_DEFAULT_ENV'], python_path)
+    create_kernelspec(profile, args.organisation, host, cluster_id, cluster_name, os.environ['CONDA_DEFAULT_ENV'],
+                      python_path)
     print_ok("   => OK")
 
     print("\n* Setting global config of jupyter lab (autorestart, timeout)")
