@@ -183,6 +183,11 @@ def get_cluster(profile, host, token, cluster_id=None, status=None):
             print("    Use 'databrickslabs_jupyterlab %s -s' to configure ssh for clusters in this workspace\n" % profile)
             return (None, None, None, None)
 
+        current_conda_env = os.environ.get("CONDA_DEFAULT_ENV", None)
+        if current_conda_env in [c["cluster_name"] for c in my_clusters]:
+            print_warning(
+                "\n   => The current conda environment is %s. You might want to select the cluster with the same name?\n" %
+                current_conda_env)
         cluster = select_cluster(my_clusters)
 
     cluster_id = cluster["cluster_id"]
