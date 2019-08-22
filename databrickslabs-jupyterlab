@@ -130,14 +130,14 @@ if args.blacklist:
 #
 if args.bootstrap:
     update_local()
-    sys.exit(0)
+    bye()
 
 #
 # Show all configure profiles
 #
 if args.profiles:
     show_profiles()
-    exit(0)
+    bye()
 
 
 profile = args.profile
@@ -199,8 +199,8 @@ if args.clipboard:
 # Select remote cluster if not given by either -i or being in the respective mirror environment
 #
 if args.kernelspec or args.reconfigure or args.lab or args.versioncheck or args.mirror:
-    print("\n* Select remote cluster")
-    cluster_id, public_ip, cluster_name, started = get_cluster(profile, host, token, args.cluster_id)
+    print("\n* Select remote cluster\n")
+    cluster_id, public_ip, cluster_name, conda_env = get_cluster(profile, host, token, args.cluster_id)
     if cluster_name is None:
         bye(1)
 
@@ -213,9 +213,11 @@ if args.kernelspec or args.reconfigure or args.lab or args.versioncheck or args.
         print_error("- whether VPN is enabled if you need one to connect to the cluster")
         bye(1)
     print_ok("   => OK")
+
+    # print("\n   => Retrieving python path")
+    # python_path = get_python_path(cluster_id, conda_env)
     
     python_path = get_python_path(cluster_id)
-
 #
 # Compare local and remote libray versions
 #
@@ -235,9 +237,8 @@ if args.mirror:
 # Install databrickslabs_jupyterlab libraries on the driver
 #
 if args.kernelspec or args.reconfigure or args.lab:
-    print("   => Checking installed libraries")
+    print("\n* Checking installed libraries")
     if args.force or not check_installed(cluster_id, python_path):
-        print("\n* Installing databrickslabs_jupyterlab, ipywidgets on remote driver")
         install_libs(cluster_id, python_path)
 
     # Recheck in case something went wrong
