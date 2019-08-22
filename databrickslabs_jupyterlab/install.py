@@ -76,14 +76,16 @@ source $(conda info | awk '/base env/ {print $4}')/bin/activate "%s"
 def install_labextensions(labext_file, env_name=None):
     if env_name is None:
         script = """#!/bin/bash
-jupyter labextension install $(cat %s)
-""" % labext_file
+"""        
     else:
         script = """#!/bin/bash
 source $(conda info | awk '/base env/ {print $4}')/bin/activate "%s" 
+""" % env_name
+
+    script += ("""
 jupyter labextension install $(cat %s)
 jupyter lab build
-""" % (env_name, labext_file)
+""" % labext_file)
 
     print_ok("   => Installing jupyterlab extensions")
     execute(script, "install_labext.sh", "Error while installing jupyter labextensions")
