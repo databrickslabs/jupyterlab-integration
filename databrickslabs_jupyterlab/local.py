@@ -157,7 +157,7 @@ def show_profiles():
         print(template % (profile, host, ssh_ok))
 
 
-def create_kernelspec(profile, organisation, host, cluster_id, cluster_name, python_path):
+def create_kernelspec(profile, organisation, host, cluster_id, cluster_name, local_env, python_path):
     """Create or edit the remote_ikernel specification for jupyter lab
     
     Args:
@@ -166,6 +166,7 @@ def create_kernelspec(profile, organisation, host, cluster_id, cluster_name, pyt
         host (str): host from databricks cli config for given profile string
         cluster_id (str): Cluster ID
         cluster_name (str): Cluster name
+        local_env (str): Name of the local conda environment
         python_path (str): Remote python path to be used for kernel
     """
     from remote_ikernel.manage import show_kernel, add_kernel
@@ -176,9 +177,15 @@ def create_kernelspec(profile, organisation, host, cluster_id, cluster_name, pyt
     if organisation is not None:
         env += " DBJL_ORG=%s" % organisation
     kernel_cmd = "sudo -H %s %s/python -m ipykernel -f {connection_file}" % (env, python_path)
+
+    if cluster_name == local_env:
+        name = "%s:%s" % (profile, cluster_name)
+    else:
+        name = "%s:%s (%s)" % (profile, cluster_name, local_env)
+
     add_kernel(
         "ssh",
-        name="%s:%s" % (profile, cluster_name),
+        name=name,
         kernel_cmd=kernel_cmd,
         language="python",
         workdir="/home/ubuntu",
@@ -187,5 +194,4 @@ def create_kernelspec(profile, organisation, host, cluster_id, cluster_name, pyt
         no_passwords=True,
         verbose=True)
 
-    print("   => Kernel specification 'SSH %s %s:%s' created or updated" % (cluster_id, profile, cluster_name))
-
+    print("   => Kernel specification 'SSH %s %s' created or updated" % (cluster_id, name))
