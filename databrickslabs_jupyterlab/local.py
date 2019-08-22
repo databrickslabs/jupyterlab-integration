@@ -157,7 +157,7 @@ def show_profiles():
         print(template % (profile, host, ssh_ok))
 
 
-def create_kernelspec(profile, organisation, host, cluster_id, cluster_name):
+def create_kernelspec(profile, organisation, host, cluster_id, cluster_name, python_path):
     """Create or edit the remote_ikernel specification for jupyter lab
     
     Args:
@@ -166,6 +166,7 @@ def create_kernelspec(profile, organisation, host, cluster_id, cluster_name):
         host (str): host from databricks cli config for given profile string
         cluster_id (str): Cluster ID
         cluster_name (str): Cluster name
+        python_path (str): Remote python path to be used for kernel
     """
     from remote_ikernel.manage import show_kernel, add_kernel
     from remote_ikernel.compat import kernelspec as ks
@@ -174,7 +175,7 @@ def create_kernelspec(profile, organisation, host, cluster_id, cluster_name):
     env = "DBJL_PROFILE=%s DBJL_HOST=%s DBJL_CLUSTER=%s" % (profile, host, cluster_id)
     if organisation is not None:
         env += " DBJL_ORG=%s" % organisation
-    kernel_cmd = "sudo -H %s /databricks/python/bin/python -m ipykernel -f {connection_file}" % env
+    kernel_cmd = "sudo -H %s %s/python -m ipykernel -f {connection_file}" % (env, python_path)
     add_kernel(
         "ssh",
         name="%s:%s" % (profile, cluster_name),
@@ -182,10 +183,9 @@ def create_kernelspec(profile, organisation, host, cluster_id, cluster_name):
         language="python",
         workdir="/home/ubuntu",
         host="%s:2200" % cluster_id,
-        #               ssh_init=json.dumps(["databrickslabs-jupyterlab", profile, "-r", "-i", cluster_id]),
         ssh_timeout="10",
         no_passwords=True,
         verbose=True)
 
-    print("   => Kernel specification 'SSH %s %s' created or updated" % (cluster_id, cluster_name))
+    print("   => Kernel specification 'SSH %s %s:%s' created or updated" % (cluster_id, profile, cluster_name))
 

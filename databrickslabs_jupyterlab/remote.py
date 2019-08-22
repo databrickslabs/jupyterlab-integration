@@ -38,7 +38,7 @@ def ssh(host, cmd):
         str: Commend result or in error case None
     """
     try:
-        return subprocess.check_output(["ssh", "-o", "StrictHostKeyChecking=no", host, cmd])
+        return subprocess.check_output(["ssh", "-o", "StrictHostKeyChecking=no", "-o", "LogLevel=ERROR", host, cmd])
     except:
         print_error("Error installing package")
         bye(1)
@@ -256,43 +256,40 @@ def get_cluster(profile, host, token, cluster_id=None, status=None):
     return (cluster_id, public_ip, cluster_name, started)
 
 
-def get_pip(host, flags):
+def get_python_path(host):
     conda_env = ssh(host, "echo $DEFAULT_DATABRICKS_ROOT_CONDA_ENV").strip().decode("utf-8")
-    if len(conda_env) == 0: 
+    if len(conda_env) == 0:
         # no conda DBR
-        python_path = "/databricks/python3/bin/python"
+        python_path = "/databricks/python3/bin"
     else:
-        python_path = "/databricks/conda/envs/%s/bin/python" % conda_env
+        python_path = "/databricks/conda/envs/%s/bin" % conda_env
+    print("   => Python path:", python_path)
+    return python_path
 
-    return "%s %s" % (python_path, flags)
-    
-    
-def install_libs(host):
+
+def install_libs(host, python_path):
     """Install ipywidgets, sidecar and databrickslabs_jupyterlab libraries on the driver
     
     Args:
         host (str): host from databricks cli config for given profile string
-        module_path (str): The local module path where databrickslabs_jupyterlab is installed
-        ipywidets_version (str): The version of ipywidgets used locally
-        sidecar_version (str): The version of ipywidgets used locally
+        python_path (str): Remote python path to be used for kernel
     """
-    pip_flags = "-m pip install -q --no-warn-conflicts --disable-pip-version-check"
-    pip = get_pip(host, pip_flags)
+    pip_cmd = "%s/pip install -q --no-warn-conflicts --disable-pip-version-check" % python_path
 
     module_path = os.path.dirname(databrickslabs_jupyterlab.__file__)
-
     wheel = glob.glob("%s/lib/*.whl" % module_path)[0]
+
     target = "/home/ubuntu/%s" % str(uuid.uuid4())
 
     print("   => Installing ipywidgets")
     packages = json.loads(subprocess.check_output(["conda", "list", "--json"]))
     deps = {p["name"]: p["version"] for p in packages if p["name"] in ["ipywidgets", "sidecar"]}
-    ssh(host, "sudo -H %s ipywidgets==%s sidecar==%s" % (pip, deps["ipywidgets"], deps["sidecar"]))
+    ssh(host, "sudo -H %s ipywidgets==%s sidecar==%s" % (pip_cmd, deps["ipywidgets"], deps["sidecar"]))
 
     print("   => Installing databrickslabs_jupyterlab")
     ssh(host, "mkdir -p %s" % target)
     scp(host, wheel, target)
-    ssh(host, "sudo -H %s --upgrade %s/%s" % (pip, target, os.path.basename(wheel)))
+    ssh(host, "sudo -H %s --upgrade %s/%s" % (pip_cmd, target, os.path.basename(wheel)))
     ssh(host, "rm -f %s/* && rmdir %s" % (target, target))
 
 
@@ -313,18 +310,22 @@ def mount_sshfs(host):
     run(["sshfs", "ubuntu@%s:/dbfs" % host, "./remotefs/%s" % host, "-p", "2200"])
 
 
-def get_remote_packages(host):
+def get_remote_packages(host, python_path):
     """List all packages installed on remote cluster
     
     Args:
         host (str): host from databricks cli config for given profile string
+        python_path (str): Remote python path to be used for kernel
     
     Returns:
         list(dict): List of pip list --format=json
     """
-    pip_flags = "-m pip list --disable-pip-version-check --format=json"
-    pip = get_pip(host, pip_flags)
-    return json.loads(ssh(host, pip))
+    pip_cmd = "%s/pip list --disable-pip-version-check --format=json" % python_path
+
+    # Bug in pip 10: https://github.com/pypa/pip/issues/5250
+    pip_cmd += " --no-cache-dir"
+
+    return json.loads(ssh(host, pip_cmd))
 
 
 def is_reachable(public_dns):
@@ -362,16 +363,17 @@ def get_library_state(cluster_id, host, token):
         return [lib["status"] for lib in libraries["library_statuses"]]
 
 
-def check_installed(host):
+def check_installed(host, python_path):
     """Check whether databrickslabs_jupyterlab is installed on the remote host
     
     Args:
-    host (str): host from databricks cli config for given profile string
+        host (str): host from databricks cli config for given profile string
+        python_path (str): Remote python path to be used for kernel
     
     Returns:
         bool: True if installed else False
     """
-    packages = get_remote_packages(host)
+    packages = get_remote_packages(host, python_path)
     found = False
     for p in packages:
         if p["name"] == "databrickslabs-jupyterlab":
@@ -380,11 +382,12 @@ def check_installed(host):
     return found
 
 
-def version_check(cluster_id, flag):
+def version_check(cluster_id, flag, python_path):
     """Compare local and remote library versions
     
     Args:
         cluster_id (str): Cluster ID
+        flag (str): all|diff|same
     """
     def normalize(key):
         return key.lower().replace("-", "_")
@@ -392,7 +395,7 @@ def version_check(cluster_id, flag):
     packages = json.loads(subprocess.check_output(["conda", "list", "--json"]))
     deps = {normalize(p["name"]): p["version"] for p in packages}
 
-    remote_packages = get_remote_packages(cluster_id)
+    remote_packages = get_remote_packages(cluster_id, python_path)
     remote_deps = {normalize(p["name"]): p["version"] for p in remote_packages}
     joint_keys = sorted(list(set(list(deps.keys()) + list(remote_deps.keys()))))
     print("%-30s %-10s%-10s" % ("Package", "local", "remote"))
@@ -452,7 +455,7 @@ def configure_ssh(profile, host, token, cluster_id):
     request = {}
     for key in ["cluster_id", "cluster_name", "spark_version", "node_type_id"]:
         request[key] = response[key]
-    
+
     if response.get("num_workers", None) is not None:
         request["num_workers"] = response["num_workers"]
 

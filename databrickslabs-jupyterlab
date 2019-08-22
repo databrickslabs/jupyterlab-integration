@@ -12,8 +12,8 @@ from enum import Enum
 
 import databrickslabs_jupyterlab
 from databrickslabs_jupyterlab.remote import (bye, check_installed, configure_ssh, connect, get_cluster,
-                                              get_remote_packages, install_libs, is_reachable, mount_sshfs,
-                                              version_check)
+                                              get_python_path, get_remote_packages, install_libs, is_reachable,
+                                              mount_sshfs, version_check)
 from databrickslabs_jupyterlab.local import (bye, conda_version, create_kernelspec, get_db_config, prepare_ssh_config,
                                              print_error, print_ok, show_profiles, write_config)
 from databrickslabs_jupyterlab.install import install, update_local
@@ -179,12 +179,15 @@ if args.kernelspec or args.reconfigure or args.lab or args.versioncheck or args.
         print_error("- whether port 2200 is open in cloud security group")
         print_error("- whether VPN is enabled if you need one to connect to the cluster")
         bye(1)
+    print_ok("   => OK")
+    
+    python_path = get_python_path(cluster_id)
 
 #
 # Compare local and remote libray versions
 #
 if args.versioncheck:
-    version_check(cluster_id, args.versioncheck)
+    version_check(cluster_id, args.versioncheck, python_path)
     bye()
 
 
@@ -199,13 +202,13 @@ if args.mirror:
 # Install databrickslabs_jupyterlab libraries on the driver
 #
 if args.kernelspec or args.reconfigure or args.lab:
-    print("   => Check installed libraries")
-    if args.force or not check_installed(cluster_id):
+    print("   => Checking installed libraries")
+    if args.force or not check_installed(cluster_id, python_path):
         print("\n* Installing databrickslabs_jupyterlab, ipywidgets on remote driver")
-        install_libs(cluster_id)
+        install_libs(cluster_id, python_path)
 
     # Recheck in case something went wrong
-    if check_installed(cluster_id):
+    if check_installed(cluster_id, python_path):
         print_ok("   => OK")
     else:
         print_error("databrickslabs_jupyterlabs is not installed on the remote cluster")
@@ -224,11 +227,13 @@ if args.lab:
 # Create a jupyter kernelspecification
 #
 if args.kernelspec:
-    print("\n* Create remote kernel spec")
+    print("\n* Creating remote kernel spec")
     # Using local conda environment name avoids overwriting of kernelspecs from different environments
-    create_kernelspec(profile, args.organisation, host, cluster_id, os.environ['CONDA_DEFAULT_ENV'])
+    create_kernelspec(profile, args.organisation, host, cluster_id, os.environ['CONDA_DEFAULT_ENV'], python_path)
+    print_ok("   => OK")
 
     print("\n* Setting global config of jupyter lab (autorestart, timeout)")
     write_config()
+    print_ok("   => OK")
 
 print("")
