@@ -144,9 +144,14 @@ def get_cluster(profile, host, token, cluster_id=None, status=None):
             print_error("   Error: ssh key for profile 'id_%s.pub' does not exist in %s/.ssh" % (profile, expanduser("~")))
             bye()
 
-    apiclient = connect(profile)
-    client = ClusterApi(apiclient)
-    clusters = client.list_clusters()
+    try:
+        apiclient = connect(profile)
+        client = ClusterApi(apiclient)
+        clusters = client.list_clusters()
+    except Exception as ex:
+        print_error(ex)
+        return (None, None, None, None)
+
     clusters = clusters["clusters"]
 
     if cluster_id is not None:
