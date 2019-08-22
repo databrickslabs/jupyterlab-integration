@@ -178,7 +178,7 @@ def create_kernelspec(profile, organisation, host, cluster_id, cluster_name, loc
         env += " DBJL_ORG=%s" % organisation
     kernel_cmd = "sudo -H %s %s/python -m ipykernel -f {connection_file}" % (env, python_path)
 
-    if cluster_name == local_env:
+    if cluster_name.replace(" ", "_") == local_env:
         name = "%s:%s" % (profile, cluster_name)
     else:
         name = "%s:%s (%s)" % (profile, cluster_name, local_env)
