@@ -10,6 +10,7 @@ from inquirer.themes import Default, term
 
 import databrickslabs_jupyterlab
 from databrickslabs_jupyterlab.remote import ssh, Dark, get_python_path, get_remote_packages
+from databrickslabs_jupyterlab.local import print_ok
 
 WHITELIST = [
     "hyperopt", "keras-applications", "keras-preprocessing", "keras", "matplotlib", "mleap", "mlflow", "numba", "numpy",
@@ -39,10 +40,6 @@ BLACKLIST = [
 ]
 
 
-def print_green(message):
-    print("\n\x1b[32m%s\x1b[0m" % message)
-
-
 def execute(script, script_name, message):
     with tempfile.TemporaryDirectory() as tmpdir:
         script_file = os.path.join(tmpdir, script_name)
@@ -62,7 +59,7 @@ def update_env(env_file):
     script = """#!/bin/bash
 conda env update --file %s
 """ % (env_file)
-    print_green("Updating current conda environment")
+    print_ok("Updating current conda environment")
     execute(script, "update_env.sh", "Error while updating conda environment")
 
 
@@ -72,7 +69,7 @@ conda env create -n %s -f %s
 source $(conda info | awk '/base env/ {print $4}')/bin/activate "%s" 
 """ % (env_name, env_file, env_name)
 
-    print_green("   => Installing conda environment %s" % env_name)
+    print_ok("   => Installing conda environment %s" % env_name)
     execute(script, "install_env.sh", "Error while installing conda environment")
 
 
@@ -85,9 +82,10 @@ jupyter labextension install $(cat %s)
         script = """#!/bin/bash
 source $(conda info | awk '/base env/ {print $4}')/bin/activate "%s" 
 jupyter labextension install $(cat %s)
+jupyter lab build
 """ % (env_name, labext_file)
 
-    print_green("   => Installing jupyterlab extensions")
+    print_ok("   => Installing jupyterlab extensions")
     execute(script, "install_labext.sh", "Error while installing jupyter labextensions")
 
 
@@ -152,7 +150,7 @@ def install(profile, cluster_id, cluster_name, use_whitelist):
 
 
 def usage(env_name):
-    print_green("""
+    print_ok("""
 = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
                               Q U I C K S T A R T
 = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
