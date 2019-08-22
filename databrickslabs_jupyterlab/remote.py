@@ -105,10 +105,10 @@ def select_cluster(clusters):
     """
     def entry(i, cluster):
         if cluster.get("autoscale", None) is None:
-            return "%s: %s (id: %s, state: %s, workers: %d)" % (i, cluster["cluster_name"], cluster["cluster_id"],
+            return "%s: '%s' (id: %s, state: %s, workers: %d)" % (i, cluster["cluster_name"], cluster["cluster_id"],
                                                                 cluster["state"], cluster["num_workers"])
         else:
-            return "%s: %s (id: %s, state: %s, scale: %d-%d)" % (i, cluster["cluster_name"], cluster["cluster_id"],
+            return "%s: '%s' (id: %s, state: %s, scale: %d-%d)" % (i, cluster["cluster_name"], cluster["cluster_id"],
                                                                  cluster["state"], cluster["autoscale"]["min_workers"],
                                                                  cluster["autoscale"]["max_workers"])
 
@@ -184,10 +184,17 @@ def get_cluster(profile, host, token, cluster_id=None, status=None):
             return (None, None, None, None)
 
         current_conda_env = os.environ.get("CONDA_DEFAULT_ENV", None)
-        if current_conda_env in [c["cluster_name"] for c in my_clusters]:
+        found = None
+        for i, c in enumerate(my_clusters):
+            if c["cluster_name"].replace(" ", "_") == current_conda_env:
+                found = c["cluster_name"]
+                break
+
+        if found is not None:
             print_warning(
-                "\n   => The current conda environment is %s. You might want to select the cluster with the same name?\n" %
-                current_conda_env)
+                "\n   => The current conda environment is '%s'.\n      You might want to select cluster %d with the name '%s'?\n" %
+                (current_conda_env, i, found))
+
         cluster = select_cluster(my_clusters)
 
     cluster_id = cluster["cluster_id"]
