@@ -71,7 +71,7 @@ and call:
 - Create a jupyter kernel specification for a databricks cli profile ($PROFILE) with the following command:
 
     ```bash
-    (db-jlab)$ databrickslabs-jupyterlab $PROFILE -k
+    (db-jlab)$ databrickslabs-jupyterlab $PROFILE -k -f
     ```
 
 - Start Jupyter Lab the usual way:
@@ -80,8 +80,25 @@ and call:
     (db-jlab)$ jupyter lab
     ```
 
-    **Note:** A new kernel is available in the kernel change menu
+**Note:** A new kernel is available in the kernel change menu.
+The kernel name has the following structure: `SSH $CLUSTER_ID $PROFILE:$CLUSTER_NAME ($LOCAL_CONDA_ENV_NAME)`
+where `$LOCAL_CONDA_ENV_NAME` will be omitted if `$LOCAL_CONDA_ENV_NAME == $CLUSTER_NAME`. Example:
 
+Examples: 
+
+- `SSH 0806-143104-skirt84 demo:bernhard-5.5-ml (db-jlab)`
+
+    - Workspace profile name: `demo`
+    - Cluster ID: `0806-143104-skirt84`
+    - Cluster Name: `bernhard-5.5-ml`
+    - Local conda environment: `db-jlab`
+
+- `SSH 0806-143104-skirt84 demo:bernhard-5.5-ml`
+
+    - Workspace profile name: `demo`
+    - Cluster ID: `0806-143104-skirt84`
+    - Cluster Name: `bernhard-5.5-ml`
+    - Local conda environment: `bernhard-5.5-ml`
 
 ### 3.3 Using Spark in the Notebook
 
@@ -118,6 +135,10 @@ After pressing *Enter*, you will see
 
 **Note:** `databrickslabs-jupyterlab $PROFILE -c` let's you quickly copy the token to the clipboard so that you can simply paste the token to the input box.
 
+#### Switching kernels
+
+Kernels can be switched via the Jupyterlab Kernel Change dialog. However, when switching to a remote kernel, the local connecteion context might get out of sync and the notebook cannot be used. In this case (step 1) shutdown the kernel and (2) Select the remote kernel again from the Jupyterlab Kernel Change dialog. A simple Kernel Restart by Jupyter lab will not work since this does not refresh the connection context.
+
 #### Restart after cluster auto-termination
 
 Should the cluster auto terminate while the notebook is connected, the status bar will change to
@@ -140,13 +161,6 @@ In this case check connectivity, e.g. by calling `ssh <cluster_id>` in a termina
 After successful start the status would again show:
 
 - ![kernel ready](docs/connected.png)
-
-#### Notebook hung after cluster start or kernel change
-
-When this happens, usually the local Jupyter lab frontend and the remote kernel are out of sync. Try the following:
-
-- Save your notebook(s) and refresh the browser page.
-- If it still doesn't work, additionally restart the kernel
 
 ## 4 Creating a mirror of a remote Databricks cluster
 
