@@ -5,11 +5,8 @@ import subprocess
 import sys
 import tempfile
 
-import inquirer
-from inquirer.themes import Default, term
-
 import databrickslabs_jupyterlab
-from databrickslabs_jupyterlab.remote import ssh, Dark, get_python_path, get_remote_packages
+from databrickslabs_jupyterlab.remote import ssh, get_python_path, get_remote_packages
 from databrickslabs_jupyterlab.local import print_ok
 
 WHITELIST = [
