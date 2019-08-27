@@ -15,7 +15,7 @@ from databrickslabs_jupyterlab.remote import (bye, check_installed, configure_ss
                                               get_python_path, get_remote_packages, install_libs, is_reachable,
                                               mount_sshfs, version_check)
 from databrickslabs_jupyterlab.local import (bye, conda_version, create_kernelspec, get_db_config, prepare_ssh_config,
-                                             print_error, print_ok, show_profiles, write_config)
+                                             print_error, print_ok, remove_kernelspecs, show_profiles, write_config)
 from databrickslabs_jupyterlab.install import install, update_local
 
 
@@ -35,6 +35,11 @@ parser.add_argument('-b',
                     dest='bootstrap',
                     action='store_true',
                     help='Bootstrap the local databrickslabs-jupyterlab environment')
+parser.add_argument('-d',
+                    '--delete',
+                    dest='delete',
+                    action='store_true',
+                    help='Delete a jupyter kernelspec')
 parser.add_argument('-m',
                     '--mirror',
                     dest='mirror',
@@ -123,6 +128,13 @@ if args.blacklist:
     import databrickslabs_jupyterlab.install
     print("   => These packages will note be installed:")
     print(databrickslabs_jupyterlab.install.BLACKLIST)
+    bye()
+
+#
+# Print White list and exit
+#
+if args.delete:
+    remove_kernelspecs()
     bye()
 
 #

@@ -17,14 +17,7 @@ from databricks_cli.clusters.api import ClusterApi
 
 import databrickslabs_jupyterlab
 from databrickslabs_jupyterlab.rest import Clusters, Libraries, DatabricksApiException
-from databrickslabs_jupyterlab.local import (bye, print_ok, print_error, print_warning)
-
-
-class Dark(Default):
-    """Dark Theme for inquirer"""
-    def __init__(self):
-        super().__init__()
-        self.List.selection_color = term.cyan
+from databrickslabs_jupyterlab.local import (bye, Dark, print_ok, print_error, print_warning)
 
 
 def ssh(host, cmd):

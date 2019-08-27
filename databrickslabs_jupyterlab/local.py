@@ -1,10 +1,20 @@
 import configparser
+from jupyter_client import kernelspec
 import os
 import subprocess
 import sys
 import textwrap
 from os.path import expanduser
 from ssh_config import SSHConfig, Host
+import inquirer
+from inquirer.themes import Default, term
+
+
+class Dark(Default):
+    """Dark Theme for inquirer"""
+    def __init__(self):
+        super().__init__()
+        self.List.selection_color = term.cyan
 
 class Colors:
     ERROR = '\033[91m'
@@ -195,3 +205,33 @@ def create_kernelspec(profile, organisation, host, cluster_id, cluster_name, loc
         verbose=True)
 
     print("   => Kernel specification 'SSH %s %s' created or updated" % (cluster_id, name))
+
+def remove_kernelspecs():
+    km = kernelspec.KernelSpecManager()
+
+    kernel_id = None
+    while kernel_id != "done":
+
+        remote_ikernels = {
+            kernelspec.get_kernel_spec(k).display_name : k
+            for k, v in kernelspec.find_kernel_specs().items() if k.startswith("rik")
+        }
+        if remote_ikernels == {}:
+            print_ok("   => No databricklabs_jupyterlab kernel spec left")
+            break
+
+        choice = [
+            inquirer.List("kernel_name",
+                        message="Which kernel spec to delete (Ctrl-C to finish)?",
+                        choices=list(remote_ikernels.keys()))
+        ]
+        answer = inquirer.prompt(choice, theme=Dark())
+
+        if answer is None:
+            break
+
+        kernel_name = answer["kernel_name"]
+        if kernel_id != "done":
+            answer = input("Really delete kernels spec '%s' (y/n) " % kernel_name)
+            if answer.lower() == "y":
+                km.remove_kernel_spec(remote_ikernels[kernel_name])
