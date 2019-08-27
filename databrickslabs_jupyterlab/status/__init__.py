@@ -1,6 +1,7 @@
 from collections import defaultdict
 import json
 import os
+import socket
 import subprocess
 import threading
 import time
@@ -114,6 +115,9 @@ class DbStatusHandler(KernelHandler):
             Status().set_status(profile, cluster_id, status)
         else:
             kernel = self.get_kernel(kernel_id)
+            # kernel_info = kernel.get_connection_info()
+            # print(kernel.is_alive(), self._is_running(kernel_info))
+            # self._is_running(kernel_info)
             if kernel is not None:
                 if kernel.is_alive():
                     status = "Connected"
@@ -128,6 +132,16 @@ class DbStatusHandler(KernelHandler):
         # print("start_status: '%s'; alive: '%s; status: '%s'" % (start_status, alive,result))
         self.finish(json.dumps(result))
 
+    # def _is_running(self, kernel_info):
+    #     port = kernel_info["hb_port"]
+    #     import socket
+    #     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    #     if sock.connect_ex(("127.0.01", port)) == 0:
+    #         sock.close()
+    #         return True
+    #     else:
+    #         print("terminated")
+    #         return False
 
 class DbStartHandler(KernelHandler):
     """Databricks cluster start handler"""
