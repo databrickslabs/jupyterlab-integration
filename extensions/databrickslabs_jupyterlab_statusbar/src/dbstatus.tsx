@@ -70,6 +70,19 @@ export namespace DbStatus {
     constructor(options: Model.IOptions) {
       super();
       this._notebookTracker = options.notebookTracker;
+      // console.log(options.notebookTracker)
+      // console.log(options.labShell)
+      // console.log(options.notebookTracker.currentWidget)
+      options.labShell.restored.then((x) => { 
+        var session = options.notebookTracker.currentWidget.session;
+        session.kernelChanged.connect((x) => {
+          this.check_status(session.kernelDisplayName, session.kernel.id)
+        })
+        session.ready.then(() => {
+          console.log("Session ready", session)
+          this.check_status(session.kernelDisplayName, session.kernel.id)
+        })
+      })
 
       this._poll = new Poll<Private.IDbStatusRequestResult | null>({
         factory: () => Private.factory(this, options.notebookTracker),
@@ -116,32 +129,48 @@ export namespace DbStatus {
       })
     }
 
-    private _restart_dialog(status:string) {
-      var title, body, label;
-      if (status == "TERMINATED") {
-        title = "Cluster terminated";
-        body = "Start remote cluster?";
-        label = "Start Cluster";
-      } else if (status === "UNREACHABLE") {
-        title = "Cluster not reachable?";
-        body = "Check e.g. VPN and then reconfigure kernel?";
-        label = "Reconfigure cluster";
-      }      
-      showDialog({
-        title: title,
-        body: body,
-        buttons: [
-          Dialog.cancelButton(),
-          Dialog.warnButton({ label: label })
-        ]
-      }).then(result => {
-        if (result.button.accept) {
-          let session = this._notebookTracker.currentWidget!.session;
-          let id = session.kernel.id;
-          let name = session.kernelDisplayName;
-          Private.request("/databrickslabs-jupyterlab-start", name, id)
+    private async check_status(name:string, id: string) {
+      const response = await Private.request("databrickslabs-jupyterlab-status", name, id);
+      if (response.ok) {
+        var result = await response.json();
+        if (result.status === "TERMINATED" || result.status === "UNREACHABLE") {
+          this._updateStatusValues(result)
         }
-      })      
+      } else {
+        console.error("check_status response: unknown", response)
+      }
+    }
+    
+    private _restart_dialog(status:string) {
+      if (! this._dialog_shown) {
+        this._dialog_shown = true;
+        var title, body, label;
+        if (status == "TERMINATED") {
+          title = "Cluster terminated";
+          body = "Start remote cluster?";
+          label = "Start Cluster";
+        } else if (status === "UNREACHABLE") {
+          title = "Cluster not reachable?";
+          body = "Check e.g. VPN and then reconfigure kernel?";
+          label = "Reconfigure cluster";
+        }      
+        showDialog({
+          title: title,
+          body: body,
+          buttons: [
+            Dialog.cancelButton(),
+            Dialog.warnButton({ label: label })
+          ]
+        }).then(result => {
+          if (result.button.accept) {
+            let session = this._notebookTracker.currentWidget!.session;
+            let id = session.kernel.id;
+            let name = session.kernelDisplayName;
+            Private.request("/databrickslabs-jupyterlab-start", name, id)
+            this._dialog_shown = false;
+          }
+        })
+      }
     }
     /**
      * Given the results of the status request, update model values.
@@ -149,7 +178,6 @@ export namespace DbStatus {
     private _updateStatusValues(value: Private.IDbStatusRequestResult | null): void {
       const oldStatusAvailable = this._statusAvailable;
       const oldCurrentStatus = this._currentStatus;
-
       if (value === null) {
         this._statusAvailable = false;
         this._currentStatus = "";
@@ -164,11 +192,6 @@ export namespace DbStatus {
 
       if ((this._currentStatus === "TERMINATED") || (this._currentStatus === "UNREACHABLE")) {
         if (this._currentStatus !== oldCurrentStatus) {
-          this._terminate_count = 0;
-        } else {
-          this._terminate_count += 1;
-        }
-        if (this._terminate_count === 1) {
           this._restart_dialog(this._currentStatus)
         }
       }
@@ -233,7 +256,8 @@ export namespace DbStatus {
     private _session: IClientSession;
     private _restarting = false;
     private _restarting_count = 0;
-    private _terminate_count = 0;
+    private _dialog_shown = false;
+    // private _terminate_count = 0;
   }
 
   /**
@@ -276,7 +300,7 @@ namespace Private {
     
     var url = URLExt.join(SERVER_CONNECTION_SETTINGS.baseUrl, command);
     url = url + "?profile=" + profile + "&cluster_id=" + cluster_id + "&id=" + id;
-    
+
     return ServerConnection.makeRequest(url, {}, SERVER_CONNECTION_SETTINGS);
   }
   
@@ -289,7 +313,9 @@ namespace Private {
     var is_starting = parent.currentStatus !== "Connected";
 
     counter += 1
+    console.log(counter, is_starting, tab_switch, parent.restarting)
     if (counter === 10 || is_starting || tab_switch || parent.restarting) {
+      console.log("factory get status")
       counter = 0;
       
       const response = await request("databrickslabs-jupyterlab-status", name, id);
@@ -297,8 +323,9 @@ namespace Private {
       if (response.ok) {
         try {
           var result = await response.json();
+          console.log("factory result:", result)
           // Keep restarting for 3 seconds
-          if (parent.restarting_count > 3) {
+          if (parent.restarting_count == 4) {
             parent.restarting = false
           } else {
             parent.restarting_count += 1;
@@ -309,6 +336,7 @@ namespace Private {
         }
       } 
     } else {
+      console.log("factory reuse status")
       return {"status": parent.currentStatus}
     }
     return null;
