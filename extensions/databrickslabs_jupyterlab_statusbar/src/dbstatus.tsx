@@ -313,9 +313,7 @@ namespace Private {
     var is_starting = parent.currentStatus !== "Connected";
 
     counter += 1
-    console.log(counter, is_starting, tab_switch, parent.restarting)
     if (counter === 10 || is_starting || tab_switch || parent.restarting) {
-      console.log("factory get status")
       counter = 0;
       
       const response = await request("databrickslabs-jupyterlab-status", name, id);
@@ -323,7 +321,6 @@ namespace Private {
       if (response.ok) {
         try {
           var result = await response.json();
-          console.log("factory result:", result)
           // Keep restarting for 3 seconds
           if (parent.restarting_count == 4) {
             parent.restarting = false
@@ -336,7 +333,6 @@ namespace Private {
         }
       } 
     } else {
-      console.log("factory reuse status")
       return {"status": parent.currentStatus}
     }
     return null;
