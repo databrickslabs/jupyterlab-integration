@@ -362,6 +362,10 @@ def is_reachable(public_dns):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(3)
     result = sock.connect_ex((public_dns, 2200))
+    try:
+        sock.close()
+    except:
+        pass
     return result == 0
 
 
