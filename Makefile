@@ -84,13 +84,8 @@ upload_ext:
 # dev tools
 
 check_version:
-ifdef env_file
-	dev_tools/check_versions $(env_file)
-else
-	@echo "$(ERROR_COLOR)Provide env_file=databrickslabs_jupyterlab/env_files/env...$(NO_COLOR)"
-	exit 1
-endif
+	dev_tools/check_versions env.yml
 
 dev_tools:
-	pip install twine bumpversion yapf pylint
+	pip install twine bumpversion yapf pylint pyYaml
 
