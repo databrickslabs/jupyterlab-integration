@@ -4,47 +4,12 @@ import os
 import subprocess
 import sys
 import textwrap
+import time
 from os.path import expanduser
 from ssh_config import SSHConfig, Host
 import inquirer
-from inquirer.themes import Default, term
 
-
-class Dark(Default):
-    """Dark Theme for inquirer"""
-    def __init__(self):
-        super().__init__()
-        self.List.selection_color = term.cyan
-
-class Colors:
-    ERROR = '\033[91m'
-    OK = '\033[92m'
-    WARNING = '\033[93m'
-    RESET = '\033[0m'
-
-def _print(color, *args):
-    print(color, end="")
-    print(*args, end="")
-    print(Colors.RESET)
-
-def print_ok(*args):
-    _print(Colors.OK, *args)
-
-def print_error(*args):
-    _print(Colors.ERROR, *args)
-
-def print_warning(*args):
-    _print(Colors.WARNING, *args)
-
-def bye(status=0):
-    """Standard exit function
-    
-    Args:
-        msg (str, optional): Exit message to be printed. Defaults to None.
-    """
-    if status != 0:
-        print_error("\n=> Exiting")
-    sys.exit(status)
+from databrickslabs_jupyterlab.utils import (bye, Dark, print_ok, print_error, print_warning)
 
 
 def conda_version():

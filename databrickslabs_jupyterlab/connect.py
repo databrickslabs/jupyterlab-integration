@@ -151,28 +151,13 @@ def dbcontext(progressbar=True):
     # Fetch auth_token and gateway port ...
     #
     cmd = 'c=sc._gateway.client.gateway_client; print(c.gateway_parameters.auth_token + "|" + str(c.port))'
-    try:
-        command_id = command.execute(cmd)
-    except DatabricksApiException as ex:
-        print(ex)
-        return None    
+    result = command.execute(cmd)
     
-    finished = False
-    while not finished:
-        print(".", end="", flush=True)
-        time.sleep(1)
-        try:
-            result = command.status(command_id)
-        except DatabricksApiException as ex:
-            print(ex)
-            return None    
-        finished = result["status"] == "Finished"
-    
-    if result["results"]["resultType"] == "error":
-        print(result["results"]["cause"])
+    if result[0] != 0:
+        print(result[1])
         return None
-
-    auth_token, port = result["results"]["data"].split("|")
+    
+    auth_token, port = result[1].split("|")
     port = int(port)
 
     interpreter = "/databricks/python/bin/python"
@@ -272,7 +257,7 @@ def dbcontext(progressbar=True):
     # Ensure that the virtual python environment and py4j gateway gets shut down
     # when the python interpreter shuts down
     #
-    def shutdown_kernel(context):
+    def shutdown_kernel(command):
         def handler():
             from IPython import get_ipython
             ip = get_ipython()
@@ -287,12 +272,12 @@ def dbcontext(progressbar=True):
             if ip.user_ns.get("dbutils", None) is not None:
                 del ip.user_ns["dbutils"]
             # Context is a singleton
-            context.destroy()
+            command.close()
 
         return handler
 
 
-    atexit.register(shutdown_kernel(command.context))
+    atexit.register(shutdown_kernel(command))
 
     # Forward spark variables to the user namespace
     #

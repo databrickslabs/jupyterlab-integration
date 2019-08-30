@@ -6,7 +6,7 @@ import sys
 import tempfile
 
 import databrickslabs_jupyterlab
-from databrickslabs_jupyterlab.remote import ssh, get_python_path, get_remote_packages
+from databrickslabs_jupyterlab.remote import get_python_path, get_remote_packages
 from databrickslabs_jupyterlab.local import print_ok
 
 WHITELIST = [
@@ -99,11 +99,10 @@ def update_local():
     usage(os.environ.get("CONDA_DEFAULT_ENV", "unknown"))
 
 
-def install(profile, cluster_id, cluster_name, use_whitelist):
+def install(profile, host, token, cluster_id, cluster_name, use_whitelist):
     print("\n* Installation of local environment to mirror a remote Databricks cluster")
+    libs = get_remote_packages(cluster_id, host, token)
 
-    python_path = get_python_path(cluster_id)
-    libs = get_remote_packages(cluster_id, python_path)
     if use_whitelist:
         print_ok("   => Using whitelist to select packages")
         ds_libs = [lib for lib in libs if lib["name"].lower() in WHITELIST]

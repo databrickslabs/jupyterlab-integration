@@ -10,134 +10,103 @@ import time
 from notebook.base.handlers import IPythonHandler
 from tornado import web
 from collections import defaultdict
-import ssh_config
 from tornado.log import LogFormatter
 
 import databrickslabs_jupyterlab
 from databrickslabs_jupyterlab.remote import (connect, is_reachable, get_cluster, get_python_path, is_reachable,
-                                              check_installed, install_libs, ssh)
+                                              check_installed, install_libs)
+from databrickslabs_jupyterlab.utils import SshConfig
 from databrickslabs_jupyterlab.local import (get_db_config, prepare_ssh_config)
 from databricks_cli.clusters.api import ClusterApi
 
-_LOG_FMT = ("%(color)s[%(levelname)1.1s %(asctime)s.%(msecs).03d "
-            "%(name)s]%(end_color)s %(message)s")
+DEBUG_LEVEL = "INFO"
+
+_LOG_FMT = ("%(color)s[%(levelname)1.1s %(asctime)s.%(msecs).03d " "%(name)s]%(end_color)s %(message)s")
 _LOG_DATEFMT = "%H:%M:%S"
 
 _console = logging.StreamHandler()
 _console.setFormatter(LogFormatter(fmt=_LOG_FMT, datefmt=_LOG_DATEFMT))
-_console.setLevel("INFO")
+_console.setLevel(DEBUG_LEVEL)
 
 _logger = logging.getLogger("databrickslabs-jl")
 _logger.propagate = False
-_logger.setLevel("INFO")
+_logger.setLevel(DEBUG_LEVEL)
 _logger.handlers = []
 _logger.addHandler(_console)
 
-class SshConfig:
-    class __SshConfig:
-        def __init__(self):
-            self.config_file = os.path.expanduser("~/.ssh/config")
-            self.load()
 
-        def _get_mtime(self):
-            return os.stat(self.config_file).st_mtime
+def get_cluster_state(profile, cluster_id, chk_version=False):
+    apiclient = connect(profile)
+    client = ClusterApi(apiclient)
+    cluster = client.get_cluster(cluster_id)
+    state = cluster.get("state", None)
+    if state == "TERMINATED":
+        _logger.warning("DbStatusHandler cluster state = %s" % state)
+    else:
+        _logger.info("DbStatusHandler cluster state = %s" % state)
 
-        def load(self):
-            _logger.info("Loading ssh config")
-            self.mtime = self._get_mtime()
-            sc = ssh_config.SSHConfig.load(self.config_file)
-            self.hosts = {
-                h.name: h.attributes()["HostName"]
-                for h in sc.hosts() if h.attributes().get("HostName", None) is not None
-            }
-
-        def get_dns(self, host_name):
-            if self._get_mtime() > self.mtime:
-                self.load()
-            return self.hosts.get(host_name, None)
-
-    instance = None
-
-    def __init__(self):
-        """Singleton initializer"""
-        if not SshConfig.instance:
-            SshConfig.instance = SshConfig.__SshConfig()
-
-    def __getattr__(self, name):
-        """Singleton getattr overload"""
-        return getattr(self.instance, name)
+    return state
 
 
 class Status:
-    """Singleton for the Status object"""
-    class __Status:
-        """Status implementation"""
-        def __init__(self):
-            self.status = defaultdict(lambda: {})
-            self.dots = 0
-            self.installing = {}
-
-        def get_status(self, profile, cluster_id):
-            """Get current cluster start status for the jupyterlab status line
-            
-            Args:
-                profile (str): Databricks CLI profile string
-                cluster_id (str): Cluster ID
-            
-            Returns:
-                str: Cluster status or "unknown"
-            """
-            # print("get_status", profile, cluster_id, self.status[profile].get(cluster_id, None))
-            if self.status.get(profile, None) is not None:
-                status = self.status[profile].get(cluster_id, None)
-                if status is None:
-                    status = "unknown"
-                return status
-            else:
-                return None
-
-        def set_status(self, profile, cluster_id, status, new_status=True):
-            """Set Cluster start status for the jupyterlab status line
-            
-            Args:
-                profile (str): Databricks CLI profile string
-                cluster_id (str): Cluster ID
-                status (str): Status value
-                new_status (bool, optional): If True, number of progress dots is set to 0. Defaults to True.
-            """
-            # print("set_status", profile, cluster_id, status, new_status)
-            if new_status:
-                self.dots = 0
-            else:
-                self.dots = (self.dots + 1) % 6
-            # if status == "Connected":
-            #     self.dots = 0
-            self.status[profile][cluster_id] = status + ("." * self.dots)
-
-        def get_installing(self, profile, cluster_id):
-            return self.installing["%s %s" % (profile, cluster_id)]
-
-        def set_installing(self, profile, cluster_id):
-            self.installing["%s %s" % (profile, cluster_id)] = True
-
-        def unset_installing(self, profile, cluster_id):
-            self.installing["%s %s" % (profile, cluster_id)] = False
-
-    instance = None
-
+    """Status implementation"""
     def __init__(self):
-        """Singleton initializer"""
-        if not Status.instance:
-            Status.instance = Status.__Status()
+        self.status = defaultdict(lambda: defaultdict(lambda: {}))
+        self.dots = 0
+        self._installing = defaultdict(lambda: None)
 
-    def __getattr__(self, name):
-        """Singleton getattr overload"""
-        return getattr(self.instance, name)
+    def get_status(self, profile, cluster_id):
+        """Get current cluster start status for the jupyterlab status line
+        
+        Args:
+            profile (str): Databricks CLI profile string
+            cluster_id (str): Cluster ID
+        
+        Returns:
+            str: Cluster status or "UNKNOWN"
+        """
+        if self.status[profile][cluster_id] == {}:
+            # For the first run start_status is None.
+            # Use REST API to provide a reasonable status
+            state = get_cluster_state(profile, cluster_id)  # called max once
+            if state in ["PENDING", "RESTARTING"]:
+                status = "Pending"  # special status, don't set in global state
+            elif state in ["RUNNING", "RESIZING"]:
+                status = "Running"  # standard status
+            elif state in ["TERMINATING", "TERMINATED"]:
+                status = "UNREACHABLE"  # standard status
+            else:
+                status = state  # ERROR, UNKNOWN non standard status
+            self.set_status(profile, cluster_id, status)
+
+        return self.status[profile][cluster_id]
+
+    def set_status(self, profile, cluster_id, status, new_status=True):
+        """Set Cluster start status for the jupyterlab status line
+        
+        Args:
+            profile (str): Databricks CLI profile string
+            cluster_id (str): Cluster ID
+            status (str): Status value
+            new_status (bool, optional): If True, number of progress dots is set to 0. Defaults to True.
+        """
+        self.dots = 0 if new_status else (self.dots + 1) % 6
+        self.status[profile][cluster_id] = status + ("." * self.dots)
+
+    def installing(self, profile, cluster_id):
+        return self._installing["%s %s" % (profile, cluster_id)]
+
+    def set_installing(self, profile, cluster_id):
+        self._installing["%s %s" % (profile, cluster_id)] = True
+
+    def unset_installing(self, profile, cluster_id):
+        self._installing["%s %s" % (profile, cluster_id)] = False
 
 
 class KernelHandler(IPythonHandler):
     """Kernel handler to get jupyter kernel for given kernelspec"""
-    NBAPP = None
+    nbapp = None
+    status = Status()
 
     def get_kernel(self, kernel_id):
         """Get jupyter kernel for given kernel Id
@@ -148,7 +117,7 @@ class KernelHandler(IPythonHandler):
         Returns:
             KernelManager: KernelManager object
         """
-        km = KernelHandler.NBAPP.kernel_manager
+        km = KernelHandler.nbapp.kernel_manager
 
         kernel_info = None
         for kernel_info in km.list_kernels():
@@ -166,86 +135,56 @@ class DbStatusHandler(KernelHandler):
     @web.authenticated
     def get(self):
         """GET handler to return the current Databricks cluster start status"""
+        global_status = KernelHandler.status
+
         profile = self.get_argument('profile', None, True)
         cluster_id = self.get_argument('cluster_id', None, True)
-        # kernel_id = self.get_argument('id', None, True)
+        kernel_id = self.get_argument('id', None, True)
 
-        # For the first run start_status is None.
-        # Use REST API to provide a reasonable status
         status = None
         reachable = None
-        state = None
-        start_status = Status().get_status(profile, cluster_id)
-        if start_status is None:
-            Status().unset_installing(profile, cluster_id)
-            state = self.get_cluster_state(profile, cluster_id)
-            if state in ["PENDING", "RESTARTING"]:
-                Status().set_installing(profile, cluster_id)
-                start_status = "Pending"
-            elif state in ["RUNNING", "RESIZING"]:
-                start_status = "Running"
-            elif state in ["TERMINATING", "TERMINATED"]:
-                start_status = "TERMINATED"
-            else:
-                Status().unset_installing(profile, cluster_id)
-                start_status = state  # ERROR, UNKNOWN
+        start_status = global_status.get_status(profile, cluster_id)
+        # returns Running, Pending, ERROR, UNKNOWN from remote
+        # and a chain of staus ending with "Running" if DbStartHandler started cluster
 
-            Status().set_status(profile, cluster_id, start_status)
-
-        if Status().get_installing(profile, cluster_id):
-            # While the DbStartHandler is installing the kernel, provide its status
+        if global_status.installing(profile, cluster_id):
+            # While the DbStartHandler is installing the kernel, provide the global starting status
             status = start_status
         else:
-            # Else, chekc reachability
+            # Else, check reachability
             dns = SshConfig().get_dns(cluster_id)
             if dns is None:
                 status = "ERROR: Unknown cluster id"
             else:
-                reachable = is_reachable(dns)
+                reachable = is_reachable(dns)  # fairly cheap, opens a socket and closes it
                 if reachable:
-                    _logger.info("DbStatusHandler reachable = %s" % reachable)
-                else:
-                    _logger.warning("DbStatusHandler reachable = %s" % reachable)
-                if reachable:
-                    if start_status.lower() == "running":
+                    if start_status == "Running":
+                        # global start status "Running" is mapped to UI status "Connected"
                         status = "Connected"
-                    elif start_status != "Connected":
-                        state = self.get_cluster_state(profile, cluster_id)
-                        status = state
-                        if status == "RUNNING" and not self.check_ipykernel(cluster_id):
-                            status =" ERROR: ipykernel not installed"
-                else:
-                    status = "UNREACHABLE"
-                    if start_status == "TERMINATED":
-                        status = "TERMINATED"
                     else:
-                        if state is None:
-                            state = self.get_cluster_state(profile, cluster_id)
-                        if state == "TERMINATED":
-                            status = state
-                            Status().set_status(profile, cluster_id, status)
+                        status = start_status
+
+                    # Even when reachable, libraries can be missing
+                    kernel = self.get_kernel(kernel_id)
+                    if kernel is not None:
+                        alive = kernel.is_alive()
+                        if not alive:
+                            _logger.error("DbStatusHandler: kernel is dead (start_status=%s)" % start_status)
+                            # checking against "MISSING LIBS" ensures check_installed will only be called once
+                            host, token = get_db_config(profile)
+                            if start_status != "MISSING LIBS" and not check_installed(cluster_id, host, token):
+                                _logger.error("DbStatusHandler: libraries are missing on remote server")
+                                status = "MISSING LIBS"
+                                global_status.set_status(profile, cluster_id, status)
+                else:
+                    _logger.warning("DbStatusHandler: kernel is not reachable")
+                    status = "UNREACHABLE"
 
         result = {'status': "%s" % status}
-        if status != "Connected":
-            _logger.debug("DbStatusHandler: installing: '%s'; reachable: '%s'; state: '%s'; start_status: '%s'; status: '%s'" %
-                (Status().installing, reachable, state, start_status, result))
+        _logger.debug("DbStatusHandler: installing: '%s'; reachable: '%s'; start_status: '%s'; ; status: '%s'" %
+            (global_status.installing(profile, cluster_id), reachable, start_status, result))
         self.finish(json.dumps(result))
 
-    def get_cluster_state(self, profile, cluster_id):
-        apiclient = connect(profile)
-        client = ClusterApi(apiclient)
-        cluster = client.get_cluster(cluster_id)
-        state = cluster.get("state", None)
-        if state == "TERMINATED":
-            _logger.warning("DbStatusHandler cluster state = %s" % state)
-        else:
-            _logger.info("DbStatusHandler cluster state = %s" % state)
-        return state
-
-    def check_ipykernel(self, cluster_id):
-        python_path = get_python_path(cluster_id)
-        lib = ssh(cluster_id, "%s show ipykernel" % python_path).strip()
-        return len(lib) > 0
 
 class DbStartHandler(KernelHandler):
     """Databricks cluster start handler"""
@@ -270,42 +209,38 @@ class DbStartHandler(KernelHandler):
             cluster_id (str): Cluster ID
             kernel_id (str): Internal jupyter kernel ID
         """
-        if Status().get_installing(profile, cluster_id):
+        global_status = KernelHandler.status
+        
+        if global_status.installing(profile, cluster_id):
             _logger.info("DbStartHandler cluster %s:%s already starting" % (profile, cluster_id))
         else:
             _logger.info("DbStartHandler cluster %s:%s start triggered" % (profile, cluster_id))
-            Status().set_installing(profile, cluster_id)
-            Status().set_status(profile, cluster_id, "Starting cluster")
+            global_status.set_installing(profile, cluster_id)
+
             host, token = get_db_config(profile)
-            cluster_id, public_ip, cluster_name, conda_env = get_cluster(profile, host, token, cluster_id, Status())
+            cluster_id, public_ip, cluster_name, dummy = get_cluster(profile, host, token, cluster_id, global_status)
             if cluster_name is None:
-                Status().set_status(profile, cluster_id, "ERROR: Cluster could not be found")
+                global_status.set_status(profile, cluster_id, "ERROR: Cluster could not be found")
                 return
 
-            Status().set_status(profile, cluster_id, "Configuring SSH")
+            global_status.set_status(profile, cluster_id, "Configuring SSH")
             prepare_ssh_config(cluster_id, profile, public_ip)
             if not is_reachable(public_dns=public_ip):
-                Status().set_status(profile, cluster_id, "UNREACHABLE")
+                global_status.set_status(profile, cluster_id, "UNREACHABLE")
             else:
-                python_path = get_python_path(cluster_id)
-
-                Status().set_status(profile, cluster_id, "Checking driver libs")
-                if not check_installed(cluster_id, python_path):
-                    Status().set_status(profile, cluster_id, "Installing driver libs")
-                    install_libs(cluster_id, python_path)
-
-                # Recheck in case something went wrong
-                if check_installed(cluster_id, python_path):
-                    Status().set_status(profile, cluster_id, "Driver libs installed")
+                global_status.set_status(profile, cluster_id, "Installing driver libs")
+                result = install_libs(cluster_id, host, token)
+                if result[0] == 0:
+                    _logger.info("DbStartHandler: installations done")
                 else:
-                    Status().set_status(profile, cluster_id, "ERROR: Driver libs not installed")
-                    return
+                    _logger.error("DbStartHandler: installations failed")
+                    global_status.set_status(profile, cluster_id, "ERROR")
 
-                time.sleep(2)
+                time.sleep(1)
                 kernel = self.get_kernel(kernel_id)
                 kernel.restart_kernel(now=True)
-                Status().set_status(profile, cluster_id, "Running")
-            Status().unset_installing(profile, cluster_id)
+                global_status.set_status(profile, cluster_id, "Running")
+            global_status.unset_installing(profile, cluster_id)
 
 
 def _jupyter_server_extension_paths():

@@ -13,7 +13,7 @@ from enum import Enum
 import databrickslabs_jupyterlab
 from databrickslabs_jupyterlab.remote import (bye, check_installed, configure_ssh, connect, get_cluster,
                                               get_python_path, get_remote_packages, install_libs, is_reachable,
-                                              mount_sshfs, version_check)
+                                              version_check)
 from databrickslabs_jupyterlab.local import (bye, conda_version, create_kernelspec, get_db_config, prepare_ssh_config,
                                              print_error, print_ok, remove_kernelspecs, show_profiles, write_config)
 from databrickslabs_jupyterlab.install import install, update_local
@@ -50,11 +50,6 @@ parser.add_argument('-c',
                     dest='clipboard',
                     action='store_true',
                     help='Copy the personal access token to the clipboard')
-parser.add_argument('-f',
-                    '--force',
-                    dest='force',
-                    action='store_true',
-                    help='Force remote installation of databrickslabs_jupyterlab package')
 parser.add_argument('-i', '--id', dest='cluster_id', help='The cluster_id to avoid manual selection')
 parser.add_argument('-k', '--kernelspec', dest='kernelspec', action='store_true', help='Create a kernel specification')
 parser.add_argument('-l', '--lab', dest='lab', action='store_true', help='Safely start Jupyter Lab')
@@ -117,7 +112,7 @@ if args.version:
 #
 if args.whitelist:
     import databrickslabs_jupyterlab.install
-    print("   => If package exists in mremote cluster an this list, it will be installed:")
+    print("   => If package exists in remote cluster an this list, it will be installed:")
     print(databrickslabs_jupyterlab.install.WHITELIST)
     bye()
 
@@ -173,6 +168,7 @@ if args.profile == "":
     print_error("\ndatabrickslabs-jupyterlab: error: the following arguments are required: profile\n")
     bye(1)
 
+
 print("\n* Getting host and token from .databrickscfg")
 host, token = get_db_config(profile)
 if ("azuredatabricks.net" in host) and args.kernelspec and not args.organisation:
@@ -226,15 +222,12 @@ if args.kernelspec or args.reconfigure or args.lab or args.versioncheck or args.
         bye(1)
     print_ok("   => OK")
 
-    # print("\n   => Retrieving python path")
-    # python_path = get_python_path(cluster_id, conda_env)
-    
-    python_path = get_python_path(cluster_id)
+
 #
 # Compare local and remote libray versions
 #
 if args.versioncheck:
-    version_check(cluster_id, args.versioncheck, python_path)
+    version_check(cluster_id, host, token, args.versioncheck)
     bye()
 
 
@@ -242,22 +235,19 @@ if args.versioncheck:
 # Create a conda environment that mirrors the selected remote cluster and exit
 #
 if args.mirror:
-    install(profile, cluster_id, cluster_name, args.use_whitelist)
+    install(profile, host, token, cluster_id, cluster_name, args.use_whitelist)
     bye()
 
 #
 # Install databrickslabs_jupyterlab libraries on the driver
 #
 if args.kernelspec or args.reconfigure or args.lab:
-    print("\n* Checking installed libraries")
-    if args.force or not check_installed(cluster_id, python_path):
-        install_libs(cluster_id, python_path)
-
-    # Recheck in case something went wrong
-    if check_installed(cluster_id, python_path):
+    print("\n* Installing driver libraries")
+    result = install_libs(cluster_id, host, token)
+    if result[0] == 0:
         print_ok("   => OK")
     else:
-        print_error("databrickslabs_jupyterlabs is not installed on the remote cluster")
+        print_error(result[1])
         bye(1)
 
 #
@@ -274,6 +264,7 @@ if args.lab:
 #
 if args.kernelspec:
     print("\n* Creating remote kernel spec")
+    python_path = get_python_path(cluster_id)
     # Using local conda environment name avoids overwriting of kernelspecs from different environments
     create_kernelspec(profile, args.organisation, host, cluster_id, cluster_name, os.environ['CONDA_DEFAULT_ENV'],
                       python_path)

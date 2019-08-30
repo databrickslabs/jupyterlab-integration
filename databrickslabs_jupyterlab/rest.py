@@ -1,3 +1,4 @@
+import time
 import os
 
 import requests
@@ -212,8 +213,18 @@ class Command(Rest):
         command_id = response.get("id", None)
         if command_id is None:
             raise DatabricksApiException(403, 4, "Command ID missing")
+        
+        finished = False
+        while not finished:
+            print(".", end="", flush=True)
+            time.sleep(1)
+            result = self.status(command_id)
+            finished = result["status"] == "Finished"
+
+        if result["results"]["resultType"] == "error":
+            return (-1, result["results"]["cause"])
         else:
-            return command_id
+            return (0, result["results"]["data"])
 
     def status(self, command_id):
         """Check the status of the command execution
@@ -227,6 +238,9 @@ class Command(Rest):
         path = "commands/status?commandId=%s&contextId=%s&clusterId=%s" % (command_id, self.context.id, self.cluster_id)
         return self.get(self.url, "1.2", path, token=self.token)
 
+    def close(self):
+        self.context.destroy()
+        
 
 class Clusters(Rest):
     """Databricks Clusters API

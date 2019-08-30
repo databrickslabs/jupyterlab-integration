@@ -9,61 +9,15 @@ import uuid
 import glob
 
 import inquirer
-from inquirer.themes import Default, term
 
 from databricks_cli.configure.provider import get_config, ProfileConfigProvider
 from databricks_cli.sdk.api_client import ApiClient
 from databricks_cli.clusters.api import ClusterApi
 
 import databrickslabs_jupyterlab
-from databrickslabs_jupyterlab.rest import Clusters, Libraries, DatabricksApiException
-from databrickslabs_jupyterlab.local import (bye, Dark, print_ok, print_error, print_warning)
-
-
-def ssh(host, cmd):
-    """Execute an ssh command
-    
-    Args:
-        host (str): Hostname or ssh host alias
-        cmd (str): Command to execute
-    
-    Returns:
-        str: Commend result or in error case None
-    """
-    try:
-        return subprocess.check_output(["ssh", "-o", "StrictHostKeyChecking=no", "-o", "LogLevel=ERROR", host, cmd])
-    except:
-        print_error("Error installing package")
-        bye(1)
-        return None
-
-
-def scp(host, file, target):
-    """Copy a file to the remote host via scp
-    
-    Args:
-        host (str): Hostname or ssh host alias
-        file (str): file name of the file to be copied
-        target (str): target folder or path
-    """
-    try:
-        subprocess.run(["scp", "-q", "-o", "StrictHostKeyChecking=no", "%s" % file, "%s:%s" % (host, target)])
-    except:
-        print_error("Error copying file over ssh")
-        bye()
-
-
-def run(cmd):
-    """Run a shell command
-    
-    Args:
-        cmd (str): shell command
-    """
-    try:
-        subprocess.run(cmd)
-    except:
-        print_error("Error running: %s" % cmd)
-        bye(1)
+from databrickslabs_jupyterlab._version import __version__
+from databrickslabs_jupyterlab.rest import Command, Clusters, Libraries, DatabricksApiException
+from databrickslabs_jupyterlab.utils import (bye, Dark, print_ok, print_error, print_warning, run)
 
 
 def connect(profile):
@@ -256,13 +210,8 @@ def get_cluster(profile, host, token, cluster_id=None, status=None):
                 done = True
                 print_ok("\n   => OK\n")
 
-    # spark_envs = response.get("spark_env_vars", None)
-    # if spark_envs is None:
-    #     conda_env = None
-    # else:
-    #     conda_env = response["spark_env_vars"].get("DATABRICKS_ROOT_CONDA_ENV", None)
-    #     if conda_env is not None:
-    #         conda_env = conda_env.strip('"') # if variable was added with quotes in UI
+        if status is not None:
+            status.set_status(profile, cluster_id, "Cluster libraries installed", False)
 
     public_ip = response["driver"].get("public_dns", None)
     if public_ip is None:
@@ -289,66 +238,51 @@ def get_python_path(host, conda_env=None):
     return python_path
 
 
-def install_libs(host, python_path):
+def install_libs(cluster_id, host, token):
     """Install ipywidgets, sidecar and databrickslabs_jupyterlab libraries on the driver
     
     Args:
         host (str): host from databricks cli config for given profile string
         python_path (str): Remote python path to be used for kernel
     """
-    pip_cmd = "%s/pip install -q --no-warn-conflicts --disable-pip-version-check" % python_path
+    python_path = get_python_path(cluster_id)
 
-    module_path = os.path.dirname(databrickslabs_jupyterlab.__file__)
-    wheel = glob.glob("%s/lib/*.whl" % module_path)[0]
-
-    target = "/home/ubuntu/%s" % str(uuid.uuid4())
-
-    print("   => Installing ipywidgets")
     packages = json.loads(subprocess.check_output(["conda", "list", "--json"]))
     deps = {p["name"]: p["version"] for p in packages if p["name"] in ["ipywidgets", "sidecar"]}
-    ssh(host, "sudo -H %s ipywidgets==%s sidecar==%s" % (pip_cmd, deps["ipywidgets"], deps["sidecar"]))
+    libs = ["ipywidgets==%s" % deps["ipywidgets"],
+            "sidecar==%s" % deps["sidecar"],
+            "databrickslabs-jupyterlab==%s" % __version__]
+    pip_cmd = ["%s/pip" %python_path,  "install", "-q", "--no-warn-conflicts", "--disable-pip-version-check"] + libs
 
-    print("   => Installing databrickslabs_jupyterlab")
-    ssh(host, "mkdir -p %s" % target)
-    scp(host, wheel, target)
-    ssh(host, "sudo -H %s --upgrade %s/%s" % (pip_cmd, target, os.path.basename(wheel)))
-    ssh(host, "rm -f %s/* && rmdir %s" % (target, target))
+    cmd =  'import subprocess, json; ' + \
+          ('ret = subprocess.run(%s, stderr=subprocess.PIPE, encoding="utf-8"); ' % pip_cmd) + \
+           'print(json.dumps([ret.returncode, str(ret.stderr)]))'
 
-
-def mount_sshfs(host):
-    """Mount remote driver filesystem via sshfs
-    Needs Fuse running on local machine
-    
-    Args:
-        host (str): host from databricks cli config for given profile string
-    """
-    ssh(host, "sudo mkdir -p /usr/lib/ssh")
-    ssh(host, "sudo ln -s /usr/lib/openssh/sftp-server /usr/lib/ssh/sftp-server")
-    run(["mkdir", "-p", "./remotefs/%s" % host])
+    print("   => Installing %s" % ", ".join(libs))
     try:
-        run(["umount", "-f", "./remotefs/%s" % host])
-    except:
-        pass
-    run(["sshfs", "ubuntu@%s:/dbfs" % host, "./remotefs/%s" % host, "-p", "2200"])
+        command = Command(url=host, cluster_id=cluster_id, token=token)
+        result = command.execute(cmd)
+        command.close()
+    except DatabricksApiException as ex:
+        print("REST API error", ex)
+        return False
+
+    if result[0] == 0:
+        return tuple(json.loads(result[1]))
+    else:
+        return result
 
 
-def get_remote_packages(host, python_path):
-    """List all packages installed on remote cluster
-    
-    Args:
-        host (str): host from databricks cli config for given profile string
-        python_path (str): Remote python path to be used for kernel
-    
-    Returns:
-        list(dict): List of pip list --format=json
-    """
-    pip_cmd = "%s/pip list --disable-pip-version-check --format=json" % python_path
-
-    # Bug in pip 10: https://github.com/pypa/pip/issues/5250
-    pip_cmd += " --no-cache-dir"
-
-    return json.loads(ssh(host, pip_cmd))
-
+def get_remote_packages(cluster_id, host, token):
+    cmd = 'import pkg_resources, json; print(json.dumps([{"name":p.key, "version":p.version} for p in pkg_resources.working_set]))'
+    try:
+        command = Command(url=host, cluster_id=cluster_id, token=token)
+        result = command.execute(cmd)
+        command.close()
+    except DatabricksApiException as ex:
+        print(ex)
+        return None
+    return result
 
 def is_reachable(public_dns):
     """Check whether a remote cluster is reachable
@@ -389,30 +323,33 @@ def get_library_state(cluster_id, host, token):
         return [lib["status"] for lib in libraries["library_statuses"]]
 
 
-def check_installed(host, python_path):
+def check_installed(cluster_id, host, token):
     """Check whether databrickslabs_jupyterlab is installed on the remote host
     
     Args:
-        host (str): host from databricks cli config for given profile string
-        python_path (str): Remote python path to be used for kernel
     
     Returns:
         bool: True if installed else False
     """
-    packages = get_remote_packages(host, python_path)
-    found = False
-    for p in packages:
-        if p["name"] == "databrickslabs-jupyterlab":
-            found = True
-            break
-    return found
+    result = get_remote_packages(cluster_id, host, token)
+    if result[0] == 0:
+        packages = json.loads(result[1])
+        package_names = [p["name"] for p in packages]
+        needed = ["databrickslabs-jupyterlab", "ipywidgets", "ipykernel"]
+
+        return all([p in package_names for p in needed])
+    else:
+        print(result[1])
+        return False
 
 
-def version_check(cluster_id, flag, python_path):
+def version_check(cluster_id, host, token, flag):
     """Compare local and remote library versions
     
     Args:
         cluster_id (str): Cluster ID
+        host (str): host from databricks cli config for given profile string
+        token (str): token from databricks cli config for given profile string
         flag (str): all|diff|same
     """
     def normalize(key):
@@ -421,7 +358,11 @@ def version_check(cluster_id, flag, python_path):
     packages = json.loads(subprocess.check_output(["conda", "list", "--json"]))
     deps = {normalize(p["name"]): p["version"] for p in packages}
 
-    remote_packages = get_remote_packages(cluster_id, python_path)
+    result = get_remote_packages(cluster_id, host, token)
+    if result[0] == 0:
+        remote_packages = json.loads(result[1])
+    else:
+        return
     remote_deps = {normalize(p["name"]): p["version"] for p in remote_packages}
     joint_keys = sorted(list(set(list(deps.keys()) + list(remote_deps.keys()))))
     print("%-30s %-10s%-10s" % ("Package", "local", "remote"))

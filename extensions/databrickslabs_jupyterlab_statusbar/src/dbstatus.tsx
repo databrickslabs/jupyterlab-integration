@@ -18,6 +18,50 @@ import { INotebookTracker } from '@jupyterlab/notebook';
 import { Dialog, showDialog } from '@jupyterlab/apputils';
 
 
+class Counter {
+  private _count = 0;
+  private _limit = 0;
+  private _delay = 0;
+
+  constructor() {
+    this.reset()
+  }
+  next() {
+    this._count += 1;
+    var result = (this._count % this._delay == 0)
+    if ((this._limit != -1) && (this._count > this._limit)) {
+      switch (this._delay) {
+        case 1: { 
+          this._delay = 2; 
+          this._limit = 30; // 60 seconds every 2 seconds
+          break; } 
+        case 2: { 
+          this._delay = 5; 
+          this._limit = 24; // 120 seconds every 5 seconds
+          break; }
+        case 5: { 
+          this._delay = 10;  // every 10 seconds until reset
+          this._limit = -1;
+          break; 
+        }
+        default: { 
+          this._delay = 10;  // every 10 seconds until reset
+          this._limit = -1;
+          break; 
+        }
+      }
+      
+      this._count = 1;
+      console.log(this._delay, this._limit)
+    }
+    return result
+  }
+  reset() {
+    this._count = 0
+    this._limit = 60  // 60 seconds every seconds
+    this._delay = 1
+  }
+}
 /**
  * A VDomRenderer for showing memory usage by a kernel.
  */
@@ -46,6 +90,8 @@ export class DbStatus extends VDomRenderer<DbStatus.Model> {
     if (text === "TERMINATED") {
       text = "[ " + text + " ] (click here to start cluster)";
     } else if (text === "UNREACHABLE") { 
+      text = "[ " + text + " ] (click here to reconnect)";
+    } else if (text === "MISSING LIBS") { 
       text = "[ " + text + " ] (click here to reconfigure)";
     } else {
       text = "[ " + text + " ]";
@@ -133,7 +179,7 @@ export namespace DbStatus {
       const response = await Private.request("databrickslabs-jupyterlab-status", name, id);
       if (response.ok) {
         var result = await response.json();
-        if (result.status === "TERMINATED" || result.status === "UNREACHABLE") {
+        if (result.status === "TERMINATED" || result.status === "UNREACHABLE" || result.status === "MISSING LIBS") {
           this._updateStatusValues(result)
         }
       } else {
@@ -150,10 +196,14 @@ export namespace DbStatus {
           body = "Start remote cluster?";
           label = "Start Cluster";
         } else if (status === "UNREACHABLE") {
-          title = "Cluster not reachable?";
-          body = "Check e.g. VPN and then reconfigure kernel?";
+          title = "Cluster not reachable";
+          body = "Cluster could be terminated or cannot be reached. Check VPN and then reconnect";
+          label = "Reconnect";
+        } else if (status === "MISSING LIBS") {
+          title = "Libraries are missing on the remote machine";
+          body = "Reconfiguration of the cluster will install them";
           label = "Reconfigure cluster";
-        }      
+        }  
         showDialog({
           title: title,
           body: body,
@@ -167,9 +217,10 @@ export namespace DbStatus {
             let id = session.kernel.id;
             let name = session.kernelDisplayName;
             Private.request("/databrickslabs-jupyterlab-start", name, id)
-            this._dialog_shown = false;
+            this.counter.reset();
           }
         })
+        this._dialog_shown = false;
       }
     }
     /**
@@ -190,7 +241,9 @@ export namespace DbStatus {
         this._currentStatus = status;
       }
 
-      if ((this._currentStatus === "TERMINATED") || (this._currentStatus === "UNREACHABLE")) {
+      if ((this._currentStatus === "TERMINATED")  || 
+          (this._currentStatus === "UNREACHABLE") ||
+          (this._currentStatus === "MISSING LIBS") ) {
         if (this._currentStatus !== oldCurrentStatus) {
           this._restart_dialog(this._currentStatus)
         }
@@ -207,9 +260,10 @@ export namespace DbStatus {
     /**
      * Click handler
      */
-     handleClick() {
-      if ((this.currentStatus == "TERMINATED") || 
-          (this.currentStatus === "UNREACHABLE")) {
+    handleClick() {
+      if ((this._currentStatus == "TERMINATED")  || 
+          (this._currentStatus == "UNREACHABLE")|| 
+          (this._currentStatus == "MISSING LIBS")) {
           this._restart_dialog(this.currentStatus)
       }
     }
@@ -257,7 +311,7 @@ export namespace DbStatus {
     private _restarting = false;
     private _restarting_count = 0;
     private _dialog_shown = false;
-    // private _terminate_count = 0;
+    public counter = new Counter()
   }
 
   /**
@@ -282,7 +336,6 @@ export namespace DbStatus {
 
 namespace Private {
   const SERVER_CONNECTION_SETTINGS = ServerConnection.makeSettings();
-  var counter = 0;
   var old_name = "";
 
   export interface IDbStatusRequestResult {
@@ -309,12 +362,13 @@ namespace Private {
     let name = notebookTracker.currentWidget!.session.kernelDisplayName;
     var tab_switch = old_name !== name;
     old_name = name;
+    if (tab_switch || parent.restarting) {
+      parent.counter.reset();
+    }
     let id = notebookTracker.currentWidget!.session.kernel.id;
     var is_starting = parent.currentStatus !== "Connected";
 
-    counter += 1
-    if (counter === 10 || is_starting || tab_switch || parent.restarting) {
-      counter = 0;
+    if (parent.counter.next() || is_starting || tab_switch || parent.restarting) {
       
       const response = await request("databrickslabs-jupyterlab-status", name, id);
 
