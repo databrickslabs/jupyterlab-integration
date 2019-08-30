@@ -13,10 +13,11 @@ import inquirer
 from databricks_cli.configure.provider import get_config, ProfileConfigProvider
 from databricks_cli.sdk.api_client import ApiClient
 from databricks_cli.clusters.api import ClusterApi
+from databricks_cli.libraries.api import LibrariesApi
 
 import databrickslabs_jupyterlab
 from databrickslabs_jupyterlab._version import __version__
-from databrickslabs_jupyterlab.rest import Command, Clusters, Libraries, DatabricksApiException
+from databrickslabs_jupyterlab.rest import Command, DatabricksApiException
 from databrickslabs_jupyterlab.utils import (bye, Dark, print_ok, print_error, print_warning, run)
 
 
@@ -147,10 +148,9 @@ def get_cluster(profile, host, token, cluster_id=None, status=None):
     cluster_id = cluster["cluster_id"]
     cluster_name = cluster["cluster_name"]
 
-    cluster_api = Clusters(url=host, token=token)
     try:
-        response = cluster_api.status(cluster_id)
-    except DatabricksApiException as ex:
+        response = client.get_cluster(cluster_id)
+    except Exception as ex:
         print_error(ex)
         return (None, None, None, None)
 
@@ -161,8 +161,8 @@ def get_cluster(profile, host, token, cluster_id=None, status=None):
             if status is not None:
                 status.set_status(profile, cluster_id, "Cluster Starting")
             try:
-                response = cluster_api.start(cluster_id)
-            except DatabricksApiException as ex:
+                response = client.start_cluster(cluster_id)
+            except Exception as ex:
                 print_error(ex)
                 return (None, None, None, None)
 
@@ -175,14 +175,14 @@ def get_cluster(profile, host, token, cluster_id=None, status=None):
             print(".", end="", flush=True)
             time.sleep(5)
             try:
-                response = cluster_api.status(cluster_id)
-            except DatabricksApiException as ex:
+                response = client.get_cluster(cluster_id)
+            except Exception as ex:
                 print_error(ex)
                 return (None, None, None, None)
 
             if response.get("error", None) is not None:
-                print("ERROR", response)
-                state = "UNKNOWN"
+                print_error(response["error"])
+                return (None, None, None, None)
             else:
                 state = response["state"]
         print_ok("\n   => OK")
@@ -196,7 +196,7 @@ def get_cluster(profile, host, token, cluster_id=None, status=None):
         done = False
         while not done:
             try:
-                states = get_library_state(cluster_id, host=host, token=token)
+                states = get_library_state(profile, cluster_id)
             except DatabricksApiException as ex:
                 print_error(ex)
                 return (None, None, None, None)
@@ -305,7 +305,7 @@ def is_reachable(public_dns):
     return result == 0
 
 
-def get_library_state(cluster_id, host, token):
+def get_library_state(profile, cluster_id):
     """Get the state of the library installation on the remote cluster
     
     Args:
@@ -316,9 +316,14 @@ def get_library_state(cluster_id, host, token):
     Returns:
         list: list of installation status for each custom library
     """
-    libraries_api = Libraries(url=host, token=token)
-    libraries = libraries_api.status(cluster_id)
-
+    try:
+        apiclient = connect(profile)
+        client = LibrariesApi(apiclient)
+        libraries = client.cluster_status(cluster_id)
+    except Exception as ex:
+        print_error(ex)
+        return None
+        
     if libraries.get("library_statuses", None) is None:
         return []
     else:
@@ -409,10 +414,16 @@ def configure_ssh(profile, host, token, cluster_id):
     with open(sshkey_file + ".pub", "r") as fd:
         sshkey = fd.read().strip()
 
-    cluster_api = Clusters(url=host, token=token)
     try:
-        response = cluster_api.status(cluster_id)
-    except DatabricksApiException as ex:
+        apiclient = connect(profile)
+        client = ClusterApi(apiclient)
+    except Exception as ex:
+        print_error(ex)
+        return None
+
+    try:
+        response = client.get_cluster(cluster_id)
+    except Exception as ex:
         print_error(ex)
         return None
 
@@ -437,7 +448,7 @@ def configure_ssh(profile, host, token, cluster_id):
     answer = input("   => Shall the ssh key be added and the cluster be restarted (y/n)? (default = n): ")
     if answer.lower() == "y":
         try:
-            response = cluster_api.edit(request)
+            response = client.edit_cluster(request)
         except DatabricksApiException as ex:
             print_error(str(ex))
             return None
