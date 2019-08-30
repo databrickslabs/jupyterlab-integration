@@ -259,10 +259,12 @@ def install_libs(cluster_id, host, token):
            'print(json.dumps([ret.returncode, str(ret.stderr)]))'
 
     print("   => Installing %s" % ", ".join(libs))
+    print("   ", end="")
     try:
         command = Command(url=host, cluster_id=cluster_id, token=token)
         result = command.execute(cmd)
         command.close()
+        print()
     except DatabricksApiException as ex:
         print("REST API error", ex)
         return False
