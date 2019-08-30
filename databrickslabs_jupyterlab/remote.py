@@ -323,7 +323,7 @@ def get_library_state(profile, cluster_id):
     except Exception as ex:
         print_error(ex)
         return None
-        
+
     if libraries.get("library_statuses", None) is None:
         return []
     else:
@@ -437,8 +437,15 @@ def configure_ssh(profile, host, token, cluster_id):
         bye()
 
     request = {}
-    for key in ["cluster_id", "cluster_name", "spark_version", "node_type_id"]:
+    for key in [
+            "autotermination_minutes", "cluster_id", "cluster_name", "cluster_source", "creator_user_name",
+            "default_tags", "driver_node_type_id", "enable_elastic_disk", "init_scripts_safe_mode", "node_type_id",
+            "spark_env_vars", "spark_version"
+    ]:
         request[key] = response[key]
+
+    if response.get("aws_attributes", None) is not None:
+        request["aws_attributes"] = response["aws_attributes"]
 
     if response.get("num_workers", None) is not None:
         request["num_workers"] = response["num_workers"]
