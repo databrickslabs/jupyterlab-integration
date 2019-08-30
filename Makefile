@@ -55,7 +55,9 @@ endif
 
 # wheel:
 
-dist: 
+dist:
+	@mkdir -p databrickslabs_jupyterlab/lib
+	@cp env.yml labextensions.txt "databrickslabs_jupyterlab/lib/"
 	@python setup.py sdist bdist_wheel
 
 release:
