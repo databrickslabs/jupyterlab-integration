@@ -18,7 +18,7 @@ import databrickslabs_jupyterlab
 from databrickslabs_jupyterlab._version import __version__
 from databrickslabs_jupyterlab.rest import Command, DatabricksApiException
 from databrickslabs_jupyterlab.utils import bye, Dark, print_ok, print_error, print_warning
-from databrickslabs_jupyterlab.local import execute, get_local_libs
+from databrickslabs_jupyterlab.local import execute, get_local_libs, utf8_decode
 
 
 def connect(profile):
@@ -255,7 +255,7 @@ def install_libs(cluster_id, host, token):
     pip_cmd = ["%s/pip" %python_path,  "install", "-q", "--no-warn-conflicts", "--disable-pip-version-check"] + libs
 
     cmd =  'import subprocess, json; ' + \
-          ('ret = subprocess.run(%s, stderr=subprocess.PIPE, encoding="utf-8"); ' % pip_cmd) + \
+          ('ret = subprocess.run(%s, stderr=subprocess.PIPE); ' % pip_cmd) + \
            'print(json.dumps([ret.returncode, str(ret.stderr)]))'
 
     print("   => Installing %s" % ", ".join(libs))
@@ -270,13 +270,15 @@ def install_libs(cluster_id, host, token):
         return False
 
     if result[0] == 0:
-        return tuple(json.loads(result[1]))
+        return tuple(json.loads(utf8_decode(result[1])))
     else:
         return result
 
 
 def get_remote_packages(cluster_id, host, token):
-    cmd = 'import pkg_resources, json; print(json.dumps([{"name":p.key, "version":p.version} for p in pkg_resources.working_set]))'
+    cmd = 'import sys, pkg_resources, json; ' + \
+          'print(json.dumps([{"name": "python", "version": "%d.%d" % (sys.version_info.major, sys.version_info.minor)}] + ' + \
+          '[{"name":p.key, "version":p.version} for p in pkg_resources.working_set]))'
     try:
         command = Command(url=host, cluster_id=cluster_id, token=token)
         result = command.execute(cmd)

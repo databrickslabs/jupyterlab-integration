@@ -129,7 +129,8 @@ def install(profile, host, token, cluster_id, cluster_name, use_whitelist):
     if result[0] != 0:
         print_error(result[1])
         bye(1)
-    libs = json.loads(result[1])    
+    libs = json.loads(result[1])
+
     if use_whitelist:
         print_ok("   => Using whitelist to select packages")
         ds_libs = [lib for lib in libs if lib["name"].lower() in WHITELIST]
@@ -139,19 +140,30 @@ def install(profile, host, token, cluster_id, cluster_name, use_whitelist):
 
     ds_yml = ""
     for lib in ds_libs:
-        if lib["name"] == "hyperopt":
-            r = re.compile(r"(\d+\.\d+.\d+)(.*)")
-            version = r.match(lib["version"]).groups()[0]
+        if lib["name"] == "python":  # just artificially added
+            python_version = lib["version"]
         else:
-            version = lib["version"]
-        ds_yml += ("    - %s==%s\n" % (lib["name"], version))
-    print("\n    Library versions being installed:")
-    print(ds_yml + "\n")
+            if lib["name"] == "hyperopt":
+                r = re.compile(r"(\d+\.\d+.\d+)(.*)")
+                version = r.match(lib["version"]).groups()[0]
+            else:
+                version = lib["version"]
+            ds_yml += ("    - %s==%s\n" % (lib["name"], version))
+    
+    print("\n    Python version being installed: %s" % python_version)
+    print("    Library versions being installed:")
+    print(ds_yml.replace("==", ": ") + "\n")
 
     module_path = os.path.dirname(databrickslabs_jupyterlab.__file__)
     env_file = os.path.join(module_path, "lib/env.yml")
     with open(env_file, "r") as fd:
         master_yml = fd.read()
+    lines = master_yml.split("\n")
+    for i in range(len(lines)):
+        if lines[i].startswith("  - python="):
+            lines[i] = "  - python=%s" % python_version
+            break
+    master_yml = "\n".join(lines)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         env_file = os.path.join(tmpdir, "env.yml")

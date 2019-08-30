@@ -13,6 +13,16 @@ import inquirer
 from databrickslabs_jupyterlab.utils import (bye, Dark, print_ok, print_error, print_warning)
 
 
+def utf8_decode(text):
+    if isinstance(text, str):
+        return text
+        
+    try:
+        return text.decode("utf-8")
+    except:
+        # ok, let's replace the "bad" characters
+        return text.decode("utf-8", "replace")
+
 def execute(cmd):
     """Execute suprpcess
     
@@ -20,7 +30,11 @@ def execute(cmd):
         cmd (list(str)): Command as list of cmd parts (e.g. ["ls", "-l"])
     """
     try:
-        return subprocess.run(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE, encoding="utf-8").__dict__
+        # Cannot use encoding arg at the moment, since need to support python 3.5
+        result = subprocess.run(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE).__dict__
+        result["stderr"] = utf8_decode(result["stderr"])
+        result["stdout"] = utf8_decode(result["stdout"])
+        return result
     except Exception as ex:
         return {'args': cmd, 'returncode': -1, 'stdout': '', 'stderr': str(ex)}
 
