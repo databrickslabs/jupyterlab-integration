@@ -34,7 +34,16 @@ _logger.handlers = []
 _logger.addHandler(_console)
 
 
-def get_cluster_state(profile, cluster_id, chk_version=False):
+def get_cluster_state(profile, cluster_id):
+    """Get cluster state
+    
+    Args:
+        profile (str): Databricks CLI profile string
+        cluster_id (str): Cluster ID
+    
+    Returns:
+        dict: ClusterStatus
+    """
     apiclient = connect(profile)
     client = ClusterApi(apiclient)
     cluster = client.get_cluster(cluster_id)
@@ -93,12 +102,33 @@ class Status:
         self.status[profile][cluster_id] = status + ("." * self.dots)
 
     def installing(self, profile, cluster_id):
+        """Check whether cluster is currently in installation mode
+        
+        Args:
+            profile (str): Databricks CLI profile string
+            cluster_id (str): Cluster ID
+        
+        Returns:
+            bool: True if in installation mode, else False
+        """
         return self._installing["%s %s" % (profile, cluster_id)]
 
     def set_installing(self, profile, cluster_id):
+        """Set installation mode for a cluster
+        
+        Args:
+            profile (str): Databricks CLI profile string
+            cluster_id (str): Cluster ID
+        """
         self._installing["%s %s" % (profile, cluster_id)] = True
 
     def unset_installing(self, profile, cluster_id):
+        """Unset installation mode for a cluster
+        
+        Args:
+            profile (str): Databricks CLI profile string
+            cluster_id (str): Cluster ID
+        """
         self._installing["%s %s" % (profile, cluster_id)] = False
 
 
