@@ -3,7 +3,6 @@ import json
 import logging
 import os
 import socket
-import subprocess
 import sys
 import threading
 import time
@@ -13,8 +12,8 @@ from collections import defaultdict
 from tornado.log import LogFormatter
 
 import databrickslabs_jupyterlab
-from databrickslabs_jupyterlab.remote import (connect, is_reachable, get_cluster, get_python_path, is_reachable,
-                                              check_installed, install_libs)
+from databrickslabs_jupyterlab.remote import (connect, is_reachable, get_cluster, get_python_path, check_installed,
+                                              install_libs)
 from databrickslabs_jupyterlab.utils import SshConfig
 from databrickslabs_jupyterlab.local import (get_db_config, prepare_ssh_config)
 from databricks_cli.clusters.api import ClusterApi
@@ -210,7 +209,7 @@ class DbStartHandler(KernelHandler):
             kernel_id (str): Internal jupyter kernel ID
         """
         global_status = KernelHandler.status
-        
+
         if global_status.installing(profile, cluster_id):
             _logger.info("DbStartHandler cluster %s:%s already starting" % (profile, cluster_id))
         else:
