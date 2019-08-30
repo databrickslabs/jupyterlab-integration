@@ -5,6 +5,7 @@ This package allows to connect to a remote Databricks cluster from a locally run
 ## 1 Prerequisites
 
 1. **Anaconda installation**
+    
     A recent version of [Anaconda](https://www.anaconda.com/distribution) with Python >= *3.5*
     The tool conda must be newer then *4.7.5*
 
@@ -276,7 +277,7 @@ follow the usage guide in section 3.
     ```bash
     (db-jlab)$ databrickslabs-jupyterlab -h
 
-    usage: databrickslabs-jupyterlab [-h] [-b] [-m] [-c] [-f] [-i CLUSTER_ID] [-k]
+    usage: databrickslabs-jupyterlab [-h] [-b] [-d] [-m] [-c] [-i CLUSTER_ID] [-k]
                                     [-l] [-o ORGANISATION] [-p] [-r] [-s] [-v]
                                     [-V {all,diff,same}] [-w] [-W] [-B]
                                     [profile]
@@ -290,10 +291,9 @@ follow the usage guide in section 3.
     -h, --help            show this help message and exit
     -b, --bootstrap       Bootstrap the local databrickslabs-jupyterlab
                             environment
+    -d, --delete          Delete a jupyter kernelspec
     -m, --mirror          Mirror a a remote Databricks environment
     -c, --clipboard       Copy the personal access token to the clipboard
-    -f, --force           Force remote installation of databrickslabs_jupyterlab
-                            package
     -i CLUSTER_ID, --id CLUSTER_ID
                             The cluster_id to avoid manual selection
     -k, --kernelspec      Create a kernel specification
