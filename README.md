@@ -29,7 +29,7 @@ Install Databricks CLI and configure profile(s) for your cluster(s)
     ```bash
     (base)$ conda create -n db-jlab python=3.6
     (base)$ conda activate db-jlab
-    (db-jlab)$ pip install --upgrade databrickslabs-jupyterlab
+    (db-jlab)$ pip install --upgrade databrickslabs-jupyterlab==1.0.2-rc1
     ```
 
 - Bootstrap the environment for *databrickslabs_jupyterlab* with the following command:
