@@ -4,7 +4,6 @@ import sys
 import time
 from os.path import expanduser
 import socket
-import subprocess
 import uuid
 import glob
 
@@ -18,7 +17,8 @@ from databricks_cli.libraries.api import LibrariesApi
 import databrickslabs_jupyterlab
 from databrickslabs_jupyterlab._version import __version__
 from databrickslabs_jupyterlab.rest import Command, DatabricksApiException
-from databrickslabs_jupyterlab.utils import (bye, Dark, print_ok, print_error, print_warning, run)
+from databrickslabs_jupyterlab.utils import bye, Dark, print_ok, print_error, print_warning
+from databrickslabs_jupyterlab.local import execute, get_local_libs
 
 
 def connect(profile):
@@ -247,7 +247,7 @@ def install_libs(cluster_id, host, token):
     """
     python_path = get_python_path(cluster_id)
 
-    packages = json.loads(subprocess.check_output(["conda", "list", "--json"]))
+    packages = get_local_libs()
     deps = {p["name"]: p["version"] for p in packages if p["name"] in ["ipywidgets", "sidecar"]}
     libs = ["ipywidgets==%s" % deps["ipywidgets"],
             "sidecar==%s" % deps["sidecar"],
@@ -362,7 +362,7 @@ def version_check(cluster_id, host, token, flag):
     def normalize(key):
         return key.lower().replace("-", "_")
 
-    packages = json.loads(subprocess.check_output(["conda", "list", "--json"]))
+    packages = get_local_libs()
     deps = {normalize(p["name"]): p["version"] for p in packages}
 
     result = get_remote_packages(cluster_id, host, token)
@@ -404,8 +404,12 @@ def configure_ssh(profile, host, token, cluster_id):
         answer = input("   => Shall it be created (y/n)? (default = n): ")
         if answer.lower() == "y":
             print("   => Creating ssh key %s" % sshkey_file)
-            subprocess.call(["ssh-keygen", "-b", "2048",  "-N", "", "-f",  sshkey_file])
-            print_ok("   => OK")
+            result = execute(["ssh-keygen", "-b", "2048",  "-N", "", "-f",  sshkey_file])
+            if result["returncode"] == 0:
+                print_ok("   => OK")
+            else:
+                print_error(result["stderr"])
+                bye()
         else:
             bye()
     else:

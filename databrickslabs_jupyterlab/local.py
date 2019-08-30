@@ -1,4 +1,5 @@
 import configparser
+import json
 from jupyter_client import kernelspec
 import os
 import subprocess
@@ -12,16 +13,26 @@ import inquirer
 from databrickslabs_jupyterlab.utils import (bye, Dark, print_ok, print_error, print_warning)
 
 
+def execute(cmd):
+    """Execute suprpcess
+    
+    Args:
+        cmd (list(str)): Command as list of cmd parts (e.g. ["ls", "-l"])
+    """
+    try:
+        return subprocess.run(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE, encoding="utf-8").__dict__
+    except Exception as ex:
+        return {'args': cmd, 'returncode': -1, 'stdout': '', 'stderr': str(ex)}
+
+
 def conda_version():
     """Check conda version"""
-    try:
-        result = subprocess.check_output(["conda", "--version"])
-    except Exception as ex:
-        print(ex)
-        print("conda cannot be called. Is it properly installed?")
+    result = execute(["conda", "--version"])
+    if result["returncode"] != 0:
+        print_error(result["stderr"])
         sys.exit(1)
 
-    result = result.strip().decode()
+    result = result["stdout"].strip()
     return tuple([int(v) for v in result.split(" ")[1].split(".")])
 
 
@@ -53,6 +64,21 @@ def write_config():
     else:
         with open(config_file, "w") as fd:
             fd.write("\n".join(["%s=%s" % (k, v) for k, v in config.items()]))
+
+
+def get_local_libs():
+    """Get installed libraries of the currtent conda environment
+    """
+    result = execute(["conda", "list", "--json"])
+    if result["returncode"] != 0:
+        print_error(result["stderr"])
+        return False
+
+    try:
+        return json.loads(result["stdout"])
+    except Exception as ex:
+        print_error(ex)
+        return False
 
 
 def get_db_config(profile):

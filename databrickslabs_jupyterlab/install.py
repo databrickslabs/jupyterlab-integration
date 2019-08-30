@@ -1,13 +1,12 @@
 import json
 import os
 import re
-import subprocess
 import sys
 import tempfile
 
 import databrickslabs_jupyterlab
 from databrickslabs_jupyterlab.remote import get_python_path, get_remote_packages
-from databrickslabs_jupyterlab.local import print_ok
+from databrickslabs_jupyterlab.local import print_ok, print_error, execute
 
 WHITELIST = [
     "hyperopt", "keras-applications", "keras-preprocessing", "keras", "matplotlib", "mleap", "mlflow", "numba", "numpy",
@@ -37,18 +36,15 @@ BLACKLIST = [
 ]
 
 
-def execute(script, script_name, message):
+def execute_script(script, script_name, message):
     with tempfile.TemporaryDirectory() as tmpdir:
         script_file = os.path.join(tmpdir, script_name)
         with open(script_file, "w") as fd:
             fd.write(script)
 
-        try:
-            result = subprocess.call(["bash", script_file])
-            if result != 0:
-                sys.exit(1)
-        except Exception as ex:
-            print(message, ex)
+        result = execute(["bash", script_file])
+        if result["returncode"] != 0:
+            print_error(result["stderr"])
             sys.exit(1)
 
 
@@ -57,7 +53,7 @@ def update_env(env_file):
 conda env update --file %s
 """ % (env_file)
     print_ok("Updating current conda environment")
-    execute(script, "update_env.sh", "Error while updating conda environment")
+    execute_script(script, "update_env.sh", "Error while updating conda environment")
 
 
 def install_env(env_file, env_name=None):
@@ -67,7 +63,7 @@ source $(conda info | awk '/base env/ {print $4}')/bin/activate "%s"
 """ % (env_name, env_file, env_name)
 
     print_ok("   => Installing conda environment %s" % env_name)
-    execute(script, "install_env.sh", "Error while installing conda environment")
+    execute_script(script, "install_env.sh", "Error while installing conda environment")
 
 
 def install_labextensions(labext_file, env_name=None):
@@ -85,7 +81,7 @@ jupyter lab build
 """ % labext_file)
 
     print_ok("   => Installing jupyterlab extensions")
-    execute(script, "install_labext.sh", "Error while installing jupyter labextensions")
+    execute_script(script, "install_labext.sh", "Error while installing jupyter labextensions")
 
 
 def update_local():

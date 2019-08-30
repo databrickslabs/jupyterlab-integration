@@ -3,8 +3,8 @@
 import yaml
 import json
 import requests
-from subprocess import check_output
 import sys
+from databrickslabs_jupyterlab.local import execute, print_error
 
 
 def load_env(path):
@@ -48,13 +48,22 @@ def get_conda_version(lib, channels):
     for c in channels:
         cmd += ["-c", c]
     cmd += [lib, "--info", "--json"]
-    response = check_output(cmd)
-    return json.loads(response)[lib][-1]
+    result = execute(cmd)
+    if result["returncode"] != 0:
+        print_error(result["stderr"])
+        return None
+    else:
+        return json.loads(result["stdout"])[lib][-1]
 
 
 def get_npm_version(ext):
     cmd = ["npm", "show", ext, "version"]
-    return check_output(cmd)
+    result = execute(cmd)
+    if result["returncode"] != 0:
+        print_error(result["stderr"])
+        return None
+    else:
+        return result["stdout"].strip()
 
 
 def compare_conda(deps):
