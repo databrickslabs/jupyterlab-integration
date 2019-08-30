@@ -11,6 +11,9 @@ CURRENT_VERSION := $(shell awk '/current_version/ {print $$3}' .bumpversion.cfg)
 clean:
 	@echo "$(OK_COLOR)=> Cleaning$(NO_COLOR)"
 	@rm -fr build dist $(EGGS) $(PYCACHE) databrickslabs_jupyterlab/lib/* databrickslabs_jupyterlab/env_files/*
+	git add .
+	git status
+	git commit -m "cleanup before release"
 
 # Tests
 
@@ -50,16 +53,9 @@ endif
 
 # Dist commands
 
-wheel:
+# wheel:
 
 dist: 
-	@echo "$(OK_COLOR)=> Creating Wheel$(NO_COLOR)"
-	@mkdir -p databrickslabs_jupyterlab/lib
-	@python setup.py sdist bdist_wheel
-	@echo "$(OK_COLOR)=> Copying wheel into distributions$(NO_COLOR)"
-	@cp dist/databrickslabs_jupyterlab-*-py3-none-any.whl databrickslabs_jupyterlab/lib/
-	@cp env.yml labextensions.txt "databrickslabs_jupyterlab/lib/"
-	@echo "$(OK_COLOR)=> Creating final wheel$(NO_COLOR)"
 	@python setup.py sdist bdist_wheel
 
 release:
