@@ -3,75 +3,10 @@ from collections import defaultdict
 from pexpect import pxssh
 import random
 import ssh_config
-import subprocess
 import sys
 import time
 
 from inquirer.themes import Default, term
-
-
-# class Ssh:
-#     def __init__(self, ssh_config="~/.ssh/config"):
-#         self.ssh_config = os.path.expanduser(ssh_config)
-#         self.ssh = defaultdict(lambda: None)
-
-#     def _split_lines(self, result):
-#         return result.decode("utf-8").strip().split("\r\n")[1:]
-
-#     def execute(self, host, cmd):
-#         if self.ssh[host] is None:
-#             success = False
-#             delays = [2, 4, 8]
-#             for retry in range(3):
-#                 print("   => Connecting to %s via ssh (%d)" % (host, retry + 1))
-#                 try:
-#                     self.ssh[host] = pxssh.pxssh(options={"StrictHostKeyChecking": "no"})
-#                     self.ssh[host].login(host, quiet=False, ssh_config=self.ssh_config)
-#                     success = True
-#                     break
-#                 except:
-#                     delay = round(random.random(), 2) + delays[retry]
-#                     print_warning("   Failed to log into %s, waiting %3.1f seconds" % (host, delay))
-#                     time.sleep(delay)
-
-#             if success:
-#                 print_ok("   => OK")
-#             else:
-#                 print_error("   => Error")
-#                 return {"exit_code": -1, "result": None}
-
-#         self.ssh[host].sendline(cmd)
-#         self.ssh[host].prompt()
-#         result = self._split_lines(self.ssh[host].before)
-#         self.ssh[host].sendline('echo $?')
-#         self.ssh[host].prompt()
-#         exit_code = self._split_lines(self.ssh[host].before)
-#         try:
-#             exit_code = int(exit_code[0])
-#         except:
-#             pass
-#         if exit_code != 0: 
-#             print_error("   => Remote command failed")
-#         return {"exit_code": exit_code, "result": result}
-
-#     def close(self, host):
-#         if self.ssh[host] is not None:
-#             print("   => Closing ssh connection to %s" % host)
-#             self.ssh[host].logout()
-#             self.ssh[host] = None
-
-
-def run(cmd):
-    """Run a shell command
-    
-    Args:
-        cmd (str): shell command
-    """
-    try:
-        subprocess.run(cmd)
-    except:
-        print_error("Error running: %s" % cmd)
-        bye(1)
 
 
 def bye(status=0):
