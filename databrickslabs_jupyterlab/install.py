@@ -7,6 +7,8 @@ import tempfile
 import databrickslabs_jupyterlab
 from databrickslabs_jupyterlab.remote import get_python_path, get_remote_packages
 from databrickslabs_jupyterlab.local import print_ok, print_error, execute
+from databrickslabs_jupyterlab.utils import bye
+
 
 WHITELIST = [
     "hyperopt", "keras-applications", "keras-preprocessing", "keras", "matplotlib", "mleap", "mlflow", "numba", "numpy",
@@ -123,8 +125,11 @@ def update_local():
 
 def install(profile, host, token, cluster_id, cluster_name, use_whitelist):
     print("\n* Installation of local environment to mirror a remote Databricks cluster")
-    libs = get_remote_packages(cluster_id, host, token)
-
+    result = get_remote_packages(cluster_id, host, token)
+    if result[0] != 0:
+        print_error(result[1])
+        bye(1)
+    libs = json.loads(result[1])    
     if use_whitelist:
         print_ok("   => Using whitelist to select packages")
         ds_libs = [lib for lib in libs if lib["name"].lower() in WHITELIST]
