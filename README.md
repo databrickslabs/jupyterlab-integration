@@ -2,25 +2,32 @@
 
 This package allows to connect to a remote Databricks cluster from a locally running Jupyter Lab:
 
-![Overview](docs/overview.png)
-
 ## 1 Prerequisites
 
-### 1.1 Databricks CLI
+1. **Anaconda installation**
+    A recent version of [Anaconda](https://www.anaconda.com/distribution) with Python >= *3.5*
+    The tool conda must be newer then *4.7.5*
 
-Install Databricks CLI and configure profile(s) for your cluster(s)
+2. **Databricks CLI**
 
-- AWS: https://docs.databricks.com/user-guide/dev-tools/databricks-cli.html)
-- Azure: https://docs.azuredatabricks.net/user-guide/dev-tools/databricks-cli.html
+    Install Databricks CLI and configure profile(s) for your cluster(s)
 
-**Note:** Whenever `$PROFILE` is used in this documentation, it refers to a valid Databricks CLI profile name, stored in a shell environment variable.
+    - [AWS Databricks CLI](https://docs.databricks.com/user-guide/dev-tools/databricks-cli.html)
+    - [Azure Databricks CLI](https://docs.azuredatabricks.net/user-guide/dev-tools/databricks-cli.html)
 
-### 1.2 SSH keys
+    Note:
+    - Whenever `$PROFILE` is used in this documentation, it refers to a valid Databricks CLI profile name, stored in a shell environment variable.
 
-- Create an ssh key pair called `~/.ssh/id_$PROFILE` for each cluster
-- Add the public key to the cluster SSH configuration
+3. **SSH access to the Databricks cluster**
 
-**Note:** Only clusters with valid ssh configuration can be accessed by *databrickslabs_jupyterlab*. This can also be done with *databrickslabs_jupyterlab*, see below
+    Configure your Databricks clusters to allow ssh access:
+
+    - AWS: [SSH Access to the cluster](https://docs.databricks.com/user-guide/clusters/ssh.html#ssh-access-to-clusters)
+    - Azure: You need to have a Azure Databricks cluster that is deployed into your Azure Virtual Network (see [VNet Injection](https://docs.azuredatabricks.net/administration-guide/cloud-configurations/azure/vnet-inject.html)). For these clusters the SSH configuration described for AWS is available. You additionally have to open port 2200 in the Network Security Group of your cluster.
+
+    Note:
+    - Only clusters with valid ssh configuration can be accessed by *databrickslabs_jupyterlab*. 
+    - Creation of ssh key and updating the cluster configuration for SSH access can also be done with *databrickslabs_jupyterlab*, see below
 
 ## 2 Installation
 
@@ -132,6 +139,8 @@ After pressing *Enter*, you will see
     - sqlContext  Hive Context
     - dbutils     Databricks utilities
 ```
+
+![Overview](docs/overview.png)
 
 **Note:** `databrickslabs-jupyterlab $PROFILE -c` let's you quickly copy the token to the clipboard so that you can simply paste the token to the input box.
 
