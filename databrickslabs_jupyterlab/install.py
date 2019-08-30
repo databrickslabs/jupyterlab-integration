@@ -47,14 +47,31 @@ def execute_script(script, script_name, message):
             print_error(result["stderr"])
             sys.exit(1)
 
+def show_result():
+    print_ok("\n   => installed databrickslabs-jupyterlab")
+    result = execute(["pip", "show", "databrickslabs_jupyterlab"])
+    if result["returncode"] == 0:
+        lines = result["stdout"].split("\n")
+        print("\n".join(lines[:2]))
+    else:
+        print_error(result["stderr"])
+
+    print_ok("\n   => jupyter server extensions")
+    result = execute(["jupyter-serverextension", "list"])
+    if result["returncode"] == 0:
+        print(result["stdout"])
+        print(result["stderr"])
+    else:
+        print_error(result["stderr"])
+
 
 def update_env(env_file):
     script = """#!/bin/bash
 conda env update --file %s
 """ % (env_file)
-    print_ok("Updating current conda environment")
+    print("* Updating current conda environment")
     execute_script(script, "update_env.sh", "Error while updating conda environment")
-
+    show_result()
 
 def install_env(env_file, env_name=None):
     script = """#!/bin/bash
@@ -62,8 +79,9 @@ conda env create -n %s -f %s
 source $(conda info | awk '/base env/ {print $4}')/bin/activate "%s" 
 """ % (env_name, env_file, env_name)
 
-    print_ok("   => Installing conda environment %s" % env_name)
+    print("* Installing conda environment %s" % env_name)
     execute_script(script, "install_env.sh", "Error while installing conda environment")
+    show_result()
 
 
 def install_labextensions(labext_file, env_name=None):
@@ -80,8 +98,16 @@ jupyter labextension install $(cat %s)
 jupyter lab build
 """ % labext_file)
 
-    print_ok("   => Installing jupyterlab extensions")
+    print("* Installing jupyterlab extensions")
     execute_script(script, "install_labext.sh", "Error while installing jupyter labextensions")
+
+    result = execute(["jupyter-labextension", "list"])
+    if result["returncode"] == 0:
+        print_ok("\n   => Installed labextensions")
+        print(result["stdout"])
+        print(result["stderr"])
+    else:
+        print_error(result["stderr"])
 
 
 def update_local():
