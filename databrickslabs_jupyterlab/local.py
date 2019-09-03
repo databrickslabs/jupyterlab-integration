@@ -171,6 +171,7 @@ def prepare_ssh_config(cluster_id, profile, public_dns):
 
     add_known_host(public_dns)
 
+
 def show_profiles():
     """Show locally configured Databricks CLI profile"""
     template = "%-20s %-60s %s"
@@ -187,7 +188,7 @@ def show_profiles():
 
 
 def create_kernelspec(profile, organisation, host, cluster_id, cluster_name, local_env, python_path):
-    """Create or edit the remote_ikernel specification for jupyter lab
+    """Create or edit the ssh_ipykernel specification for jupyter lab
     
     Args:
         profile (str): Databricks CLI profile string    
@@ -198,32 +199,46 @@ def create_kernelspec(profile, organisation, host, cluster_id, cluster_name, loc
         local_env (str): Name of the local conda environment
         python_path (str): Remote python path to be used for kernel
     """
-    from remote_ikernel.manage import show_kernel, add_kernel
-    from remote_ikernel.compat import kernelspec as ks
+    from ssh_ipykernel.manage import add_kernel
 
     print("   => Creating kernel specification for profile '%s'" % profile)
     env = "DBJL_PROFILE=%s DBJL_HOST=%s DBJL_CLUSTER=%s" % (profile, host, cluster_id)
     if organisation is not None:
         env += " DBJL_ORG=%s" % organisation
-    kernel_cmd = "sudo -H %s %s/python -m ipykernel -f {connection_file}" % (env, python_path)
-
+    
     if cluster_name.replace(" ", "_") == local_env:
-        name = "%s:%s" % (profile, cluster_name)
+        display_name = "SSH %s %s:%s" % (cluster_id, profile, cluster_name)
     else:
-        name = "%s:%s (%s)" % (profile, cluster_name, local_env)
+        display_name = "SSH %s %s:%s (%s)" % (cluster_id, profile, cluster_name, local_env)
 
     add_kernel(
-        "ssh",
-        name=name,
-        kernel_cmd=kernel_cmd,
-        language="python",
-        workdir="/home/ubuntu",
-        host="%s:2200" % cluster_id,
-        ssh_timeout="10",
-        no_passwords=True,
-        verbose=True)
+        host=cluster_id,
+        display_name=display_name,
+        local_python_path=sys.executable,
+        remote_python_path=os.path.dirname(python_path),
+        sudo=True,
+        env=env,
+        timeout=5
+    )   
+    # kernel_cmd = "sudo -H %s %s/python -m ipykernel -f {connection_file}" % (env, python_path)
 
-    print("   => Kernel specification 'SSH %s %s' created or updated" % (cluster_id, name))
+    # if cluster_name.replace(" ", "_") == local_env:
+    #     name = "%s:%s" % (profile, cluster_name)
+    # else:
+    #     name = "%s:%s (%s)" % (profile, cluster_name, local_env)
+
+    # add_kernel(
+    #     "ssh",
+    #     name=name,
+    #     kernel_cmd=kernel_cmd,
+    #     language="python",
+    #     workdir="/home/ubuntu",
+    #     host="%s:2200" % cluster_id,
+    #     ssh_timeout="10",
+    #     no_passwords=True,
+    #     verbose=True)
+
+    print("   => Kernel specification 'SSH %s %s' created or updated" % (cluster_id, display_name))
 
 def remove_kernelspecs():
     km = kernelspec.KernelSpecManager()
@@ -231,18 +246,18 @@ def remove_kernelspecs():
     kernel_id = None
     while kernel_id != "done":
 
-        remote_ikernels = {
+        remote_kernels = {
             kernelspec.get_kernel_spec(k).display_name : k
-            for k, v in kernelspec.find_kernel_specs().items() if k.startswith("rik")
+            for k, v in kernelspec.find_kernel_specs().items() if k.startswith("ssh_")
         }
-        if remote_ikernels == {}:
+        if remote_kernels == {}:
             print_ok("   => No databricklabs_jupyterlab kernel spec left")
             break
 
         choice = [
             inquirer.List("kernel_name",
                         message="Which kernel spec to delete (Ctrl-C to finish)?",
-                        choices=list(remote_ikernels.keys()))
+                        choices=list(remote_kernels.keys()))
         ]
         answer = inquirer.prompt(choice, theme=Dark())
 
@@ -253,4 +268,4 @@ def remove_kernelspecs():
         if kernel_id != "done":
             answer = input("Really delete kernels spec '%s' (y/n) " % kernel_name)
             if answer.lower() == "y":
-                km.remove_kernel_spec(remote_ikernels[kernel_name])
+                km.remove_kernel_spec(remote_kernels[kernel_name])
