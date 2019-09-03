@@ -121,14 +121,25 @@ def get_db_config(profile):
         token = config[profile]["token"]
         return host, token
 
+def add_known_host(public_dns, known_hosts="~/.ssh/known_hosts"):
+    result = execute(["ssh-keygen", "-R", "[%s]:2200" % public_dns])
+    result = execute(["ssh-keyscan", "-p", "2200", public_dns])
+    if result["returncode"] == 0:
+        fingerprint = result["stdout"]
+        known_hosts_file = os.path.expanduser(known_hosts)
+        with open(known_hosts_file, "a") as fd:
+            fd.write("\n%s" % fingerprint)
+        print("   => Known hosts fingerprint added for %s\n" % public_dns)
+    else:
+        print_warning("   => Could not add know_hosts fingerprint for %s\n" % public_dns)
 
-def prepare_ssh_config(cluster_id, profile, public_ip):
+def prepare_ssh_config(cluster_id, profile, public_dns):
     """Add/edit the ssh configuration belonging to the given cluster in ~/.ssh/config
     
     Args:
         cluster_id (str): Cluster ID
         profile (str): Databricks CLI profile string
-        public_ip (str): Public IP address
+        public_dns (str): Public DNS/IP address
     """
     config = os.path.join(expanduser("~"), ".ssh/config")
     try:
@@ -138,24 +149,27 @@ def prepare_ssh_config(cluster_id, profile, public_ip):
     hosts = [h.name for h in sc.hosts()]
     if cluster_id in hosts:
         host = sc.get(cluster_id)
-        host.set("HostName", public_ip)
+        host.set("HostName", public_dns)
+        host.set("ServerAliveInterval", 5)
+        host.set("ServerAliveCountMax", 2)
         print("   => Added ssh config entry or modified IP address:\n")
         print(textwrap.indent(str(host), "      "))
     else:
         attrs = {
-            'HostName': public_ip,
+            'HostName': public_dns,
             'IdentityFile': '~/.ssh/id_%s' % profile,
             'Port': 2200,
             'User': 'ubuntu',
-            'ServerAliveInterval': 300,
+            'ServerAliveInterval': 5,
             'ServerAliveCountMax': 2
         }
         host = Host(name=cluster_id, attrs=attrs)
-        print("Adding ssh config to ~/.ssh/config:\n")
+        print("   => Adding ssh config to ~/.ssh/config:\n")
         print(textwrap.indent(str(host), "      "))
         sc.append(host)
     sc.write()
 
+    add_known_host(public_dns)
 
 def show_profiles():
     """Show locally configured Databricks CLI profile"""
