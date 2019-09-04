@@ -56,19 +56,19 @@ Ensure, ssh access is correctly configured, see [Configure SSH access](docs/ssh-
 - Create a jupyter kernel specification for a *Databricks CLI* profile `$PROFILE` and start Jupyter Lab with the following command:
 
     ```bash
+    (db-jlab)$ databrickslabs-jupyterlab $PROFILE -k
     (db-jlab)$ databrickslabs-jupyterlab $PROFILE -l
     ```
 
 Notes:
 
-- The command with `-l` is a shortcut for 
+- The command with `-l` is a save versin for the standard command to start Jupyter Lab
 
     ```bash
-    (db-jlab)$ databrickslabs-jupyterlab $PROFILE -k
     (db-jlab)$ jupyter lab
     ```
     
-    that ensures that the kernel specificiation is updated (one could omit the first step if the kernel specification is up to date)
+    that ensures that the kernel specificiation is updated.
 - A new kernel is available in the kernel change menu (see [here](docs/kernel-name.md) for an explanation of the kernel name structure)
 
 ### 3.2 Using Spark in the Notebook
