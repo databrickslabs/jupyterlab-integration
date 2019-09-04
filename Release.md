@@ -50,7 +50,8 @@ In case the jupyter labextions and/or the python code has been changed:
 2. Clean environment
 
     ```bash
-    make clean
+    make clean    # delete all temp files
+    make prepare  # commit deletions
     ```
 
 3. Commit changes

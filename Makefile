@@ -11,6 +11,8 @@ CURRENT_VERSION := $(shell awk '/current_version/ {print $$3}' .bumpversion.cfg)
 clean:
 	@echo "$(OK_COLOR)=> Cleaning$(NO_COLOR)"
 	@rm -fr build dist $(EGGS) $(PYCACHE) databrickslabs_jupyterlab/lib/* databrickslabs_jupyterlab/env_files/*
+
+prepare: clean
 	git add .
 	git status
 	git commit -m "cleanup before release"
