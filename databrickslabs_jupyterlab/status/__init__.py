@@ -18,7 +18,12 @@ from databrickslabs_jupyterlab.utils import SshConfig
 from databrickslabs_jupyterlab.local import (get_db_config, prepare_ssh_config)
 from databricks_cli.clusters.api import ClusterApi
 
-DEBUG_LEVEL = "INFO"
+from ssh_ipykernel.status import Status as KernelStatus
+
+if os.environ.get("DEBUG", None) is None:
+    DEBUG_LEVEL = "INFO"
+else:
+    DEBUG_LEVEL = os.environ.get["DEBUG"]
 
 _LOG_FMT = ("%(color)s[%(levelname)1.1s %(asctime)s.%(msecs).03d " "%(name)s]%(end_color)s %(message)s")
 _LOG_DATEFMT = "%H:%M:%S"
@@ -48,10 +53,10 @@ def get_cluster_state(profile, cluster_id):
     client = ClusterApi(apiclient)
     cluster = client.get_cluster(cluster_id)
     state = cluster.get("state", None)
-    if state == "TERMINATED":
-        _logger.warning("DbStatusHandler cluster state = %s" % state)
-    else:
-        _logger.info("DbStatusHandler cluster state = %s" % state)
+    # if state == "TERMINATED":
+    #     _logger.warning("DbStatusHandler cluster state = %s" % state)
+    # else:
+    #     _logger.info("DbStatusHandler cluster state = %s" % state)
 
     return state
 
@@ -62,6 +67,7 @@ class Status:
         self.status = defaultdict(lambda: defaultdict(lambda: {}))
         self.dots = 0
         self._installing = defaultdict(lambda: None)
+        self._ignore_next_unreachable = False
 
     def get_status(self, profile, cluster_id):
         """Get current cluster start status for the jupyterlab status line
@@ -78,7 +84,7 @@ class Status:
             # Use REST API to provide a reasonable status
             state = get_cluster_state(profile, cluster_id)  # called max once
             if state in ["PENDING", "RESTARTING"]:
-                status = "Pending"  # special status, don't set in global state
+                status = "Starting"  # special status, don't set in global state
             elif state in ["RUNNING", "RESIZING"]:
                 status = "Running"  # standard status
             elif state in ["TERMINATING", "TERMINATED"]:
@@ -88,6 +94,9 @@ class Status:
             self.set_status(profile, cluster_id, status)
 
         return self.status[profile][cluster_id]
+
+    def reset_status(self, profile, cluster_id):
+        self.status[profile][cluster_id] = {}
 
     def set_status(self, profile, cluster_id, status, new_status=True):
         """Set Cluster start status for the jupyterlab status line
@@ -130,6 +139,12 @@ class Status:
             cluster_id (str): Cluster ID
         """
         self._installing["%s %s" % (profile, cluster_id)] = False
+        self._ignore_next_unreachable = True
+
+    def ignore_next_unreachable(self):
+        result = self._ignore_next_unreachable
+        self._ignore_next_unreachable = False
+        return result
 
 
 class KernelHandler(IPythonHandler):
@@ -170,48 +185,45 @@ class DbStatusHandler(KernelHandler):
         cluster_id = self.get_argument('cluster_id', None, True)
         kernel_id = self.get_argument('id', None, True)
 
+        kernel = self.get_kernel(kernel_id)
+        conn_info = {
+            "control_port": kernel.control_port,
+            "hb_port": kernel.hb_port,
+            "iopub_port": kernel.iopub_port,
+            "shell_port": kernel.shell_port,
+            "stdin_port": kernel.stdin_port
+        }
+        kernel_status = KernelStatus(conn_info)
+
         status = None
-        reachable = None
         start_status = global_status.get_status(profile, cluster_id)
-        # returns Running, Pending, ERROR, UNKNOWN from remote
-        # and a chain of staus ending with "Running" if DbStartHandler started cluster
 
         if global_status.installing(profile, cluster_id):
             # While the DbStartHandler is installing the kernel, provide the global starting status
             status = start_status
         else:
-            # Else, check reachability
-            dns = SshConfig().get_dns(cluster_id)
-            if dns is None:
-                status = "ERROR: Unknown cluster id"
-            else:
-                reachable = is_reachable(dns)  # fairly cheap, opens a socket and closes it
-                if reachable:
-                    if start_status == "Running":
-                        # global start status "Running" is mapped to UI status "Connected"
-                        status = "Connected"
-                    else:
-                        status = start_status
 
-                    # Even when reachable, libraries can be missing
-                    kernel = self.get_kernel(kernel_id)
-                    if kernel is not None:
-                        alive = kernel.is_alive()
-                        if not alive:
-                            _logger.error("DbStatusHandler: kernel is dead (start_status=%s)" % start_status)
-                            # checking against "MISSING LIBS" ensures check_installed will only be called once
-                            host, token = get_db_config(profile)
-                            if start_status != "MISSING LIBS" and not check_installed(cluster_id, host, token):
-                                _logger.error("DbStatusHandler: libraries are missing on remote server")
-                                status = "MISSING LIBS"
-                                global_status.set_status(profile, cluster_id, status)
+            if kernel_status.is_running():
+                status = "Connected"
+            elif kernel_status.is_starting():
+                status = "Starting"
+            elif kernel_status.is_unknown():
+                # Use REST API to determine status
+                global_status.reset_status(profile, cluster_id)
+                status = global_status.get_status(profile, cluster_id)
+            elif kernel_status.is_connect_failed():
+                status = "CONNECT FAILED"
+            else:
+                # just swallow the intermediate UNREACHABLE after a restart
+                if global_status.ignore_next_unreachable():
+                    status = "Starting"
                 else:
-                    _logger.warning("DbStatusHandler: kernel is not reachable")
                     status = "UNREACHABLE"
 
         result = {'status': "%s" % status}
-        _logger.debug("DbStatusHandler: installing: '%s'; reachable: '%s'; start_status: '%s'; ; status: '%s'" %
-            (global_status.installing(profile, cluster_id), reachable, start_status, result))
+        _logger.debug(
+            "DbStatusHandler: installing: '%s'; start_status: '%s'; kernel_status: '%s'; status: '%s'" %
+            (global_status.installing(profile, cluster_id), start_status, kernel_status.get_status_message(), result))
         self.finish(json.dumps(result))
 
 

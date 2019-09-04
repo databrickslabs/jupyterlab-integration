@@ -3,7 +3,7 @@
 
 import React from 'react';
 
-import { VDomRenderer, VDomModel, IClientSession } from '@jupyterlab/apputils';
+import { VDomRenderer, VDomModel } from '@jupyterlab/apputils';
 
 import { URLExt, Poll } from '@jupyterlab/coreutils';
 
@@ -52,7 +52,7 @@ class Counter {
       }
       
       this._count = 1;
-      console.log(this._delay, this._limit)
+      console.debug("Databrickslabs-jupyterlab: monitoring every", this._delay, "seconds")
     }
     return result
   }
@@ -87,12 +87,10 @@ export class DbStatus extends VDomRenderer<DbStatus.Model> {
       return null;
     }
     let text: string = this.model.currentStatus;
-    if (text === "TERMINATED") {
-      text = "[ " + text + " ] (click here to start cluster)";
-    } else if (text === "UNREACHABLE") { 
-      text = "[ " + text + " ] (click here to reconnect)";
-    } else if (text === "MISSING LIBS") { 
-      text = "[ " + text + " ] (click here to reconfigure)";
+    if (text === "UNREACHABLE") { 
+      text = "[ " + text + " ] (click here to restart)";
+    } else if (text === "CONNECT FAILED") { 
+      text = "[ " + text + " ] (retrying)";
     } else {
       text = "[ " + text + " ]";
     }
@@ -116,16 +114,16 @@ export namespace DbStatus {
     constructor(options: Model.IOptions) {
       super();
       this._notebookTracker = options.notebookTracker;
-      // console.log(options.notebookTracker)
-      // console.log(options.labShell)
-      // console.log(options.notebookTracker.currentWidget)
-      options.labShell.restored.then((x) => { 
+
+      options.labShell.restored.then((layout) => { 
         var session = options.notebookTracker.currentWidget.session;
-        session.kernelChanged.connect((x) => {
+        console.debug("Databrickslabs-jupyterlab: session", session)
+        session.kernelChanged.connect((change) => {
+          console.debug("Databrickslabs-jupyterlab: Kernel changed", change)
           this.check_status(session.kernelDisplayName, session.kernel.id)
         })
         session.ready.then(() => {
-          console.log("Session ready", session)
+          console.debug("Databrickslabs-jupyterlab: Session ready", session)
           this.check_status(session.kernelDisplayName, session.kernel.id)
         })
       })
@@ -158,20 +156,8 @@ export namespace DbStatus {
         }
       });
 
-      const onStatusChanged = (session: IClientSession) => {
-        if (session.status === "restarting") {
-          this.restarting = true;
-          this.restarting_count = 0;
-        }
-      };
-
       options.labShell.currentChanged.connect((_, change) => {
-        if (this._oldSession) {
-          this._oldSession.statusChanged.disconnect(onStatusChanged);
-        }
-        this._session = options.notebookTracker.currentWidget.session
-        this._session.statusChanged.connect(onStatusChanged);
-        this._oldSession = this._session;
+        console.debug("Databrickslabs-jupyterlab: shell changed")
       })
     }
 
@@ -179,7 +165,7 @@ export namespace DbStatus {
       const response = await Private.request("databrickslabs-jupyterlab-status", name, id);
       if (response.ok) {
         var result = await response.json();
-        if (result.status === "TERMINATED" || result.status === "UNREACHABLE" || result.status === "MISSING LIBS") {
+        if (result.status === "UNREACHABLE") {
           this._updateStatusValues(result)
         }
       } else {
@@ -191,19 +177,11 @@ export namespace DbStatus {
       if (! this._dialog_shown) {
         this._dialog_shown = true;
         var title, body, label;
-        if (status == "TERMINATED") {
-          title = "Cluster terminated";
-          body = "Start remote cluster?";
-          label = "Start Cluster";
-        } else if (status === "UNREACHABLE") {
-          title = "Cluster not reachable";
-          body = "Cluster could be terminated or cannot be reached. Check VPN and then reconnect";
-          label = "Reconnect";
-        } else if (status === "MISSING LIBS") {
-          title = "Libraries are missing on the remote machine";
-          body = "Reconfiguration of the cluster will install them";
-          label = "Reconfigure cluster";
-        }  
+        if (status === "UNREACHABLE") {
+          title = "Kernel not reachable";
+          body = "Kernel cannot be reached. Check your network (e.g. VPN) and then press 'Restart' to restart the kernel or cluster";
+          label = "Restart";
+        } 
         showDialog({
           title: title,
           body: body,
@@ -234,16 +212,11 @@ export namespace DbStatus {
         this._currentStatus = "";
       } else {
         var status = value.status;
-        if (this.restarting) {
-          status = "Restarting"
-        }
         this._statusAvailable = true;
         this._currentStatus = status;
       }
 
-      if ((this._currentStatus === "TERMINATED")  || 
-          (this._currentStatus === "UNREACHABLE") ||
-          (this._currentStatus === "MISSING LIBS") ) {
+      if (this._currentStatus === "UNREACHABLE") {
         if (this._currentStatus !== oldCurrentStatus) {
           this._restart_dialog(this._currentStatus)
         }
@@ -261,9 +234,7 @@ export namespace DbStatus {
      * Click handler
      */
     handleClick() {
-      if ((this._currentStatus == "TERMINATED")  || 
-          (this._currentStatus == "UNREACHABLE")|| 
-          (this._currentStatus == "MISSING LIBS")) {
+      if (this._currentStatus == "UNREACHABLE") {
           this._restart_dialog(this.currentStatus)
       }
     }
@@ -306,8 +277,6 @@ export namespace DbStatus {
     private _statusAvailable: boolean = false;
     private _poll: Poll<Private.IDbStatusRequestResult>;
     private _notebookTracker: INotebookTracker;
-    private _oldSession: IClientSession;
-    private _session: IClientSession;
     private _restarting = false;
     private _restarting_count = 0;
     private _dialog_shown = false;
@@ -362,25 +331,17 @@ namespace Private {
     let name = notebookTracker.currentWidget!.session.kernelDisplayName;
     var tab_switch = old_name !== name;
     old_name = name;
-    if (tab_switch || parent.restarting) {
-      parent.counter.reset();
-    }
     let id = notebookTracker.currentWidget!.session.kernel.id;
     var is_starting = parent.currentStatus !== "Connected";
+    var do_status_check = parent.counter.next()
 
-    if (parent.counter.next() || is_starting || tab_switch || parent.restarting) {
+    if (do_status_check || is_starting || tab_switch) {
       
       const response = await request("databrickslabs-jupyterlab-status", name, id);
 
       if (response.ok) {
         try {
           var result = await response.json();
-          // Keep restarting for 3 seconds
-          if (parent.restarting_count == 4) {
-            parent.restarting = false
-          } else {
-            parent.restarting_count += 1;
-          }
           return result
         } catch (error) {
           throw error;
