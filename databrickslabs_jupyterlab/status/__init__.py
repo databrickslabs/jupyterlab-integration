@@ -18,8 +18,6 @@ from databrickslabs_jupyterlab.utils import SshConfig
 from databrickslabs_jupyterlab.local import (get_db_config, prepare_ssh_config)
 from databricks_cli.clusters.api import ClusterApi
 
-from ssh_ipykernel.status import Status as KernelStatus
-
 if os.environ.get("DEBUG", None) is None:
     DEBUG_LEVEL = "INFO"
 else:
@@ -193,6 +191,8 @@ class DbStatusHandler(KernelHandler):
             "shell_port": kernel.shell_port,
             "stdin_port": kernel.stdin_port
         }
+        
+        from ssh_ipykernel.status import Status as KernelStatus
         kernel_status = KernelStatus(conn_info)
 
         status = None

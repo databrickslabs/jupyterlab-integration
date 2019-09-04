@@ -3,7 +3,7 @@ from databrickslabs_jupyterlab._version import __version__, __version_info__
 
 if os.environ.get("DBJL_HOST") is None:
 
-    from databrickslabs_jupyterlab.status import KernelHandler, DbStartHandler, DbStatusHandler, Status
+    from databrickslabs_jupyterlab.status import KernelHandler, DbStartHandler, DbStatusHandler
     from notebook.utils import url_path_join
 
     def load_jupyter_server_extension(nbapp):
