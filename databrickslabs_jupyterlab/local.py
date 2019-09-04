@@ -152,6 +152,7 @@ def prepare_ssh_config(cluster_id, profile, public_dns):
         host.set("HostName", public_dns)
         host.set("ServerAliveInterval", 5)
         host.set("ServerAliveCountMax", 2)
+        host.set("ConnectTimeout", 5)
         print("   => Added ssh config entry or modified IP address:\n")
         print(textwrap.indent(str(host), "      "))
     else:
@@ -161,7 +162,8 @@ def prepare_ssh_config(cluster_id, profile, public_dns):
             'Port': 2200,
             'User': 'ubuntu',
             'ServerAliveInterval': 5,
-            'ServerAliveCountMax': 2
+            'ServerAliveCountMax': 2,
+            'ConnectTimeout': 5
         }
         host = Host(name=cluster_id, attrs=attrs)
         print("   => Adding ssh config to ~/.ssh/config:\n")
@@ -170,7 +172,6 @@ def prepare_ssh_config(cluster_id, profile, public_dns):
     sc.write()
 
     add_known_host(public_dns)
-
 
 def show_profiles():
     """Show locally configured Databricks CLI profile"""
