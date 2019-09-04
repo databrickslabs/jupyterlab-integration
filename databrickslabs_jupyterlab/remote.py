@@ -4,6 +4,7 @@ import sys
 import time
 from os.path import expanduser
 import socket
+import subprocess
 import uuid
 import glob
 
@@ -297,14 +298,15 @@ def is_reachable(public_dns):
     Returns:
         bool: True if reachable else False
     """
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.settimeout(3)
-    result = sock.connect_ex((public_dns, 2200))
-    try:
-        sock.close()
-    except:
-        pass
-    return result == 0
+    return subprocess.call(["nc", "-z", public_dns, "2200"]) == 0
+    # sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # sock.settimeout(3)
+    # result = sock.connect_ex((public_dns, 2200))
+    # try:
+    #     sock.close()
+    # except:
+    #     pass
+    # return result == 0
 
 
 def get_library_state(profile, cluster_id):
