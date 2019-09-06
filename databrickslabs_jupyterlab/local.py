@@ -2,6 +2,7 @@ import configparser
 import json
 from jupyter_client import kernelspec
 import os
+import shutil
 import subprocess
 import sys
 import textwrap
@@ -12,6 +13,81 @@ import inquirer
 
 from databrickslabs_jupyterlab.utils import (bye, Dark, print_ok, print_error, print_warning)
 
+# add all missing keys to ssh_config
+Host.attrs += [
+    ("Host", str),
+    ("CanonicalizeFallbackLocal", str),
+    ("CanonicalizeHostname", str),
+    ("CanonicalizeMaxDots", str),
+    ("CanonicalizePermittedCNAMEs", str),
+    ("CASignatureAlgorithms", str),
+    ("CertificateFile", str),
+    ("ChallengeResponseAuthentication", str),
+    ("CheckHostIP", str),
+    ("Ciphers", str),
+    ("ClearAllForwardings", str),
+    ("Compression", str),
+    ("ConnectionAttempts", str),
+    ("ConnectTimeout", str),
+    ("ControlMaster", str),
+    ("ControlPath", str),
+    ("ControlPersist", str),
+    ("DynamicForward", str),
+    ("EnableSSHKeysign", str),
+    ("EscapeChar", str),
+    ("ExitOnForwardFailure", str),
+    ("FingerprintHash", str),
+    ("ForwardX11", str),
+    ("ForwardX11Timeout", str),
+    ("ForwardX11Trusted", str),
+    ("GatewayPorts", str),
+    ("GlobalKnownHostsFile", str),
+    ("GSSAPIAuthentication", str),
+    ("GSSAPIDelegateCredentials", str),
+    ("HashKnownHosts", str),
+    ("HostbasedAuthentication", str),
+    ("HostbasedKeyTypes", str),
+    ("HostKeyAlgorithms", str),
+    ("HostKeyAlias", str),
+    ("IdentitiesOnly", str),
+    ("IgnoreUnknown", str),
+    ("Include", str),
+    ("IPQoS", str),
+    ("KbdInteractiveAuthentication", str),
+    ("KbdInteractiveDevices", str),
+    ("KexAlgorithms", str),
+    ("MACs", str),
+    ("NoHostAuthenticationForLocalhost", str),
+    ("NumberOfPasswordPrompts", str),
+    ("PasswordAuthentication", str),
+    ("PermitLocalCommand", str),
+    ("PKCS11Provider", str),
+    ("ProxyJump", str),
+    ("ProxyUseFdpass", str),
+    ("PubkeyAcceptedKeyTypes", str),
+    ("PubkeyAuthentication", str),
+    ("RekeyLimit", str),
+    ("RemoteCommand", str),
+    ("RemoteForward", str),
+    ("RequestTTY", str),
+    ("RevokedHostKeys", str),
+    ("SendEnv", str),
+    ("ServerAliveCountMax", str),
+    ("SetEnv", str),
+    ("StreamLocalBindMask", str),
+    ("StreamLocalBindUnlink", str),
+    ("StrictHostKeyChecking", str),
+    ("SyslogFacility", str),
+    ("TCPKeepAlive", str),
+    ("Tunnel", str),
+    ("TunnelDevice", str),
+    ("UpdateHostKeys", str),
+    ("UseKeychain", str),
+    ("UserKnownHostsFile", str),
+    ("VerifyHostKeyDNS", str),
+    ("VisualHostKey", str),
+    ("XAuthLocation", str)
+]
 
 def utf8_decode(text):
     if isinstance(text, str):
@@ -141,7 +217,18 @@ def prepare_ssh_config(cluster_id, profile, public_dns):
         profile (str): Databricks CLI profile string
         public_dns (str): Public DNS/IP address
     """
-    config = os.path.join(expanduser("~"), ".ssh/config")
+    backup_path = "~/.databrickslabs_jupyterlab/ssh_config_backup"
+
+    config = os.path.expanduser("~/.ssh/config")
+    if not os.path.exists(os.path.expanduser(backup_path)):
+        os.makedirs(os.path.expanduser(backup_path))
+
+    print_warning("   => ~/.ssh/config will be changed")
+    backup = "%s/config.%s" % (backup_path, time.strftime("%Y-%m-%d_%H-%M-%S"))
+    print_warning("   => A backup of the current ~/.ssh/config has been created")
+    print_warning("   => at %s" % backup)
+
+    shutil.copy(config, os.path.expanduser(backup))
     try:
         sc = SSHConfig.load(config)
     except:
@@ -157,13 +244,13 @@ def prepare_ssh_config(cluster_id, profile, public_dns):
         print(textwrap.indent(str(host), "      "))
     else:
         attrs = {
-            'HostName': public_dns,
-            'IdentityFile': '~/.ssh/id_%s' % profile,
-            'Port': 2200,
-            'User': 'ubuntu',
-            'ServerAliveInterval': 5,
-            'ServerAliveCountMax': 2,
-            'ConnectTimeout': 5
+            "HostName": public_dns,
+            "IdentityFile": "~/.ssh/id_%s" % profile,
+            "Port": 2200,
+            "User": "ubuntu",
+            "ServerAliveInterval": 5,
+            "ServerAliveCountMax": 2,
+            "ConnectTimeout": 5
         }
         host = Host(name=cluster_id, attrs=attrs)
         print("   => Adding ssh config to ~/.ssh/config:\n")
@@ -221,24 +308,6 @@ def create_kernelspec(profile, organisation, host, cluster_id, cluster_name, loc
         env=env,
         timeout=5
     )   
-    # kernel_cmd = "sudo -H %s %s/python -m ipykernel -f {connection_file}" % (env, python_path)
-
-    # if cluster_name.replace(" ", "_") == local_env:
-    #     name = "%s:%s" % (profile, cluster_name)
-    # else:
-    #     name = "%s:%s (%s)" % (profile, cluster_name, local_env)
-
-    # add_kernel(
-    #     "ssh",
-    #     name=name,
-    #     kernel_cmd=kernel_cmd,
-    #     language="python",
-    #     workdir="/home/ubuntu",
-    #     host="%s:2200" % cluster_id,
-    #     ssh_timeout="10",
-    #     no_passwords=True,
-    #     verbose=True)
-
     print("   => Kernel specification 'SSH %s %s' created or updated" % (cluster_id, display_name))
 
 def remove_kernelspecs():
