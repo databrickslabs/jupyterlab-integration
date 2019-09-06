@@ -134,7 +134,11 @@ def write_config():
     """
     config = {"c.KernelManager.autorestart": False, "c.MappingKernelManager.kernel_info_timeout": 600}
 
-    config_file = os.path.expanduser("~/.jupyter/jupyter_notebook_config.py")
+    full_path = os.path.expanduser("~/.jupyter")
+    if not os.path.exists(full_path):
+        os.mkdir(full_path)
+
+    config_file = os.path.join(full_path, "jupyter_notebook_config.py")
     if os.path.exists(config_file):
         with open(config_file, "r") as fd:
             lines = fd.read().split("\n")
