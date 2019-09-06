@@ -1,5 +1,3 @@
-[< back](../README.md)
-
 ## Configure SSH access
 
 Configuring the SSH access comprises of 2 steps

@@ -1,5 +1,3 @@
-[< back](../README.md)
-
 ## 4 Creating a mirror of a remote Databricks cluster
 
 For the specific use case when the same notebook should run locally and remotely, a local mirror of the remote libraries and versions is needed. There are two ways to achieve this:
@@ -98,4 +96,4 @@ After switching into this environment via
 (base)$ conda activate bernhard-5.5-ml
 ```
 
-follow the usage guide in section 3 ([Getting started](../README.md)) in the main Readme.
+follow the usage guide in section 3 (Getting started) in the main [Readme](../README.md).

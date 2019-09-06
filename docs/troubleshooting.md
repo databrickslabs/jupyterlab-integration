@@ -1,5 +1,3 @@
-[< back](../README.md)
-
 ## Troubleshooting
 
 - **The status bar at the bottom of Jupyter lab does not show** `...|Idle  [Connected]`
@@ -11,7 +9,7 @@
         ```bash
         (db-jlab)$ ssh $CLUSTER_ID
         ```
-    
+
     If this all is working successfully, then most probably the Jupyter kenrel mechnnism is out of sync. 
     **=> Solution:** Fully shut down the kernel in Jupyter and select the kernel again. This will execute all prerequisite checks and confgurations and the notebook should connect succesfully again.
 

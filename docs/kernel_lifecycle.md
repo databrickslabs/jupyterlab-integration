@@ -1,5 +1,3 @@
-[< back](../README.md)
-
 ## 1 Kernel Lifecycle
 
 ### 1.1 Switching kernels

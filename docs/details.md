@@ -1,5 +1,3 @@
-[< back](../README.md)
-
 ## 5 Details
 
 - **Show help**
