@@ -1,3 +1,5 @@
+[< back](../README.md)
+
 ## Kernel names
 
 The *databrickslabs_jupyterlab* kernel names have the following structure:

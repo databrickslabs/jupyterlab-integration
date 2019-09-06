@@ -9,7 +9,7 @@ This package allows to connect to a remote Databricks cluster from a locally run
     Either Macos or Linux. Windows is currently not supported
 
 2. **Anaconda installation**
-    
+
     A recent version of [Anaconda](https://www.anaconda.com/distribution) with Python >= *3.5*
     The tool *conda* must be newer then *4.7.5*
 
@@ -23,11 +23,16 @@ This package allows to connect to a remote Databricks cluster from a locally run
 
     Configure your Databricks clusters to allow ssh access, see [Configure SSH access](docs/ssh-configurations.md)
 
-    **Only clusters with valid ssh configuration are visible to *databrickslabs_jupyterlab*.** 
+    *Only clusters with valid ssh configuration are visible to *databrickslabs_jupyterlab*.*
+
+5. **Databricks Runtime**
+
+    The project has been tested with Databricks runtimes 5.5 only.
 
 ## 2 Installation
 
-- Create a new conda environment and install *databrickslabs_jupyterlab* with the following commands:
+1. **Install databrickslabs_jupyterlab**
+    Create a new conda environment and install *databrickslabs_jupyterlab* with the following commands:
 
     ```bash
     (base)$ conda create -n db-jlab python=3.6
@@ -37,119 +42,98 @@ This package allows to connect to a remote Databricks cluster from a locally run
 
     The prefix `(db-jlab)$` for all command examples in this document assumes that the *databrickslabs_jupyterlab* conda enviromnent `db-jlab` is activated.
 
-- Bootstrap the environment for *databrickslabs_jupyterlab* with the following command:
+2. **Bootstrap databrickslabs_jupyterlab**
+    Bootstrap the environment for *databrickslabs_jupyterlab* with the following command, which will finish with showing the usage:
 
     ```bash
     (db-jlab)$ databrickslabs-jupyterlab -b
     ```
 
-    It finishes with an overview of the usage.
-
-    
-
-## 3 Usage
+## 3 Getting started
 
 Ensure, ssh access is correctly configured, see [Configure SSH access](docs/ssh-configurations.md)
 
 ### 3.1 Starting Jupyter Lab
 
-- Create a jupyter kernel specification for a *Databricks CLI* profile `$PROFILE` and start Jupyter Lab with the following command:
+1. **Create a kernel specification**
+    In the terminal, create a jupyter kernel specification for a *Databricks CLI* profile `$PROFILE` and start Jupyter Lab with the following command:
 
     ```bash
     (db-jlab)$ databrickslabs-jupyterlab $PROFILE -k
-    (db-jlab)$ databrickslabs-jupyterlab $PROFILE -l
     ```
 
-Notes:
-
-- The command with `-l` is a save versin for the standard command to start Jupyter Lab
+2. **Start Jupyter Lab**
+    Start Jupyter Lab using *databrickslabs-jupyterlab*
 
     ```bash
-    (db-jlab)$ jupyter lab
+    (db-jlab)$ databrickslabs-jupyterlab $PROFILE -l -c
     ```
-    
-    that ensures that the kernel specificiation is updated.
-- A new kernel is available in the kernel change menu (see [here](docs/kernel-name.md) for an explanation of the kernel name structure)
+
+    The command with `-l` is a save version for the standard command to start Jupyter Lab (`jupyter lab`) that ensures that the kernel specificiation is updated. If `-c` is provided it also copies the PAT to the clipboard for the next step in the notebook.
+
+    A new kernel is available in the kernel change menu (see [here](docs/kernel-name.md) for an explanation of the kernel name structure)
 
 ### 3.2 Using Spark in the Notebook
 
-#### Getting a remote Spark Session in the notebook
+1. **Check whether the notebook is properly connected**
 
-When the cluster is already running the status bar of Jupyter lab should show
+    When the notebook successfully connected to the cluster, the status bar at the bottom of Jupyter lab should show `...|Idle  [Connected]`:
 
-![kernel ready](docs/connected.png)
+    ![kernel ready](docs/connected.png)
 
-To connect to the remote Spark context, enter the following two lines into a notebook cell:
+    If this is not the case, see [Troubleshooting](docs/troubleshooting.md)
 
-```python
-[1] from databrickslabs_jupyterlab.connect import dbcontext
+2. **Get a remote Spark Session in the notebook**
+
+    To connect to the remote Spark context, enter the following two lines into a notebook cell:
+
+    ```python
+    from databrickslabs_jupyterlab.connect import dbcontext
     dbcontext()
-```
+    ```
 
-This will request you to add the token copied to clipboard above:
+    This will request you to add the token copied to clipboard above:
 
-```text
-    Fri Aug  9 09:58:04 2019 py4j imported
-    Enter personal access token for profile 'demo' |_____________________________|
-```
+    ![Get Token](docs/get_token_in_notebook.png)
 
-After pressing *Enter*, you will see
+    After pressing *Enter*, you will see
 
-```text
-    Gateway created for cluster '0806-143104-skirt84' ... connected
-    The following global variables have been created:
-    - spark       Spark session
-    - sc          Spark context
-    - sqlContext  Hive Context
-    - dbutils     Databricks utilities
-```
+    ![Spark Success](docs/spark_success.png)
 
-![Overview](docs/overview.png)
+    Note: `databrickslabs-jupyterlab $PROFILE -c` let's you quickly copy the token again to the clipboard so that you can simply paste the token to the input box.
 
-**Note:** `databrickslabs-jupyterlab $PROFILE -c` let's you quickly copy the token to the clipboard so that you can simply paste the token to the input box.
+3. **Test the Spark access**
 
-#### Switching kernels
+    To check the remote Spark connection, enter the following lines into a notebook cell:
 
-Kernels can be switched via the Jupyterlab Kernel Change dialog. However, when switching to a remote kernel, the local connection context might get out of sync and the notebook cannot be used. In this case:
+    ```python
+    import socket
+    print(socket.gethostname(), is_remote())
 
-1. shutdown the kernel
-2. Select the remote kernel again from the Jupyterlab Kernel Change dialog. 
+    a = sc.range(10000).repartition(100).map(lambda x: x).sum()
+    print(a)
+    ```
 
-A simple Kernel Restart by Jupyter lab will not work since this does not refresh the connection context!
+    It will show that the kernel is actually running remotely and the hostname of the driver. The second part quickly smoke tests a Spark job.
 
-#### Restart after cluster auto-termination
+    ![Get Token](docs/spark_test.png)
 
-Should the cluster auto terminate while the notebook is connected or the network connection is down, the status bar will change to
+**Success:** Your local Jupyter Lab is successfully contected to the remote Databricks cluster
 
-- ![kernel disconnected](docs/cluster-unreachable.png)
+## 4 Advanced topics
 
-Additionally a dialog to confirm that the remote cluster should be started again will be launched in Jupyter Lab 
-
-Notes: 
-
-- One can check connectivity before, e.g. by calling `ssh <cluster_id>` in a terminal window)
-- After cancelling the dialog, clicking on the status bar entry as indicated by the message will open the dialog box again
-
-During restart the following status messages will be shown in this order:
-
-- ![cluster-starting](docs/cluster-starting.png)
-- ![installing-cluster-libs](docs/installing-cluster-libs.png)
-- ![installing-driver-libs](docs/installing-driver-libs.png)
-- ![configure-ssh](docs/configure-ssh.png)
-- ![starting](docs/starting.png)
-
-After successful start the status would again show:
-
-- ![kernel ready](docs/connected.png)
-
-
-## 4) Advanced topics
-
+- [Switching kernels and restart after cluster auto-termination](docs/kernel_lifecycle.md)
 - [Creating a mirror of a remote Databricks cluster](docs/mirrored-environment.md)
 - [Detailed databrickslabs_jupyterlab command overview](docs/details.md)
 - [How it works](docs/how-it-works.md)
+- [Troubleshooting](docs/troubleshooting.md)
 
-## 4 Test notebooks
+## 5 Project Support
+Please note that all projects in the /databrickslabs github account are provided for your exploration only, and are not formally supported by Databricks with Service Level Agreements (SLAs). They are provided AS-IS and we do not make any guarantees of any kind. Please do not submit a support ticket relating to any issues arising from the use of these projects.
+
+Any issues discovered through the use of this project should be filed as GitHub Issues on the Repo. They will be reviewed as time permits, but there are no formal SLAs for support.
+
+## 6 Test notebooks
 
 To work with the test notebooks in `./examples` the remote cluster needs to have the following libraries installed:
 

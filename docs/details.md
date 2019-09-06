@@ -1,3 +1,5 @@
+[< back](../README.md)
+
 ## 5 Details
 
 - **Show help**
@@ -62,24 +64,27 @@
 
     and add `~/.ssh/id_demo.pub` to the SSH config of the respective cluster and restart it.
 
+    Alternatively use `databrickslabs-jupyterlab $PROFILE -s -i $CLUSTER_ID` (see below)
+
 - **Create jupyter kernel for remote cluster**
 
     - Databricks on AWS:
 
         ```bash
-        (db-jlab)$ databrickslabs-jupyterlab $PROFILE -k [-i <cluster name>]
+        (db-jlab)$ databrickslabs-jupyterlab $PROFILE -k [-c] [-i <cluster name>]
         ```
 
     - Azure:
 
         ```bash
-        (db-jlab)$ databrickslabs-jupyterlab $PROFILE -k -o <organisation> [-i <cluster name>]
+        (db-jlab)$ databrickslabs-jupyterlab $PROFILE -k -o <organisation> [-c] [-i <cluster name>]
         ```
 
     This will execute the following steps:
 
     - Get host and token from `.databrickscfg` for the given profile
     - In case `-i` is not used, show a list of clusters that have the correct SSH key (id_$PROFILE) configured
+    - In case `-c`is used the Personal access token of the $PROFILE will be copied to the clipboard
     - Installs `databrickslabs_jupyterlab` and `ipywidgets` on the remote driver
     - Creates the remote kernel specification
 
@@ -88,10 +93,10 @@
     while you can start Jupyter Lab via `jupyter lab`, it is recommended to use the wrapper
 
     ```bash
-    (db-jlab)$ databrickslabs-jupyterlab $PROFILE -l [-i <cluster name>]
+    (db-jlab)$ databrickslabs-jupyterlab $PROFILE -l [-c] [-i <cluster name>]
     ```
 
-    It will check whether the remote cluster is up and running, update the ssh info, check the availability of th relevant libs before starting jupyter Lab.
+    It will check whether the remote cluster is up and running, update the ssh info, check the availability of th relevant libs before starting jupyter Lab. In case `-c`is used the Personal access token of the $PROFILE will be copied to the clipboard
 
 - **Copy Personal Access token for databricks workspace to the clipboard**
 
@@ -106,3 +111,11 @@
     ```bash
     (db-jlab)$ databrickslabs-jupyterlab $PROFILE -v all|same|diff [-i <cluster name>]
     ```
+
+- **Configure SSH access**
+
+    ```bash
+    databrickslabs-jupyterlab $PROFILE -s -i $CLUSTER_ID
+    ```
+
+    For more details see [Configure SSH access](ssh-configurations.md)
