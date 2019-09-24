@@ -93,16 +93,23 @@ def compare_pip(pips):
     print()
 
 
+def decode(text):
+    if isinstance(text, str):
+        return text
+    else:
+        return text.decode("utf-8", "replace")
+
 def compare_ext(exts):
     print("extensions")
     print("==========")
     for ext, version in exts:
-        npm_version = get_npm_version(ext).decode()[:-1]
+        npm_version = decode(get_npm_version(ext))
         if version == npm_version:
             print("%s ok" % ext)
         else:
             print("%s (%s) => %s" % (ext, version, npm_version))
     print()
+
 
 if len(sys.argv) < 2:
     print("Usage: check_versions <env-file-name>")
