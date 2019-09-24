@@ -9,6 +9,7 @@ setup(
     version = "1.0.2-rc7",
     author = "Bernhard Walter",
     author_email = "bernhard.walter@databricks.com",
+    url="https://github.com/databrickslabs/Jupyterlab-Integration",
     description = ("Remote Jupyter Lab kernel for Databricks"),
     long_description_content_type='text/markdown',
     license = "Databricks License",
@@ -16,7 +17,7 @@ setup(
     packages=find_packages(),
     scripts=['databrickslabs-jupyterlab'],
     install_requires=[
-        'notebook==5.7.8',
+        'notebook==6.0.1',
         'inquirer',
         'ssh_config',
         'databricks_cli'
@@ -25,7 +26,7 @@ setup(
         ('etc/jupyter/jupyter_notebook_config.d', ['databrickslabs_jupyterlab/status/etc/serverextension.json']),
     ],
     include_package_data=True,
-    long_description=read('Readme.md'),
+    long_description=read('PYPI.md'),
     classifiers=[
         "Development Status :: 4 - Beta",
         "Topic :: Utilities",
