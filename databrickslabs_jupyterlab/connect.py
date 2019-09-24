@@ -2,6 +2,7 @@ import atexit
 import base64
 import configparser
 import getpass
+import io
 import os
 import random
 import sys
@@ -24,7 +25,16 @@ try:
     import warnings
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
+        # Suppress py4j loading message on stderr by redirecting sys.stderr
+        stderr_orig = sys.stderr
+        sys.stderr = io.StringIO()
         from PythonShell import get_existing_gateway, RemoteContext  # pylint: disable=import-error
+        out = sys.stderr.getvalue()
+        # Restore sys.stderr
+        sys.stderr = stderr_orig
+        # Print any other error message to stderr
+        if not "py4j imported" in out:
+            print(out, file=sys.stderr)
 
     from dbutils import DBUtils  # pylint: disable=import-error
 except:
@@ -138,7 +148,7 @@ def dbcontext(progressbar=True):
 
     # Create a Databricks virtual python environment and start thew py4j gateway
     #
-    token = getpass.getpass("\nEnter personal access token for profile '%s'" % profile)
+    token = getpass.getpass("Creating a Spark execution context:\nEnter personal access token for profile '%s'" % profile)
 
     try:
         command = Command(url=host, cluster_id=clusterId, token=token)
