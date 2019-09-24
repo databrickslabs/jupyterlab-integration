@@ -178,8 +178,8 @@ export namespace DbStatus {
         this._dialog_shown = true;
         var title, body, label;
         if (status === "UNREACHABLE") {
-          title = "Kernel not reachable";
-          body = "Kernel cannot be reached. Check your network (e.g. VPN) and then press 'Restart' to restart the kernel or cluster";
+          title = "Cluster not reachable";
+          body = "Cluster cannot be reached. Check cluster or your network (e.g. VPN) and then press 'Restart' to restart the kernel or cluster";
           label = "Restart";
         } 
         showDialog({
