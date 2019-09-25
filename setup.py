@@ -6,7 +6,7 @@ def read(fname):
 
 setup(
     name = "databrickslabs_jupyterlab",
-    version = "1.0.2-rc8",
+    version = "1.0.2-rc9",
     author = "Bernhard Walter",
     author_email = "bernhard.walter@databricks.com",
     url="https://github.com/databrickslabs/Jupyterlab-Integration",
