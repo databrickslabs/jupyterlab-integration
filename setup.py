@@ -1,8 +1,16 @@
 import os
+import re
 from setuptools import setup, find_packages
 
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
+
+def notebook_version():
+    with open("env.yml", "r") as fd:
+        env = fd.read()
+    r = re.compile("notebook=.*\n")
+    nb = r.search(env).group().strip().split("=")[1]
+    return nb
 
 setup(
     name = "databrickslabs_jupyterlab",
@@ -17,7 +25,7 @@ setup(
     packages=find_packages(),
     scripts=['databrickslabs-jupyterlab'],
     install_requires=[
-        'notebook==5.7.8',
+        'notebook==%s' % notebook_version(),
         'inquirer',
         'ssh_config',
         'databricks_cli'
