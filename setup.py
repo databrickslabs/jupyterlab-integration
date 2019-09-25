@@ -6,7 +6,7 @@ def read(fname):
 
 setup(
     name = "databrickslabs_jupyterlab",
-    version = "1.0.2-rc10",
+    version = "1.0.2-rc9",
     author = "Bernhard Walter",
     author_email = "bernhard.walter@databricks.com",
     url="https://github.com/databrickslabs/Jupyterlab-Integration",
@@ -17,6 +17,7 @@ setup(
     packages=find_packages(),
     scripts=['databrickslabs-jupyterlab'],
     install_requires=[
+        'notebook==5.7.8',
         'inquirer',
         'ssh_config',
         'databricks_cli'
