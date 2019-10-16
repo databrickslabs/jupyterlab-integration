@@ -247,13 +247,14 @@ def prepare_ssh_config(cluster_id, profile, public_dns):
         print("   => Added ssh config entry or modified IP address:\n")
         print(textwrap.indent(str(host), "      "))
     else:
+        # ServerAliveInterval * ServerAliveCountMax = 48h
         attrs = {
             "HostName": public_dns,
             "IdentityFile": "~/.ssh/id_%s" % profile,
             "Port": 2200,
             "User": "ubuntu",
-            "ServerAliveInterval": 5,
-            "ServerAliveCountMax": 2,
+            "ServerAliveInterval": 30,
+            "ServerAliveCountMax": 5760,
             "ConnectTimeout": 5
         }
         host = Host(name=cluster_id, attrs=attrs)
