@@ -1,5 +1,7 @@
+import base64
 import json
 import os
+import re
 import sys
 import time
 from os.path import expanduser
@@ -9,6 +11,8 @@ import uuid
 import glob
 
 import inquirer
+import requests
+from urllib.parse import unquote
 
 from databricks_cli.configure.provider import get_config, ProfileConfigProvider
 from databricks_cli.sdk.api_client import ApiClient
@@ -470,3 +474,64 @@ def configure_ssh(profile, host, token, cluster_id):
         print_ok("   => OK")
     else:
         print_error("   => Cancelled")
+
+def download_notebook(url):
+    """Download Databricks demo notebooks from docs.databricks.com.
+    It adds two cells on the top to initialize the Databricks context and MLflow
+    
+    Args:
+        url (str): The HTML url copied from the "Get notebook link"
+    """
+
+    def wrap(typ, cell):
+        return {"cell_type":typ, "source": cell, "output":[], "metadata":{}, "execution_count":0 }
+
+    cell1 = """# Retrieve Spark Context
+from databrickslabs_jupyterlab.connect import dbcontext, is_remote
+dbcontext()"""
+
+    cell2 = """# Setup MLflow (optional)
+import os
+from mlflow
+from mlflow.tracking import MlflowClient
+
+def remote_mlflow_setup(experiment_name):
+    mlflow.set_experiment(experiment_name)
+    experiment = MlflowClient().get_experiment_by_name(experiment_name)    
+    from IPython.display import HTML, display
+    url = "%s/#mlflow/experiments/%s" % (os.environ["DBJL_HOST"], experiment.experiment_id)
+    display(HTML('View the <a href="%s">MLflow experiment</a>' % url))    
+
+
+experiment_name = <FILL>
+home = "/Users/%s" % <FILL>
+experiment_name = "%s/experiments/%s" % (home, experiment_name)
+remote_mlflow_setup(experiment_name)"""
+
+    print("*** experimental ***")
+    name = os.path.splitext(os.path.basename(url))[0]
+
+    resp = requests.get(url)
+    if resp.status_code != 200:
+        print("error")
+    else:
+        r = re.compile("<script>(.+?)</script>")
+        scripts = r.findall(resp.text)
+        script = [s for s in scripts if "__DATABRICKS_NOTEBOOK_MODEL" in s][0]
+        r = re.compile("'(.+?)'")
+        s = r.findall(script)
+        nb = json.loads(unquote(base64.b64decode(s[0]).decode("utf-8")))
+        cells = [c["command"] for c in nb["commands"]]
+        ipy = {"cells":[wrap("code", cell1), wrap("code", cell2)],  "nbformat": 4, "nbformat_minor": 4, "metadata":{}}
+        for c in cells:
+            t = "code"            
+            if c.startswith("%md"):
+                t = "markdown"
+                c = c[3:]
+            elif c.startswith("%s"):
+                # Jupyter uses a cell magic
+                c = "%" + c
+            ipy["cells"].append(wrap(t, c))
+        with open("%s.ipynb" % name, "w") as fd:
+            fd.write(json.dumps(ipy))
+        print("Downloaded notebook to %s.ipynb" % name)

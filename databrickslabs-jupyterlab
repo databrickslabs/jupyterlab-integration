@@ -10,9 +10,9 @@ from getpass import getpass
 from enum import Enum
 
 import databrickslabs_jupyterlab
-from databrickslabs_jupyterlab.remote import (bye, check_installed, configure_ssh, connect, get_cluster,
-                                              get_python_path, get_remote_packages, install_libs, is_reachable,
-                                              version_check)
+from databrickslabs_jupyterlab.remote import (bye, check_installed, configure_ssh, connect, download_notebook,
+                                              get_cluster, get_python_path, get_remote_packages, install_libs,
+                                              is_reachable, version_check)
 from databrickslabs_jupyterlab.local import (bye, conda_version, create_kernelspec, get_db_config, prepare_ssh_config,
                                              print_error, print_ok, remove_kernelspecs, show_profiles, write_config)
 from databrickslabs_jupyterlab.install import install, update_local
@@ -52,6 +52,7 @@ parser.add_argument('-c',
 parser.add_argument('-i', '--id', dest='cluster_id', help='The cluster_id to avoid manual selection')
 parser.add_argument('-k', '--kernelspec', dest='kernelspec', action='store_true', help='Create a kernel specification')
 parser.add_argument('-l', '--lab', dest='lab', action='store_true', help='Safely start Jupyter Lab')
+parser.add_argument('-n', '--notebook_url', dest='notebook_url', help='Download demo notebook')
 parser.add_argument('-o', '--organisation', dest='organisation', help='The organisation for Azure Databricks')
 parser.add_argument('-p',
                     '--profiles',
@@ -145,6 +146,12 @@ if args.profiles:
     show_profiles()
     bye()
 
+#
+# Download Demo notebook
+#
+if args.notebook_url:
+    download_notebook(args.notebook_url)
+    bye()
 
 profile = args.profile
 
