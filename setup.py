@@ -14,7 +14,7 @@ def notebook_version():
 
 setup(
     name = "databrickslabs_jupyterlab",
-    version = "1.0.2-rc11",
+    version = "1.0.2",
     author = "Bernhard Walter",
     author_email = "bernhard.walter@databricks.com",
     url="https://github.com/databrickslabs/Jupyterlab-Integration",
