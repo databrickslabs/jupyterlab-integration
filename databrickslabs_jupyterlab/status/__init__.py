@@ -48,9 +48,13 @@ def get_cluster_state(profile, cluster_id):
         dict: ClusterStatus
     """
     apiclient = connect(profile)
-    client = ClusterApi(apiclient)
-    cluster = client.get_cluster(cluster_id)
-    state = cluster.get("state", None)
+    try:
+        client = ClusterApi(apiclient)
+        cluster = client.get_cluster(cluster_id)
+        state = cluster.get("state", None)
+    except:
+        _logger.warning("DbStatusHandler cluster not reachable")
+        state = "TERMINATED"
     # if state == "TERMINATED":
     #     _logger.warning("DbStatusHandler cluster state = %s" % state)
     # else:
