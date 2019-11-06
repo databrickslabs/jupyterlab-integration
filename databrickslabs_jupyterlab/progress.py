@@ -53,10 +53,8 @@ class Progress(object):
 
         indicator = HBox([toggle_button, progressbars])
 
-        # print(self.running, self.progressbar_showing)
-
         while (self.running == 1):
-            time.sleep(0.1)
+            time.sleep(0.2)
             jobs = [(jobid, self.tracker.getJobInfo(jobid))
                     for jobid in self.tracker.getJobIdsForGroup(self.job_info.group_id)
                     if self.tracker.getJobInfo(jobid).status == "RUNNING"]
@@ -68,7 +66,7 @@ class Progress(object):
                     bars[j] = FloatProgress(value=0.0,
                                             min=0.0,
                                             max=100.0,
-                                            description='Job: % 3d Stage: % 3d' % (j, 0),
+                                            description='Job: %04d Stage: %04d' % (j, 0),
                                             bar_style='info',
                                             orientation='horizontal',
                                             style=style)
@@ -89,22 +87,19 @@ class Progress(object):
                 stageIds = sorted(job.stageIds)
                 for s in stageIds:
                     stageInfo = self.tracker.getStageInfo(s)
+                    bars[j].description = 'Job: %04d Stage: %04d' % (j, s)
+                    labels[j].value = "code: '%s' / stages: %s" % (stageInfo.name, str(stageIds)[1:-1])
                     if stageInfo.numActiveTasks > 0:
-                        bars[j].description = 'Job: %04d Stage: %04d' % (j, s)
                         progress = int(100 * stageInfo.numCompletedTasks / stageInfo.numTasks)
                         bars[j].value = progress
-                        labels[j].value = "code: '%s' / stages: %s" % (stageInfo.name, str(stageIds)[1:-1])
 
         if lastJob is not None and self.running == 0:
             bars[lastJob].value = 100.0
 
     def start_progressbar(self, info):
-        # print("start_progressbar")
         self.sc.setLocalProperty("spark.scheduler.pool", self.job_info.pool_id)
         self.job_info.group_id = self.job_info.pool_id + "_" + uuid.uuid4().hex
         self.sc.setJobGroup(self.job_info.group_id, "jupyterlab job group", True)
-
-        time.sleep(0.1)
 
         self.running = 1
         self.progressbar_showing = False
@@ -140,6 +135,7 @@ def load_css():
         <style>
         .db-bar {
             height: 12px;
+            overflow: hidden;
         }
 
         .db-label {
