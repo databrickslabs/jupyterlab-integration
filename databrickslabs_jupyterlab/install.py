@@ -1,44 +1,52 @@
 import json
 import os
 import re
+import subprocess
 import sys
 import tempfile
 
 import databrickslabs_jupyterlab
 from databrickslabs_jupyterlab.remote import get_python_path, get_remote_packages
-from databrickslabs_jupyterlab.local import print_ok, print_error, execute
+from databrickslabs_jupyterlab.local import print_ok, print_error
 from databrickslabs_jupyterlab.utils import bye
 
 
 WHITELIST = [
-    "hyperopt", "keras-applications", "keras-preprocessing", "keras", "matplotlib", "mleap", "mlflow", "numba", "numpy",
-    "pandas", "patsy", "pillow", "pyarrow", "python-dateutil", "pyparsing", "scikit-learn", "scipy", "seaborn",
-    "simplejson", "statsmodels", "tabulate", "tensorboard", "tensorboardx", "tensorflow-estimator", "tensorflow",
-    "torch", "torchvision"
+    "boto3", "jsonschema", "hyperopt", "keras-applications", "keras-preprocessing", "keras", "lxml", "matplotlib",
+    "mleap", "mlflow", "numba", "numpy", "pandas", "patsy", "pillow", "pyarrow", "python-dateutil", "pyparsing",
+    "scikit-learn", "scipy", "seaborn", "simplejson", "statsmodels", "tabulate", "tensorboard",
+    "tensorboardx", "tensorflow-estimator", "tensorflow", "torch", "torchvision", "urllib3"
 ]
 
 BLACKLIST = [
     "absl-py", "ansi2html", "asn1crypto", "astor", "attrs", "backcall", "backports.shutil-get-terminal-size", "bcrypt",
-    "bleach", "blessings", "boto", "boto3", "botocore", "brewer2mpl", "certifi", "cffi", "chardet", "click", "colorama",
-    "configobj", "configparser", "cryptography", "cycler", "cython", "databricks-cli", "databrickslabs-jupyterlab",
-    "decorator", "defusedxml", "docker", "docopt", "docutils", "entrypoints", "enum34", "et-xmlfile", "flask",
-    "freetype-py", "funcsigs", "fusepy", "future", "gast", "gitdb2", "gitpython", "grpcio", "gunicorn", "h5py",
-    "horovod", "html5lib", "idna", "inquirer", "ipaddress", "ipykernel", "ipython", "ipython-genutils", "ipywidgets",
-    "itsdangerous", "jdcal", "jedi", "jinja2", "jmespath", "jsonschema", "jupyter-client", "jupyter-core", "llvmlite",
-    "lxml", "mako", "markdown", "markupsafe", "mistune", "mkl-fft", "mkl-random", "mock", "msgpack", "msgpack-python",
-    "nbconvert", "nbformat", "ndg-httpsclient", "networkx", "nose", "nose-exclude", "notebook", "olefile", "openpyxl",
-    "openpyxl", "packaging", "pandocfilters", "paramiko", "parso", "pathlib2", "pexpect", "pickleshare", "pip", "ply",
-    "prometheus-client", "prompt-toolkit", "protobuf", "psutil", "psycopg2", "ptyprocess", "py4j", "pyasn1",
-    "pycparser", "pycurl", "pygments", "pygobject", "pymongo", "pynacl", "pypng", "pysocks", "python-apt",
-    "python-dateutil", "python-editor", "python-geohash", "pyopenssl", "pytz", "pyyaml", "pyzmq", "querystring-parser",
-    "readchar", "requests", "scour", "send2trash", "setuptools", "sidecar", "simplegeneric", "simplejson",
-    "singledispatch", "six", "smmap2", "sqlparse", "ssh-config", "ssh-import-id", "tabulate", "termcolor", "terminado",
-    "testpath", "texttable", "tornado", "tqdm", "traitlets", "unattended-upgrades", "urllib3", "virtualenv", "wcwidth",
-    "webencodings", "websocket-client", "werkzeug", "wheel", "widgetsnbextension", "wrapt"
+    "bleach", "blessings", "brewer2mpl", "certifi", "cffi", "chardet", "click", "colorama", "configobj", "configparser",
+    "cryptography", "cycler", "cython", "databricks-cli", "databrickslabs-jupyterlab", "decorator", "defusedxml",
+    "docker", "docopt", "docutils", "entrypoints", "enum34", "et-xmlfile", "flask", "freetype-py", "funcsigs", "fusepy",
+    "future", "gast", "gitdb2", "gitpython", "grpcio", "gunicorn", "h5py", "horovod", "html5lib", "idna", "inquirer",
+    "ipaddress", "ipykernel", "ipython", "ipython-genutils", "ipywidgets", "itsdangerous", "jdcal", "jedi", "jinja2",
+    "jmespath", "jsonschema", "jupyter-client", "jupyter-core", "llvmlite", "mako", "markdown", "markupsafe", "mistune",
+    "mkl-fft", "mkl-random", "mock", "msgpack", "msgpack-python", "nbconvert", "nbformat", "ndg-httpsclient",
+    "networkx", "nose", "nose-exclude", "notebook", "olefile", "openpyxl", "openpyxl", "packaging", "pandocfilters",
+    "paramiko", "parso", "pathlib2", "pexpect", "pickleshare", "pip", "ply", "prometheus-client", "prompt-toolkit",
+    "protobuf", "psutil", "psycopg2", "ptyprocess", "py4j", "pyasn1", "pycparser", "pycurl", "pygments", "pygobject",
+    "pymongo", "pynacl", "pypng", "pysocks", "python-apt", "python-dateutil", "python-editor", "python-geohash",
+    "pyopenssl", "pytz", "pyyaml", "pyzmq", "querystring-parser", "readchar", "requests", "scour", "send2trash",
+    "setuptools", "sidecar", "simplegeneric", "singledispatch", "six", "smmap2", "sqlparse", "ssh-config",
+    "ssh-import-id", "tabulate", "termcolor", "terminado", "testpath", "texttable", "tornado", "tqdm", "traitlets",
+    "unattended-upgrades", "virtualenv", "wcwidth", "webencodings", "websocket-client", "werkzeug", "wheel",
+    "widgetsnbextension", "wrapt"
 ]
 
+def execute(cmd):
+    try:
+        result = subprocess.call(cmd)
+    except Exception as ex:
+        print_error(ex)
+        result = 1
+    return {"returncode": result}
 
-def execute_script(script, script_name, message):
+def execute_script(script, script_name, success_message, error_message):
     with tempfile.TemporaryDirectory() as tmpdir:
         script_file = os.path.join(tmpdir, script_name)
         with open(script_file, "w") as fd:
@@ -46,71 +54,79 @@ def execute_script(script, script_name, message):
 
         result = execute(["bash", script_file])
         if result["returncode"] != 0:
-            print_error(result["stderr"])
+            print_error(error_message)
             sys.exit(1)
+        else:
+            print_ok(success_message)
 
-def show_result():
-    print_ok("\n   => installed databrickslabs-jupyterlab")
-    result = execute(["pip", "show", "databrickslabs_jupyterlab"])
-    if result["returncode"] == 0:
-        lines = result["stdout"].split("\n")
-        print("\n".join(lines[:2]))
+def validate(env_name=None, labext=False):
+    if env_name is None:
+        script = """#!/bin/bash
+        set -e
+        """
     else:
-        print_error(result["stderr"])
+        script = """#!/bin/bash
+        set -e
+        source $(conda info | awk '/base env/ {print $4}')/bin/activate "%s"
+        """ % env_name
 
-    print_ok("\n   => jupyter server extensions")
-    result = execute(["jupyter-serverextension", "list"])
-    if result["returncode"] == 0:
-        print(result["stdout"])
-        print(result["stderr"])
+    if labext:
+        script += """
+            jupyter-labextension list
+        """
     else:
-        print_error(result["stderr"])
+        script += """
+            pip show databrickslabs_jupyterlab
+            jupyter-serverextension list
+        """
 
+    print("* Validating conda environment")
+    execute_script(script, "validate_env.sh", 
+        "Successfully validated conda environment", 
+        "Error while validating conda environment")
 
 def update_env(env_file):
     script = """#!/bin/bash
-conda env update --file %s
-""" % (env_file)
-    print("* Updating current conda environment")
-    execute_script(script, "update_env.sh", "Error while updating conda environment")
-    show_result()
+    conda env update --file %s
+    """ % (env_file)
 
-def install_env(env_file, env_name=None):
+    print("* Updating conda environment")
+    execute_script(script, "update_env.sh", 
+        "Successfully updated conda environment", 
+        "Error while updating conda environment")
+    validate()
+
+def install_env(env_file, env_name):
     script = """#!/bin/bash
-conda env create -n %s -f %s
-source $(conda info | awk '/base env/ {print $4}')/bin/activate "%s" 
-""" % (env_name, env_file, env_name)
+    conda env create -n %s -f %s
+    """ % (env_name, env_file)
 
     print("* Installing conda environment %s" % env_name)
-    execute_script(script, "install_env.sh", "Error while installing conda environment")
-    show_result()
+    execute_script(script, "install_env.sh", 
+        "Successfully installed conda environment",
+        "Error while installing conda environment")
+    validate(env_name)
 
 
 def install_labextensions(labext_file, env_name=None):
     if env_name is None:
         script = """#!/bin/bash
-"""        
+        """
     else:
         script = """#!/bin/bash
-source $(conda info | awk '/base env/ {print $4}')/bin/activate "%s" 
-""" % env_name
+        source $(conda info | awk '/base env/ {print $4}')/bin/activate "%s" 
+        """ % env_name
 
     script += ("""
-jupyter labextension install $(cat %s)
-jupyter lab build
-""" % labext_file)
+        jupyter labextension install $(cat %s)
+        jupyter lab build
+    """ % labext_file)
 
     print("* Installing jupyterlab extensions")
-    execute_script(script, "install_labext.sh", "Error while installing jupyter labextensions")
-
-    result = execute(["jupyter-labextension", "list"])
-    if result["returncode"] == 0:
-        print_ok("\n   => Installed labextensions")
-        print(result["stdout"])
-        print(result["stderr"])
-    else:
-        print_error(result["stderr"])
-
+    execute_script(script, "install_labext.sh", 
+        "Successfully installed jupyter labextensions",
+        "Error while installing jupyter labextensions")
+    validate(env_name, labext=True)
 
 def update_local():
     module_path = os.path.dirname(databrickslabs_jupyterlab.__file__)
@@ -143,13 +159,16 @@ def install(profile, host, token, cluster_id, cluster_name, use_whitelist):
         if lib["name"] == "python":  # just artificially added
             python_version = lib["version"]
         else:
-            if lib["name"] == "hyperopt":
+            if lib["name"] in ["hyperopt", "torchvision"]:
                 r = re.compile(r"(\d+\.\d+.\d+)(.*)")
+                version = r.match(lib["version"]).groups()[0]
+            elif lib["name"] in ["tensorboardx"]:
+                r = re.compile(r"(\d+\.\d+)(.*)")
                 version = r.match(lib["version"]).groups()[0]
             else:
                 version = lib["version"]
             ds_yml += ("    - %s==%s\n" % (lib["name"], version))
-    
+
     print("\n    Python version being installed: %s" % python_version)
     print("    Library versions being installed:")
     print(ds_yml.replace("==", ": ") + "\n")
@@ -236,5 +255,10 @@ databrickslabs-jupyterlab:
 6) Check currently available profiles 
 
     databrickslabs-jupyterlab -p
+
+7) Download a demo notebook from docs.databricks.com (experimental)
+
+    databrickslabs-jupyterlab -n https://docs.databricks.com/_static/notebooks/delta/xyz.html
+
 
 """ % env_name)
