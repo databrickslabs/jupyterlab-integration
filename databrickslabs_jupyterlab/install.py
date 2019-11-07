@@ -169,21 +169,22 @@ def install(profile, host, token, cluster_id, cluster_name, use_whitelist):
                 version = lib["version"]
             ds_yml += ("    - %s==%s\n" % (lib["name"], version))
 
-    print("\n    Python version being installed: %s" % python_version)
-    print("    Library versions being installed:")
-    print(ds_yml.replace("==", ": ") + "\n")
-
     module_path = os.path.dirname(databrickslabs_jupyterlab.__file__)
     env_file = os.path.join(module_path, "lib/env.yml")
     with open(env_file, "r") as fd:
         master_yml = fd.read()
     lines = master_yml.split("\n")
     for i in range(len(lines)):
-        if lines[i].startswith("  - python="):
-            lines[i] = "  - python=%s" % python_version
+        if lines[i].startswith("dependencies"):
+            lines.insert(i+1, "  - python=%s" % python_version)
             break
     master_yml = "\n".join(lines)
 
+    print("\n Installed environment \n")
+    print(master_yml)
+    print("\n    # Data Science Libs\n")
+    print(ds_yml + "\n")
+    
     with tempfile.TemporaryDirectory() as tmpdir:
         env_file = os.path.join(tmpdir, "env.yml")
         with open(env_file, "w") as fd:
