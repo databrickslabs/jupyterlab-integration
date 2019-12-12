@@ -49,6 +49,11 @@ parser.add_argument('-c',
                     dest='clipboard',
                     action='store_true',
                     help='Copy the personal access token to the clipboard')
+parser.add_argument('-D',
+                    '--debug',
+                    dest='debug',
+                    action='store_true',
+                    help='Debug calls to REST API')
 parser.add_argument('-i', '--id', dest='cluster_id', help='The cluster_id to avoid manual selection')
 parser.add_argument('-k', '--kernelspec', dest='kernelspec', action='store_true', help='Create a kernel specification')
 parser.add_argument('-l', '--lab', dest='lab', action='store_true', help='Safely start Jupyter Lab')
@@ -98,6 +103,10 @@ parser.add_argument('-B',
                     help='Print blacklist (exclude pkg) of packages to install')
 
 args = parser.parse_args()
+
+if args.debug:
+    import http.client as http_client
+    http_client.HTTPConnection.debuglevel = 1
 
 #
 # Print Version and exit
