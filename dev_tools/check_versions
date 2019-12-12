@@ -2,6 +2,7 @@
 
 import yaml
 import json
+import re
 import requests
 import sys
 from databrickslabs_jupyterlab.local import execute, print_error
@@ -26,14 +27,18 @@ def load_extensions(path):
     return result
 
 
-def extract(libs, delim):
-    return [lib.split(delim) for lib in libs if not isinstance(lib, dict) and delim in lib]
+def extract(libs, delim='>|=|<'):
+    def normalize(l):
+        result = [el for el in l if el != ""]
+        return result + [""] if len(result) == 1 else result[:2]
+    return [normalize(re.split(delim, lib)) 
+            for lib in libs if not isinstance(lib, dict)]
 
 
 def extract_pip(libs):
     pip = [lib for lib in libs if isinstance(lib, dict) and lib.get("pip", None) is not None]
     if len(pip) == 1:
-        pip = extract(pip[0]["pip"], "==")
+        pip = extract(pip[0]["pip"])
     return pip
 
 
@@ -116,7 +121,7 @@ if len(sys.argv) < 2:
 else:
     env = load_env(sys.argv[1])
     channels = env["channels"]
-    deps = extract(env["dependencies"], "=")
+    deps = extract(env["dependencies"])
     pips = extract_pip(env["dependencies"])
     exts = load_extensions("labextensions.txt")
 
