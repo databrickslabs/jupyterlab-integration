@@ -241,8 +241,8 @@ def prepare_ssh_config(cluster_id, profile, public_dns):
     if cluster_id in hosts:
         host = sc.get(cluster_id)
         host.set("HostName", public_dns)
-        host.set("ServerAliveInterval", 5)
-        host.set("ServerAliveCountMax", 2)
+        host.set("ServerAliveInterval", 30)
+        host.set("ServerAliveCountMax", 5760)
         host.set("ConnectTimeout", 5)
         print("   => Added ssh config entry or modified IP address:\n")
         print(textwrap.indent(str(host), "      "))
