@@ -27,7 +27,8 @@ This package allows to connect to a remote Databricks cluster from a locally run
 
 5. **Databricks Runtime**
 
-    The project has been tested with Databricks runtimes 5.5 only.
+    The project has been tested with Databricks runtimes 5.5 LTS, 6.0, 6.1 and 6.2 with Python 3 (both ML and standard runtime). Note, it does not support Python 2.7
+    
 
 ## 2 Installation
 
