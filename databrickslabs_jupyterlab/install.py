@@ -118,8 +118,8 @@ def install_labextensions(labext_file, env_name=None):
         """ % env_name
 
     script += ("""
-        jupyter labextension install $(cat %s)
-        jupyter lab build
+        jupyter labextension install --no-build $(cat %s)
+        jupyter lab build --dev-build=True
     """ % labext_file)
 
     print("* Installing jupyterlab extensions")
