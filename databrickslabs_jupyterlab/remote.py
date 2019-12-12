@@ -41,7 +41,9 @@ def connect(profile):
         bye(1)
     verify = config.insecure is None
     if config.is_valid_with_token:
-        return ApiClient(host=config.host, token=config.token, verify=verify)
+        api_client = ApiClient(host=config.host, token=config.token, verify=verify)
+        api_client.default_headers['user-agent'] = 'databrickslabs-jupyterlab-%s' % __version__
+        return api_client
     else:
         print_error("Token for profile '%s' is invalid" % profile)
         bye(1)
@@ -253,9 +255,10 @@ def install_libs(cluster_id, host, token):
     python_path = get_python_path(cluster_id)
 
     packages = get_local_libs()
-    deps = {p["name"]: p["version"] for p in packages if p["name"] in ["ipywidgets", "sidecar"]}
+    deps = {p["name"]: p["version"] for p in packages if p["name"] in ["ipywidgets", "sidecar", "ipykernel"]}
     libs = ["ipywidgets==%s" % deps["ipywidgets"],
             "sidecar==%s" % deps["sidecar"],
+            "ipykernel==%s" % deps["ipykernel"],
             "databrickslabs-jupyterlab==%s" % __version__]
     pip_cmd = ["%s/pip" %python_path,  "install", "-q", "--no-warn-conflicts", "--disable-pip-version-check"] + libs
 

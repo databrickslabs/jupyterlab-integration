@@ -4,6 +4,8 @@ import os
 import requests
 import xml.etree.ElementTree
 
+from databrickslabs_jupyterlab._version import __version__
+
 
 class DatabricksApiException(Exception):
     """Exception class for Databricks API errors
@@ -28,6 +30,9 @@ class Rest(object):
     """Rest class to execute REST get and post calls.
     JSON Results will automatically be converted to dicts
     """
+    
+    headers = {"User-Agent": "databrickslabs-jupyterlab-%s" % __version__}
+
     def _rest_error(self, status_code, error_code, message):
         """Create a stabdard REST error message
         
@@ -85,7 +90,7 @@ class Rest(object):
         """
         full_url = os.path.join(url, "api/%s" % api_version, path)
         try:
-            response = requests.get(full_url, auth=("token", token))
+            response = requests.get(full_url, auth=("token", token), headers=self.headers)
         except Exception as ex:
             raise DatabricksApiException(0, 5, str(ex))
         if response.status_code in (200, 201):
@@ -113,7 +118,8 @@ class Rest(object):
         """
         full_url = os.path.join(url, "api/%s" % api_version, path)
         try:
-            response = requests.post(full_url, json=json, data=data, files=files, auth=("token", token))
+            response = requests.post(full_url, json=json, data=data, files=files, auth=("token", token), 
+                                     headers=self.headers)
         except Exception as ex:
             raise DatabricksApiException(0, 5, str(ex))
         if response.status_code in (200, 201):
