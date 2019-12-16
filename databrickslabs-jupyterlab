@@ -8,6 +8,7 @@ import sys
 import uuid
 from getpass import getpass
 from enum import Enum
+from version_parser import Version
 
 import databrickslabs_jupyterlab
 from databrickslabs_jupyterlab.remote import (bye, check_installed, configure_ssh, connect, download_notebook,
@@ -167,8 +168,7 @@ profile = args.profile
 #
 # Check that at least conda 4.7.5 is installed. If not, exit
 #
-version = conda_version()
-if version[1] >= 4 and version[2] >= 5:
+if Version("4.7.5") < Version(conda_version()):
     print("Valid version of conda detected: %s.%s.%s" % version)
 else:
     print("Too old conda version:")
