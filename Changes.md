@@ -25,3 +25,9 @@
   - ipykernel: 5.1.3
 
 - REST API call now use the User Agent "databrickslabs-jupyterlab-1.0.7"
+
+## 1.0.8 (2019-12-16)
+
+### Fixes
+
+- Fixed a regression when introducing version-parser: blacklist had to be updated
