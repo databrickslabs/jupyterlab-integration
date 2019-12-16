@@ -26,6 +26,7 @@ setup(
     scripts=['databrickslabs-jupyterlab'],
     install_requires=[
         'notebook==%s' % notebook_version(),
+        'version_parser',
         'inquirer',
         'ssh_config',
         'databricks_cli'

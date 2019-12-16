@@ -122,8 +122,7 @@ def conda_version():
         print_error(result["stderr"])
         sys.exit(1)
 
-    result = result["stdout"].strip()
-    return tuple([int(v) for v in result.split(" ")[1].split(".")])
+    return result["stdout"].strip().split(" ")[1]
 
 
 def write_config():
