@@ -168,7 +168,8 @@ profile = args.profile
 #
 # Check that at least conda 4.7.5 is installed. If not, exit
 #
-if Version("4.7.5") < Version(conda_version()):
+version = conda_version()
+if Version("4.7.5") < Version(version):
     print("Valid version of conda detected: %s.%s.%s" % version)
 else:
     print("Too old conda version:")
