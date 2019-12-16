@@ -34,9 +34,8 @@ BLACKLIST = [
     "pyopenssl", "pytz", "pyyaml", "pyzmq", "querystring-parser", "readchar", "requests", "scour", "send2trash",
     "setuptools", "sidecar", "simplegeneric", "singledispatch", "six", "smmap2", "sqlparse", "ssh-config",
     "ssh-import-id", "tabulate", "termcolor", "terminado", "testpath", "texttable", "tornado", "tqdm", "traitlets",
-    "unattended-upgrades", "virtualenv", "wcwidth", "webencodings", "websocket-client", "werkzeug", "wheel",
-    "widgetsnbextension", "wrapt"
-]
+    "unattended-upgrades", "version-parser", "virtualenv", "wcwidth", "webencodings", "websocket-client", "werkzeug",
+    "wheel", "widgetsnbextension", "wrapt"]
 
 def execute(cmd):
     try:
