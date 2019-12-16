@@ -31,3 +31,7 @@
 ### Fixes
 
 - Fixed a regression when introducing version-parser: blacklist had to be updated
+
+## 1.0.9 (2019-12-16)
+
+- Fixed a regression when introducing newer package versions whoch broke python3.5 (DBR 5.5) support
