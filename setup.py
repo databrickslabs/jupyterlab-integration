@@ -8,8 +8,8 @@ def read(fname):
 def notebook_version():
     with open("env.yml", "r") as fd:
         env = fd.read()
-    r = re.compile("notebook=.*\n")
-    nb = r.search(env).group().strip().split("=")[1]
+    r = re.compile("notebook==.*\n")
+    nb = r.search(env).group().strip().split("==")[1]
     return nb
 
 setup(
