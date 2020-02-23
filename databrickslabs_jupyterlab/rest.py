@@ -20,6 +20,7 @@ class DatabricksApiException(Exception):
         error_code (int): Error specific code
         error_message (str): Error message
     """
+
     def __init__(self, status_code, error_code, error_message):
         self.status_code = status_code
         self.error_code = error_code
@@ -30,7 +31,7 @@ class Rest(object):
     """Rest class to execute REST get and post calls.
     JSON Results will automatically be converted to dicts
     """
-    
+
     headers = {"User-Agent": "databrickslabs-jupyterlab-%s" % __version__}
 
     def _rest_error(self, status_code, error_code, message):
@@ -56,7 +57,9 @@ class Rest(object):
             str: The error message without HTML tags
         """
         try:
-            result = ''.join(xml.etree.ElementTree.fromstring(text).itertext()).replace("\n\n", "\n")
+            result = "".join(xml.etree.ElementTree.fromstring(text).itertext()).replace(
+                "\n\n", "\n"
+            )
         except:
             result = text
         return result
@@ -73,7 +76,9 @@ class Rest(object):
         try:
             return response.json()
         except Exception:
-            raise DatabricksApiException(403, 3, "Invalid json message: %s" % self._remove_tags(response.text))
+            raise DatabricksApiException(
+                403, 3, "Invalid json message: %s" % self._remove_tags(response.text)
+            )
 
     def get(self, url, api_version, path, token):
         """REST GET function
@@ -118,8 +123,14 @@ class Rest(object):
         """
         full_url = os.path.join(url, "api/%s" % api_version, path)
         try:
-            response = requests.post(full_url, json=json, data=data, files=files, auth=("token", token), 
-                                     headers=self.headers)
+            response = requests.post(
+                full_url,
+                json=json,
+                data=data,
+                files=files,
+                auth=("token", token),
+                headers=self.headers,
+            )
         except Exception as ex:
             raise DatabricksApiException(0, 5, str(ex))
         if response.status_code in (200, 201):
@@ -144,6 +155,7 @@ class Context(Rest):
         token (str): Authentication token
         id (str): Context ID
     """
+
     def __init__(self, url, cluster_id, token):
         self.token = token
         self.url = url
@@ -197,6 +209,7 @@ class Command(Rest):
         token (str): Authentication token
         context (Context): The Execution Context for the commands
     """
+
     def __init__(self, url, cluster_id, token):
         self.token = token
         self.url = url
@@ -215,11 +228,13 @@ class Command(Rest):
         """
         data = {"language": "python", "contextId": self.context.id, "clusterId": self.cluster_id}
         files = {"command": command}
-        response = self.post(self.url, "1.2", "commands/execute", data=data, files=files, token=self.token)
+        response = self.post(
+            self.url, "1.2", "commands/execute", data=data, files=files, token=self.token
+        )
         command_id = response.get("id", None)
         if command_id is None:
             raise DatabricksApiException(403, 4, "Command ID missing")
-        
+
         finished = False
         while not finished:
             print(".", end="", flush=True)
@@ -241,7 +256,11 @@ class Command(Rest):
         Returns:
             dict: Dictionary with context id and status
         """
-        path = "commands/status?commandId=%s&contextId=%s&clusterId=%s" % (command_id, self.context.id, self.cluster_id)
+        path = "commands/status?commandId=%s&contextId=%s&clusterId=%s" % (
+            command_id,
+            self.context.id,
+            self.cluster_id,
+        )
         return self.get(self.url, "1.2", path, token=self.token)
 
     def close(self):

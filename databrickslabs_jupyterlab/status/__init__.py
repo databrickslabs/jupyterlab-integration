@@ -12,10 +12,16 @@ from collections import defaultdict
 from tornado.log import LogFormatter
 
 import databrickslabs_jupyterlab
-from databrickslabs_jupyterlab.remote import (connect, is_reachable, get_cluster, get_python_path, check_installed,
-                                              install_libs)
+from databrickslabs_jupyterlab.remote import (
+    connect,
+    is_reachable,
+    get_cluster,
+    get_python_path,
+    check_installed,
+    install_libs,
+)
 from databrickslabs_jupyterlab.utils import SshConfig
-from databrickslabs_jupyterlab.local import (get_db_config, prepare_ssh_config)
+from databrickslabs_jupyterlab.local import get_db_config, prepare_ssh_config
 from databricks_cli.clusters.api import ClusterApi
 
 if os.environ.get("DEBUG", None) is None:
@@ -23,7 +29,9 @@ if os.environ.get("DEBUG", None) is None:
 else:
     DEBUG_LEVEL = os.environ.get["DEBUG"]
 
-_LOG_FMT = ("%(color)s[%(levelname)1.1s %(asctime)s.%(msecs).03d " "%(name)s]%(end_color)s %(message)s")
+_LOG_FMT = (
+    "%(color)s[%(levelname)1.1s %(asctime)s.%(msecs).03d " "%(name)s]%(end_color)s %(message)s"
+)
 _LOG_DATEFMT = "%H:%M:%S"
 
 _console = logging.StreamHandler()
@@ -65,6 +73,7 @@ def get_cluster_state(profile, cluster_id):
 
 class Status:
     """Status implementation"""
+
     def __init__(self):
         self.status = defaultdict(lambda: defaultdict(lambda: {}))
         self.dots = 0
@@ -151,6 +160,7 @@ class Status:
 
 class KernelHandler(IPythonHandler):
     """Kernel handler to get jupyter kernel for given kernelspec"""
+
     nbapp = None
     status = Status()
 
@@ -178,14 +188,15 @@ class KernelHandler(IPythonHandler):
 
 class DbStatusHandler(KernelHandler):
     """Databricks cluster status handler"""
+
     @web.authenticated
     def get(self):
         """GET handler to return the current Databricks cluster start status"""
         global_status = KernelHandler.status
 
-        profile = self.get_argument('profile', None, True)
-        cluster_id = self.get_argument('cluster_id', None, True)
-        kernel_id = self.get_argument('id', None, True)
+        profile = self.get_argument("profile", None, True)
+        cluster_id = self.get_argument("cluster_id", None, True)
+        kernel_id = self.get_argument("id", None, True)
 
         kernel = self.get_kernel(kernel_id)
         conn_info = {
@@ -193,10 +204,11 @@ class DbStatusHandler(KernelHandler):
             "hb_port": kernel.hb_port,
             "iopub_port": kernel.iopub_port,
             "shell_port": kernel.shell_port,
-            "stdin_port": kernel.stdin_port
+            "stdin_port": kernel.stdin_port,
         }
-        
+
         from ssh_ipykernel.status import Status as KernelStatus
+
         kernel_status = KernelStatus(conn_info)
 
         status = None
@@ -224,26 +236,33 @@ class DbStatusHandler(KernelHandler):
                 else:
                     status = "UNREACHABLE"
 
-        result = {'status': "%s" % status}
+        result = {"status": "%s" % status}
         _logger.debug(
-            "DbStatusHandler: installing: '%s'; start_status: '%s'; kernel_status: '%s'; status: '%s'" %
-            (global_status.installing(profile, cluster_id), start_status, kernel_status.get_status_message(), result))
+            "DbStatusHandler: installing: '%s'; start_status: '%s'; kernel_status: '%s'; status: '%s'"
+            % (
+                global_status.installing(profile, cluster_id),
+                start_status,
+                kernel_status.get_status_message(),
+                result,
+            )
+        )
         self.finish(json.dumps(result))
 
 
 class DbStartHandler(KernelHandler):
     """Databricks cluster start handler"""
+
     @web.authenticated
     def get(self):
         """GET handler to trigger cluster start in a separate thread"""
-        profile = self.get_argument('profile', None, True)
-        cluster_id = self.get_argument('cluster_id', None, True)
-        kernel_id = self.get_argument('id', None, True)
+        profile = self.get_argument("profile", None, True)
+        cluster_id = self.get_argument("cluster_id", None, True)
+        kernel_id = self.get_argument("id", None, True)
         thread = threading.Thread(target=self.start_cluster, args=(profile, cluster_id, kernel_id))
         thread.daemon = True
         thread.start()
 
-        result = {'status': "ok"}
+        result = {"status": "ok"}
         self.finish(json.dumps(result))
 
     def start_cluster(self, profile, cluster_id, kernel_id):
@@ -263,7 +282,9 @@ class DbStartHandler(KernelHandler):
             global_status.set_installing(profile, cluster_id)
 
             host, token = get_db_config(profile)
-            cluster_id, public_ip, cluster_name, dummy = get_cluster(profile, host, token, cluster_id, global_status)
+            cluster_id, public_ip, cluster_name, dummy = get_cluster(
+                profile, host, token, cluster_id, global_status
+            )
             if cluster_name is None:
                 global_status.set_status(profile, cluster_id, "ERROR: Cluster could not be found")
                 return
@@ -292,6 +313,5 @@ def _jupyter_server_extension_paths():
     """
     Set up the server extension for status handling
     """
-    return [{
-        'module': 'databrickslabs_jupyterlab',
-    }]
+    return [{"module": "databrickslabs_jupyterlab",}]
+

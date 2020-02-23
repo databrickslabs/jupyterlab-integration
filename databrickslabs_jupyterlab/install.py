@@ -12,10 +12,37 @@ from databrickslabs_jupyterlab.utils import bye, execute, execute_script
 
 
 WHITELIST = [
-    "boto3", "jsonschema", "hyperopt", "keras-applications", "keras-preprocessing", "keras", "lxml", "matplotlib",
-    "mleap", "mlflow", "numba", "numpy", "pandas", "patsy", "pillow", "pyarrow", "python-dateutil", "pyparsing",
-    "scikit-learn", "scipy", "seaborn", "simplejson", "statsmodels", "tabulate", "tensorboard",
-    "tensorboardx", "tensorflow-estimator", "tensorflow", "torch", "torchvision", "urllib3"
+    "boto3",
+    "jsonschema",
+    "hyperopt",
+    "keras-applications",
+    "keras-preprocessing",
+    "keras",
+    "lxml",
+    "matplotlib",
+    "mleap",
+    "mlflow",
+    "numba",
+    "numpy",
+    "pandas",
+    "patsy",
+    "pillow",
+    "pyarrow",
+    "python-dateutil",
+    "pyparsing",
+    "scikit-learn",
+    "scipy",
+    "seaborn",
+    "simplejson",
+    "statsmodels",
+    "tabulate",
+    "tensorboard",
+    "tensorboardx",
+    "tensorflow-estimator",
+    "tensorflow",
+    "torch",
+    "torchvision",
+    "urllib3",
 ]
 
 BLACKLIST = [
@@ -201,6 +228,7 @@ def update_env(env_file):
     )
     validate()
 
+
 def install_env(env_file, env_name):
     script = "conda env create -n %s -f %s" % (env_name, env_file,)
 
@@ -225,6 +253,7 @@ def install_labextensions(labext_file, env_name=None):
         "Error while installing jupyter labextensions",
     )
     validate(env_name, labext=True)
+
 
 def update_local():
     module_path = os.path.dirname(databrickslabs_jupyterlab.__file__)
@@ -265,7 +294,7 @@ def install(profile, host, token, cluster_id, cluster_name, use_whitelist):
                 version = r.match(lib["version"]).groups()[0]
             else:
                 version = lib["version"]
-            ds_yml += ("    - %s==%s\n" % (lib["name"], version))
+            ds_yml += "    - %s==%s\n" % (lib["name"], version)
 
     module_path = os.path.dirname(databrickslabs_jupyterlab.__file__)
     env_file = os.path.join(module_path, "lib/env.yml")
@@ -274,7 +303,7 @@ def install(profile, host, token, cluster_id, cluster_name, use_whitelist):
     lines = master_yml.split("\n")
     for i in range(len(lines)):
         if lines[i].startswith("dependencies"):
-            lines.insert(i+1, "  - python=%s" % python_version)
+            lines.insert(i + 1, "  - python=%s" % python_version)
             break
     master_yml = "\n".join(lines)
 
@@ -282,7 +311,7 @@ def install(profile, host, token, cluster_id, cluster_name, use_whitelist):
     print(master_yml)
     print("\n    # Data Science Libs\n")
     print(ds_yml + "\n")
-    
+
     with tempfile.TemporaryDirectory() as tmpdir:
         env_file = os.path.join(tmpdir, "env.yml")
         with open(env_file, "w") as fd:
@@ -305,7 +334,8 @@ def install(profile, host, token, cluster_id, cluster_name, use_whitelist):
 
 
 def usage(env_name):
-    print_ok("""
+    print_ok(
+        """
 = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
                               Q U I C K S T A R T
 = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
@@ -360,4 +390,7 @@ databrickslabs-jupyterlab:
     databrickslabs-jupyterlab -n https://docs.databricks.com/_static/notebooks/delta/xyz.html
 
 
-""" % env_name)
+"""
+        % env_name
+    )
+

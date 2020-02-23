@@ -48,7 +48,7 @@ def connect(profile):
     verify = config.insecure is None
     if config.is_valid_with_token:
         api_client = ApiClient(host=config.host, token=config.token, verify=verify)
-        api_client.default_headers['user-agent'] = 'databrickslabs-jupyterlab-%s' % __version__
+        api_client.default_headers["user-agent"] = "databrickslabs-jupyterlab-%s" % __version__
         return api_client
     else:
         print_error("Token for profile '%s' is invalid" % profile)
@@ -64,18 +64,31 @@ def select_cluster(clusters):
     Returns:
         dict: Cluster config of selected cluster
     """
+
     def entry(i, cluster):
         if cluster.get("autoscale", None) is None:
-            return "%s: '%s' (id: %s, state: %s, workers: %d)" % (i, cluster["cluster_name"], cluster["cluster_id"],
-                                                                cluster["state"], cluster["num_workers"])
+            return "%s: '%s' (id: %s, state: %s, workers: %d)" % (
+                i,
+                cluster["cluster_name"],
+                cluster["cluster_id"],
+                cluster["state"],
+                cluster["num_workers"],
+            )
         else:
-            return "%s: '%s' (id: %s, state: %s, scale: %d-%d)" % (i, cluster["cluster_name"], cluster["cluster_id"],
-                                                                 cluster["state"], cluster["autoscale"]["min_workers"],
-                                                                 cluster["autoscale"]["max_workers"])
+            return "%s: '%s' (id: %s, state: %s, scale: %d-%d)" % (
+                i,
+                cluster["cluster_name"],
+                cluster["cluster_id"],
+                cluster["state"],
+                cluster["autoscale"]["min_workers"],
+                cluster["autoscale"]["max_workers"],
+            )
 
-    answer = question('cluster_id',
-                      'Which cluster to connect to?',
-                      [entry(i, cluster) for i, cluster in enumerate(clusters)])
+    answer = question(
+        "cluster_id",
+        "Which cluster to connect to?",
+        [entry(i, cluster) for i, cluster in enumerate(clusters)],
+    )
     return clusters[int(answer["cluster_id"].split(":")[0])]
 
 
@@ -99,7 +112,10 @@ def get_cluster(profile, host, token, cluster_id=None, status=None):
         try:
             ssh_pub = fd.read().strip()
         except:
-            print_error("   Error: ssh key for profile 'id_%s.pub' does not exist in %s/.ssh" % (profile, expanduser("~")))
+            print_error(
+                "   Error: ssh key for profile 'id_%s.pub' does not exist in %s/.ssh"
+                % (profile, expanduser("~"))
+            )
             bye()
 
     try:
@@ -120,25 +136,34 @@ def get_cluster(profile, host, token, cluster_id=None, status=None):
                 break
 
         if cluster is None:
-            print_error("   Error: A cluster with id '%s' does not exist in the workspace of profile '%s'" %
-                        (cluster_id, profile))
+            print_error(
+                "   Error: A cluster with id '%s' does not exist in the workspace of profile '%s'"
+                % (cluster_id, profile)
+            )
             return (None, None, None, None)
 
         if ssh_pub not in [c.strip() for c in cluster.get("ssh_public_keys", [])]:
-            print_error("   Error: Cluster with id '%s' does not have ssh key '~/.ssh/id_%s' configured" %
-                        (cluster_id, profile))
+            print_error(
+                "   Error: Cluster with id '%s' does not have ssh key '~/.ssh/id_%s' configured"
+                % (cluster_id, profile)
+            )
             return (None, None, None, None)
     else:
         my_clusters = [
-            cluster for cluster in clusters
+            cluster
+            for cluster in clusters
             if ssh_pub in [c.strip() for c in cluster.get("ssh_public_keys", [])]
         ]
 
         if not my_clusters:
             print_error(
-                "    Error: There is no cluster in the workspace for profile '%s' configured with ssh key '~/.ssh/id_%s':" %
-                (profile, profile))
-            print("    Use 'databrickslabs_jupyterlab %s -s' to configure ssh for clusters in this workspace\n" % profile)
+                "    Error: There is no cluster in the workspace for profile '%s' configured with ssh key '~/.ssh/id_%s':"
+                % (profile, profile)
+            )
+            print(
+                "    Use 'databrickslabs_jupyterlab %s -s' to configure ssh for clusters in this workspace\n"
+                % profile
+            )
             return (None, None, None, None)
 
         current_conda_env = os.environ.get("CONDA_DEFAULT_ENV", None)
@@ -150,8 +175,9 @@ def get_cluster(profile, host, token, cluster_id=None, status=None):
 
         if found is not None:
             print_warning(
-                "\n   => The current conda environment is '%s'.\n      You might want to select cluster %d with the name '%s'?\n" %
-                (current_conda_env, i, found))
+                "\n   => The current conda environment is '%s'.\n      You might want to select cluster %d with the name '%s'?\n"
+                % (current_conda_env, i, found)
+            )
 
         cluster = select_cluster(my_clusters)
 
@@ -200,7 +226,10 @@ def get_cluster(profile, host, token, cluster_id=None, status=None):
         if status is not None:
             status.set_status(profile, cluster_id, "Cluster started")
 
-        print("\n   => Waiting for libraries on cluster %s being installed (this can take some time)" % cluster_id)
+        print(
+            "\n   => Waiting for libraries on cluster %s being installed (this can take some time)"
+            % cluster_id
+        )
         print("   ", end="", flush=True)
 
         done = False
@@ -258,16 +287,30 @@ def install_libs(cluster_id, host, token):
     python_path = get_python_path(cluster_id)
 
     packages = get_local_libs()
-    deps = {p["name"]: p["version"] for p in packages if p["name"] in ["ipywidgets", "sidecar", "ipykernel"]}
-    libs = ["ipywidgets==%s" % deps["ipywidgets"],
-            "sidecar==%s" % deps["sidecar"],
-            "ipykernel==%s" % deps["ipykernel"],
-            "databrickslabs-jupyterlab==%s" % __version__]
-    pip_cmd = ["%s/pip" %python_path,  "install", "-q", "--no-warn-conflicts", "--disable-pip-version-check"] + libs
+    deps = {
+        p["name"]: p["version"]
+        for p in packages
+        if p["name"] in ["ipywidgets", "sidecar", "ipykernel"]
+    }
+    libs = [
+        "ipywidgets==%s" % deps["ipywidgets"],
+        "sidecar==%s" % deps["sidecar"],
+        "ipykernel==%s" % deps["ipykernel"],
+        "databrickslabs-jupyterlab==%s" % __version__,
+    ]
+    pip_cmd = [
+        "%s/pip" % python_path,
+        "install",
+        "-q",
+        "--no-warn-conflicts",
+        "--disable-pip-version-check",
+    ] + libs
 
-    cmd =  'import subprocess, json; ' + \
-          ('ret = subprocess.run(%s, stderr=subprocess.PIPE); ' % pip_cmd) + \
-           'print(json.dumps([ret.returncode, str(ret.stderr)]))'
+    cmd = (
+        "import subprocess, json; "
+        + ("ret = subprocess.run(%s, stderr=subprocess.PIPE); " % pip_cmd)
+        + "print(json.dumps([ret.returncode, str(ret.stderr)]))"
+    )
 
     print("   => Installing %s" % ", ".join(libs))
     print("   ", end="")
@@ -287,9 +330,11 @@ def install_libs(cluster_id, host, token):
 
 
 def get_remote_packages(cluster_id, host, token):
-    cmd = 'import sys, pkg_resources, json; ' + \
-          'print(json.dumps([{"name": "python", "version": "%d.%d" % (sys.version_info.major, sys.version_info.minor)}] + ' + \
-          '[{"name":p.key, "version":p.version} for p in pkg_resources.working_set]))'
+    cmd = (
+        "import sys, pkg_resources, json; "
+        + 'print(json.dumps([{"name": "python", "version": "%d.%d" % (sys.version_info.major, sys.version_info.minor)}] + '
+        + '[{"name":p.key, "version":p.version} for p in pkg_resources.working_set]))'
+    )
     try:
         command = Command(url=host, cluster_id=cluster_id, token=token)
         result = command.execute(cmd)
@@ -298,6 +343,7 @@ def get_remote_packages(cluster_id, host, token):
         print(ex)
         return None
     return result
+
 
 def is_reachable(public_dns):
     """Check whether a remote cluster is reachable
@@ -373,6 +419,7 @@ def version_check(cluster_id, host, token, flag):
         token (str): token from databricks cli config for given profile string
         flag (str): all|diff|same
     """
+
     def normalize(key):
         return key.lower().replace("-", "_")
 
@@ -393,7 +440,9 @@ def version_check(cluster_id, host, token, flag):
         scope = [key for key in joint_keys if deps.get(key, None) == remote_deps.get(key, None)]
     else:
         scope = [
-            key for key in joint_keys if deps.get(key, None) != remote_deps.get(key, None)
+            key
+            for key in joint_keys
+            if deps.get(key, None) != remote_deps.get(key, None)
             #            and deps.get(key, None) is not None and remote_deps.get(key, None) is not None
         ]
     for key in scope:
@@ -402,6 +451,7 @@ def version_check(cluster_id, host, token, flag):
             print_ok(result)
         else:
             print_error(result)
+
 
 def configure_ssh(profile, host, token, cluster_id):
     """Configure SSH for the remote cluster
@@ -418,7 +468,7 @@ def configure_ssh(profile, host, token, cluster_id):
         answer = input("   => Shall it be created (y/n)? (default = n): ")
         if answer.lower() == "y":
             print("   => Creating ssh key %s" % sshkey_file)
-            result = execute(["ssh-keygen", "-b", "2048",  "-N", "", "-f",  sshkey_file])
+            result = execute(["ssh-keygen", "-b", "2048", "-N", "", "-f", sshkey_file])
             if result["returncode"] == 0:
                 print_ok("   => OK")
             else:
@@ -452,9 +502,18 @@ def configure_ssh(profile, host, token, cluster_id):
 
     request = {}
     for key in [
-            "autotermination_minutes", "cluster_id", "cluster_name", "cluster_source", "creator_user_name",
-            "default_tags", "driver_node_type_id", "enable_elastic_disk", "init_scripts_safe_mode", "node_type_id",
-            "spark_env_vars", "spark_version"
+        "autotermination_minutes",
+        "cluster_id",
+        "cluster_name",
+        "cluster_source",
+        "creator_user_name",
+        "default_tags",
+        "driver_node_type_id",
+        "enable_elastic_disk",
+        "init_scripts_safe_mode",
+        "node_type_id",
+        "spark_env_vars",
+        "spark_version",
     ]:
         request[key] = response[key]
 
@@ -469,8 +528,12 @@ def configure_ssh(profile, host, token, cluster_id):
 
     request["ssh_public_keys"] = ssh_public_keys + [sshkey]
 
-    print_warning("   => The ssh key will be added to the cluster. \n   Note: The cluster will be restarted immediately!")
-    answer = input("   => Shall the ssh key be added and the cluster be restarted (y/n)? (default = n): ")
+    print_warning(
+        "   => The ssh key will be added to the cluster. \n   Note: The cluster will be restarted immediately!"
+    )
+    answer = input(
+        "   => Shall the ssh key be added and the cluster be restarted (y/n)? (default = n): "
+    )
     if answer.lower() == "y":
         try:
             response = client.edit_cluster(request)
@@ -481,6 +544,7 @@ def configure_ssh(profile, host, token, cluster_id):
     else:
         print_error("   => Cancelled")
 
+
 def download_notebook(url):
     """Download Databricks demo notebooks from docs.databricks.com.
     It adds two cells on the top to initialize the Databricks context and MLflow
@@ -490,7 +554,13 @@ def download_notebook(url):
     """
 
     def wrap(typ, cell):
-        return {"cell_type":typ, "source": cell, "output":[], "metadata":{}, "execution_count":0 }
+        return {
+            "cell_type": typ,
+            "source": cell,
+            "output": [],
+            "metadata": {},
+            "execution_count": 0,
+        }
 
     cell1 = """# Retrieve Spark Context
 from databrickslabs_jupyterlab.connect import dbcontext, is_remote
@@ -528,9 +598,14 @@ remote_mlflow_setup(experiment_name)"""
         s = r.findall(script)
         nb = json.loads(unquote(base64.b64decode(s[0]).decode("utf-8")))
         cells = [c["command"] for c in nb["commands"]]
-        ipy = {"cells":[wrap("code", cell1), wrap("code", cell2)],  "nbformat": 4, "nbformat_minor": 4, "metadata":{}}
+        ipy = {
+            "cells": [wrap("code", cell1), wrap("code", cell2)],
+            "nbformat": 4,
+            "nbformat_minor": 4,
+            "metadata": {},
+        }
         for c in cells:
-            t = "code"            
+            t = "code"
             if c.startswith("%md"):
                 t = "markdown"
                 c = c[3:]

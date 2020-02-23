@@ -14,18 +14,16 @@ is_windows = platform.platform(1, 1).split("-")[0] == "Windows"
 if is_windows:
     from pick import pick
 else:
-    from inquirer import prompt
+    import inquirer
     from inquirer.themes import Default, term
 
     class Dark(Default):
         """Dark Theme for inquirer"""
+
         def __init__(self):
             super().__init__()
             self.List.selection_color = term.cyan
 
-
-def is_windows():
-    return platform.platform(1, 1).split("-")[1] == 'Windows'
 
 def bye(status=0):
     """Standard exit function
@@ -39,10 +37,10 @@ def bye(status=0):
 
 
 class Colors:
-    ERROR = '\033[91m'
-    OK = '\033[92m'
-    WARNING = '\033[93m'
-    RESET = '\033[0m'
+    ERROR = "\033[91m"
+    OK = "\033[92m"
+    WARNING = "\033[93m"
+    RESET = "\033[0m"
 
 
 def _print(color, *args):
@@ -62,16 +60,13 @@ def print_error(*args):
 def print_warning(*args):
     _print(Colors.WARNING, *args)
 
+
 def question(tag, message, choices):
     if is_windows:
         option, _ = pick(choices, message)
         return {tag: option}
     else:
-        choice = [
-            inquirer.List(tag,
-                          message=message,
-                          choices=choices)
-        ]
+        choice = [inquirer.List(tag, message=message, choices=choices)]
         return inquirer.prompt(choice, theme=Dark())
 
 
@@ -134,12 +129,12 @@ class SshConfig:
         sc = ssh_config.SSHConfig.load(self.config_file)
         self.hosts = {
             h.name: h.attributes()["HostName"]
-            for h in sc.hosts() if h.attributes().get("HostName", None) is not None
+            for h in sc.hosts()
+            if h.attributes().get("HostName", None) is not None
         }
 
     def get_dns(self, host_name):
         if self._get_mtime() > self.mtime:
             self.load()
         return self.hosts.get(host_name, None)
-
 

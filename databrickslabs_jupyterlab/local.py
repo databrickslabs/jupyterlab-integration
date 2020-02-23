@@ -92,7 +92,7 @@ Host.attrs += [
     ("UserKnownHostsFile", str),
     ("VerifyHostKeyDNS", str),
     ("VisualHostKey", str),
-    ("XAuthLocation", str)
+    ("XAuthLocation", str),
 ]
 
 
@@ -112,7 +112,10 @@ def write_config():
     - c.KernelManager.autorestart: False
     - c.MappingKernelManager.kernel_info_timeout: 600
     """
-    config = {"c.KernelManager.autorestart": False, "c.MappingKernelManager.kernel_info_timeout": 600}
+    config = {
+        "c.KernelManager.autorestart": False,
+        "c.MappingKernelManager.kernel_info_timeout": 600,
+    }
 
     full_path = os.path.expanduser("~/.jupyter")
     if not os.path.exists(full_path):
@@ -181,6 +184,7 @@ def get_db_config(profile):
         token = config[profile]["token"]
         return host, token
 
+
 def add_known_host(public_dns, known_hosts="~/.ssh/known_hosts"):
     result = execute(["ssh-keygen", "-R", "[%s]:2200" % public_dns])
     result = execute(["ssh-keyscan", "-p", "2200", public_dns])
@@ -192,6 +196,7 @@ def add_known_host(public_dns, known_hosts="~/.ssh/known_hosts"):
         print("   => Known hosts fingerprint added for %s\n" % public_dns)
     else:
         print_warning("   => Could not add know_hosts fingerprint for %s\n" % public_dns)
+
 
 def prepare_ssh_config(cluster_id, profile, public_dns):
     """Add/edit the ssh configuration belonging to the given cluster in ~/.ssh/config
@@ -235,7 +240,7 @@ def prepare_ssh_config(cluster_id, profile, public_dns):
             "User": "ubuntu",
             "ServerAliveInterval": 30,
             "ServerAliveCountMax": 5760,
-            "ConnectTimeout": 5
+            "ConnectTimeout": 5,
         }
         host = Host(name=cluster_id, attrs=attrs)
         print("   => Adding ssh config to ~/.ssh/config:\n")
@@ -244,6 +249,7 @@ def prepare_ssh_config(cluster_id, profile, public_dns):
     sc.write()
 
     add_known_host(public_dns)
+
 
 def show_profiles():
     """Show locally configured Databricks CLI profile"""
@@ -260,7 +266,9 @@ def show_profiles():
         print(template % (profile, host, ssh_ok))
 
 
-def create_kernelspec(profile, organisation, host, cluster_id, cluster_name, local_env, python_path):
+def create_kernelspec(
+    profile, organisation, host, cluster_id, cluster_name, local_env, python_path
+):
     """Create or edit the ssh_ipykernel specification for jupyter lab
     
     Args:
@@ -278,7 +286,7 @@ def create_kernelspec(profile, organisation, host, cluster_id, cluster_name, loc
     env = "DBJL_PROFILE=%s DBJL_HOST=%s DBJL_CLUSTER=%s" % (profile, host, cluster_id)
     if organisation is not None:
         env += " DBJL_ORG=%s" % organisation
-    
+
     if cluster_name.replace(" ", "_") == local_env:
         display_name = "SSH %s %s:%s" % (cluster_id, profile, cluster_name)
     else:
@@ -291,9 +299,10 @@ def create_kernelspec(profile, organisation, host, cluster_id, cluster_name, loc
         remote_python_path=os.path.dirname(python_path),
         sudo=True,
         env=env,
-        timeout=5
-    )   
+        timeout=5,
+    )
     print("   => Kernel specification 'SSH %s %s' created or updated" % (cluster_id, display_name))
+
 
 def remove_kernelspecs():
     km = kernelspec.KernelSpecManager()
@@ -302,15 +311,19 @@ def remove_kernelspecs():
     while kernel_id != "done":
 
         remote_kernels = {
-            kernelspec.get_kernel_spec(k).display_name : k
-            for k, v in kernelspec.find_kernel_specs().items() if k.startswith("ssh_")
+            kernelspec.get_kernel_spec(k).display_name: k
+            for k, v in kernelspec.find_kernel_specs().items()
+            if k.startswith("ssh_")
         }
         if remote_kernels == {}:
             print_ok("   => No databricklabs_jupyterlab kernel spec left")
             break
 
-        answer = question("kernel_name", "Which kernel spec to delete (Ctrl-C to finish)?",
-                          list(remote_kernels.keys()))
+        answer = question(
+            "kernel_name",
+            "Which kernel spec to delete (Ctrl-C to finish)?",
+            list(remote_kernels.keys()),
+        )
 
         if answer is None:
             break

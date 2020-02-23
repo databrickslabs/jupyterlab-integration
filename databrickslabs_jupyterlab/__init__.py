@@ -12,7 +12,9 @@ if os.environ.get("DBJL_HOST") is None:
         """
         print("Loading server extension ...")
         KernelHandler.nbapp = nbapp
-        base_url = nbapp.web_app.settings['base_url']
-        status_route = url_path_join(base_url, '/databrickslabs-jupyterlab-status')
-        start_route = url_path_join(base_url, '/databrickslabs-jupyterlab-start')
-        nbapp.web_app.add_handlers('.*', [(status_route, DbStatusHandler), (start_route, DbStartHandler)])
+        base_url = nbapp.web_app.settings["base_url"]
+        status_route = url_path_join(base_url, "/databrickslabs-jupyterlab-status")
+        start_route = url_path_join(base_url, "/databrickslabs-jupyterlab-start")
+        nbapp.web_app.add_handlers(
+            ".*", [(status_route, DbStatusHandler), (start_route, DbStartHandler)]
+        )

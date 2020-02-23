@@ -17,6 +17,7 @@ class Dbfs(object):
         Args:
             dbutils (DBUtils): DBUtils object (for fs only)
         """
+
         def __init__(self, dbutils):
             self.dbutils = dbutils
 
@@ -25,7 +26,7 @@ class Dbfs(object):
             self.sc = Sidecar(title="DBFS-%s" % os.environ["DBJL_CLUSTER"].split("-")[-1])
             self.path = "/"
             self.flist = Select(options=[], rows=40, disabled=False)
-            self.flist.observe(self.on_click, names='value')
+            self.flist.observe(self.on_click, names="value")
 
             self.refresh = Button(description="refresh")
             self.refresh.on_click(self.on_refresh)
@@ -70,8 +71,13 @@ class Dbfs(object):
 
             dirs = sorted([fobj.name for fobj in fobjs if fobj.isDir()], key=lambda x: x.lower())
             files = sorted(
-                ["%s (%d %s)" % ((fobj.name, ) + self.convertBytes(fobj.size)) for fobj in fobjs if not fobj.isDir()],
-                key=lambda x: x[0].lower())
+                [
+                    "%s (%d %s)" % ((fobj.name,) + self.convertBytes(fobj.size))
+                    for fobj in fobjs
+                    if not fobj.isDir()
+                ],
+                key=lambda x: x[0].lower(),
+            )
             self.flist.options = [""] + dirs + files
 
         def show_path(self, path):

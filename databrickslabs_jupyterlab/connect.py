@@ -23,12 +23,14 @@ try:
     from pyspark.sql import HiveContext
 
     import warnings
+
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         # Suppress py4j loading message on stderr by redirecting sys.stderr
         stderr_orig = sys.stderr
         sys.stderr = io.StringIO()
         from PythonShell import get_existing_gateway, RemoteContext  # pylint: disable=import-error
+
         out = sys.stderr.getvalue()
         # Restore sys.stderr
         sys.stderr = stderr_orig
@@ -46,12 +48,13 @@ from databrickslabs_jupyterlab.dbfs import Dbfs
 from databrickslabs_jupyterlab.database import Databases
 
 
-class JobInfo():
+class JobInfo:
     """Job info class for Spark jobs
     Args:
         pool_id (str): Pool ID to separate Spark jobs from each other
         group_id (str): Group ID to enable killing jobs and progress bar
     """
+
     def __init__(self, pool_id):
         self.pool_id = pool_id
         self.group_id = None
@@ -63,6 +66,7 @@ class DatabricksBrowser:
         spark (SparkSession): Spark Session object
         dbutils (DBUtils): DbUtils object
     """
+
     def __init__(self, spark, dbutils):
         self.spark = spark
         self.dbutils = dbutils
@@ -105,6 +109,7 @@ def dbcontext(progressbar=True):
     Args:
         progressbar (bool, optional): If True the spark progressbar will be installed. Defaults to True.
     """
+
     def get_sparkui_url(host, organisation, clusterId):
         if organisation is None:
             sparkUi = "%s#/setting/clusters/%s/sparkUi" % (host, clusterId)
@@ -121,9 +126,11 @@ def dbcontext(progressbar=True):
             <dt>Spark UI</dt><dd><a href="{sparkUi}">go to ...</a></dd>
             </dl>
         </div>
-        """.format(sc=spark.sparkContext,
-                   sparkUi=get_sparkui_url(host, organisation, clusterId),
-                   num_executors=len(spark.sparkContext._jsc.sc().statusTracker().getExecutorInfos()))
+        """.format(
+            sc=spark.sparkContext,
+            sparkUi=get_sparkui_url(host, organisation, clusterId),
+            num_executors=len(spark.sparkContext._jsc.sc().statusTracker().getExecutorInfos()),
+        )
         display(HTML(output))
 
     # Get the configuration injected by the client
@@ -148,7 +155,10 @@ def dbcontext(progressbar=True):
 
     # Create a Databricks virtual python environment and start thew py4j gateway
     #
-    token = getpass.getpass("Creating a Spark execution context:\nEnter personal access token for profile '%s'" % profile)
+    token = getpass.getpass(
+        "Creating a Spark execution context:\nEnter personal access token for profile '%s'"
+        % profile
+    )
 
     try:
         command = Command(url=host, cluster_id=clusterId, token=token)
@@ -162,11 +172,11 @@ def dbcontext(progressbar=True):
     #
     cmd = 'c=sc._gateway.client.gateway_client; print(c.gateway_parameters.auth_token + "|" + str(c.port))'
     result = command.execute(cmd)
-    
+
     if result[0] != 0:
         print(result[1])
         return None
-    
+
     auth_token, port = result[1].split("|")
     port = int(port)
 
@@ -214,7 +224,9 @@ def dbcontext(progressbar=True):
                   <dt>Master</dt><dd><code>{sc.master}</code></dd>
                 </dl>
             </div>
-            """.format(sc=spark.sparkContext, uiWebUrl=uiWebUrl)
+            """.format(
+                sc=spark.sparkContext, uiWebUrl=uiWebUrl
+            )
 
         return sc_repr_html
 
@@ -262,7 +274,7 @@ def dbcontext(progressbar=True):
 
     # Register sql magic
     #
-    ip.register_magic_function(sql, magic_kind='line_cell')
+    ip.register_magic_function(sql, magic_kind="line_cell")
 
     # Ensure that the virtual python environment and py4j gateway gets shut down
     # when the python interpreter shuts down
@@ -270,6 +282,7 @@ def dbcontext(progressbar=True):
     def shutdown_kernel(command):
         def handler():
             from IPython import get_ipython
+
             ip = get_ipython()
 
             ip = get_ipython()
@@ -285,7 +298,6 @@ def dbcontext(progressbar=True):
             command.close()
 
         return handler
-
 
     atexit.register(shutdown_kernel(command))
 

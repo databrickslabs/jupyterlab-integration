@@ -11,7 +11,7 @@ from functools import reduce
 from databrickslabs_jupyterlab.connect import is_remote
 
 
-class GridSearchCV():
+class GridSearchCV:
     """Abstracts away the differences between spark_sklearn and scikit-learn GridSearch
         
     Args:
@@ -19,6 +19,7 @@ class GridSearchCV():
         param_grid (dict): Dictionary of the paramter grid for grid search
         spark (SparkSession, optional): SparkSession object. Defaults to None.
     """
+
     def __init__(self, estimator, param_grid, *args, spark=None, **kwargs):
         self.estimator = estimator
         self.grid_size = reduce(lambda a, b: a * b, [len(p) for p in param_grid.values()])
@@ -26,9 +27,13 @@ class GridSearchCV():
 
         if is_remote():
             import spark_sklearn  # pylint: disable=import-error
-            self.gs = spark_sklearn.GridSearchCV(spark.sparkContext, estimator, param_grid, *args, **kwargs)
+
+            self.gs = spark_sklearn.GridSearchCV(
+                spark.sparkContext, estimator, param_grid, *args, **kwargs
+            )
         else:
             import sklearn.model_selection
+
             self.gs = sklearn.model_selection.GridSearchCV(estimator, param_grid, *args, **kwargs)
 
     def fit(self, x, y):
@@ -95,7 +100,7 @@ class GridSearchCV():
             csv = os.path.join(tempdir, filename)
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                pd.DataFrame(cv_results).sort_values(by='rank_test_score').to_csv(csv, index=False)
+                pd.DataFrame(cv_results).sort_values(by="rank_test_score").to_csv(csv, index=False)
 
             mlflow.log_artifact(csv, "cv_results")
 
@@ -105,11 +110,22 @@ class GridSearchCV():
         if is_remote():
             if os.environ.get("DBJL_ORG", None) is None:
                 display(
-                    HTML('<a href=%s/#mlflow/experiments/%s>Goto experiment</a>' %
-                         (os.environ["DBJL_HOST"], experiment_id)))
+                    HTML(
+                        "<a href=%s/#mlflow/experiments/%s>Goto experiment</a>"
+                        % (os.environ["DBJL_HOST"], experiment_id)
+                    )
+                )
             else:
                 display(
-                    HTML('<a href=%s?o=%s#mlflow/experiments/%s>Goto experiment</a>' %
-                         (os.environ["DBJL_HOST"], os.environ["DBJL_ORG"], experiment_id)))
+                    HTML(
+                        "<a href=%s?o=%s#mlflow/experiments/%s>Goto experiment</a>"
+                        % (os.environ["DBJL_HOST"], os.environ["DBJL_ORG"], experiment_id)
+                    )
+                )
         else:
-            display(HTML('<a href=%s/#/experiments/%s>Goto experiment</a>' % (tracking_uri, experiment_id)))
+            display(
+                HTML(
+                    "<a href=%s/#/experiments/%s>Goto experiment</a>"
+                    % (tracking_uri, experiment_id)
+                )
+            )

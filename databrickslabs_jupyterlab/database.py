@@ -15,16 +15,23 @@ class Databases(object):
         Args:
             spark (SparkSession): Spark Session object
         """
+
         def __init__(self, spark):
             self.spark = spark
 
         def create(self):
             """Create the sidecar view"""
-            self.sc = Sidecar(title="Databases-%s" % os.environ["DBJL_CLUSTER"].split("-")[-1],
-                              layout=Layout(width="300px"))
+            self.sc = Sidecar(
+                title="Databases-%s" % os.environ["DBJL_CLUSTER"].split("-")[-1],
+                layout=Layout(width="300px"),
+            )
             self.refresh = Button(description="refresh")
             self.refresh.on_click(self.on_refresh)
-            self.output = Output(layout=Layout(height="600px", width="320px", overflow_x="scroll", overflow_y="scroll"))
+            self.output = Output(
+                layout=Layout(
+                    height="600px", width="320px", overflow_x="scroll", overflow_y="scroll"
+                )
+            )
             self.output.add_class("db-detail")
             self.selects = []
             self.accordion = Accordion(children=[])
@@ -62,7 +69,7 @@ class Databases(object):
 
             for db in sorted(tables.keys()):
                 select = Select(options=[""] + sorted(tables[db]), disabled=False)
-                select.observe(self.on_click(db, self), names='value')
+                select.observe(self.on_click(db, self), names="value")
                 self.selects.append(select)
             self.accordion.children = self.selects
             for i, db in enumerate(sorted(tables.keys())):
@@ -75,6 +82,7 @@ class Databases(object):
                 db (str): database name
                 parent (object): parent object
             """
+
             def f(change):
                 if change["old"] is not None:
                     parent.output.clear_output()
@@ -105,13 +113,16 @@ class Databases(object):
         def set_css(self):
             """Set CSS"""
             display(
-                HTML("""
+                HTML(
+                    """
             <style>
             .db-detail .p-Widget {
             overflow: visible;
             }
             </style>
-            """))
+            """
+                )
+            )
 
     def __init__(self, spark=None):
         """Singleton initializer
