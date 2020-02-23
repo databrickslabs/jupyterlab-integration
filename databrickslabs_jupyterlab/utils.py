@@ -14,7 +14,7 @@ is_windows = platform.platform(1, 1).split("-")[0] == "Windows"
 if is_windows:
     from pick import pick
 else:
-    import inquirer
+    from inquirer import prompt
     from inquirer.themes import Default, term
 
     class Dark(Default):
