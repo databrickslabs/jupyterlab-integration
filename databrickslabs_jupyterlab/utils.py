@@ -1,13 +1,26 @@
 import os
 from collections import defaultdict
-from pexpect import pxssh
+import platform
 import random
 import ssh_config
 import sys
 import time
 
-from inquirer.themes import Default, term
+if platform.platform(1, 1).split("-")[0] == 'Windows':
+    from pick import pick
+else:
+    from inquirer import prompt
+    from inquirer.themes import Default, term
 
+    class Dark(Default):
+        """Dark Theme for inquirer"""
+        def __init__(self):
+            super().__init__()
+            self.List.selection_color = term.cyan
+
+
+def is_windows():
+    return platform.platform(1, 1).split("-")[1] == 'Windows'
 
 def bye(status=0):
     """Standard exit function
@@ -18,13 +31,6 @@ def bye(status=0):
     if status != 0:
         print_error("\n=> Exiting")
     sys.exit(status)
-
-
-class Dark(Default):
-    """Dark Theme for inquirer"""
-    def __init__(self):
-        super().__init__()
-        self.List.selection_color = term.cyan
 
 
 class Colors:
@@ -51,6 +57,17 @@ def print_error(*args):
 def print_warning(*args):
     _print(Colors.WARNING, *args)
 
+def question(tag, message, choices):
+    if is_windows():
+        option, index = pick(choices, message)
+        return {tag: option}
+    else:
+        choice = [
+            inquirer.List(tag,
+                          message=message,
+                          choices=choices)
+        ]
+        return inquirer.prompt(choice, theme=Dark())
 
 class SshConfig:
     def __init__(self):

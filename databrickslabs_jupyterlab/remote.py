@@ -10,7 +10,6 @@ import subprocess
 import uuid
 import glob
 
-import inquirer
 import requests
 from urllib.parse import unquote
 
@@ -22,7 +21,7 @@ from databricks_cli.libraries.api import LibrariesApi
 import databrickslabs_jupyterlab
 from databrickslabs_jupyterlab._version import __version__
 from databrickslabs_jupyterlab.rest import Command, DatabricksApiException
-from databrickslabs_jupyterlab.utils import bye, Dark, print_ok, print_error, print_warning
+from databrickslabs_jupyterlab.utils import bye, print_ok, print_error, print_warning, question
 from databrickslabs_jupyterlab.local import execute, get_local_libs, utf8_decode
 
 
@@ -67,12 +66,9 @@ def select_cluster(clusters):
                                                                  cluster["state"], cluster["autoscale"]["min_workers"],
                                                                  cluster["autoscale"]["max_workers"])
 
-    choice = [
-        inquirer.List('cluster_id',
-                      message='Which cluster to connect to?',
-                      choices=[entry(i, cluster) for i, cluster in enumerate(clusters)])
-    ]
-    answer = inquirer.prompt(choice, theme=Dark())
+    answer = question('cluster_id',
+                      'Which cluster to connect to?',
+                      [entry(i, cluster) for i, cluster in enumerate(clusters)])
     return clusters[int(answer["cluster_id"].split(":")[0])]
 
 

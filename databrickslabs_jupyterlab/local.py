@@ -9,9 +9,8 @@ import textwrap
 import time
 from os.path import expanduser
 from ssh_config import SSHConfig, Host
-import inquirer
 
-from databrickslabs_jupyterlab.utils import (bye, Dark, print_ok, print_error, print_warning)
+from databrickslabs_jupyterlab.utils import (bye, print_ok, print_error, print_warning, question)
 
 # add all missing keys to ssh_config
 Host.attrs += [
@@ -328,12 +327,8 @@ def remove_kernelspecs():
             print_ok("   => No databricklabs_jupyterlab kernel spec left")
             break
 
-        choice = [
-            inquirer.List("kernel_name",
-                        message="Which kernel spec to delete (Ctrl-C to finish)?",
-                        choices=list(remote_kernels.keys()))
-        ]
-        answer = inquirer.prompt(choice, theme=Dark())
+        answer = question("kernel_name", "Which kernel spec to delete (Ctrl-C to finish)?",
+                          list(remote_kernels.keys()))
 
         if answer is None:
             break
