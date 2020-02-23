@@ -21,8 +21,15 @@ from databricks_cli.libraries.api import LibrariesApi
 import databrickslabs_jupyterlab
 from databrickslabs_jupyterlab._version import __version__
 from databrickslabs_jupyterlab.rest import Command, DatabricksApiException
-from databrickslabs_jupyterlab.utils import bye, print_ok, print_error, print_warning, question
-from databrickslabs_jupyterlab.local import execute, get_local_libs, utf8_decode
+from databrickslabs_jupyterlab.utils import (
+    bye,
+    print_ok,
+    print_error,
+    print_warning,
+    question,
+    utf8_decode,
+)
+from databrickslabs_jupyterlab.local import execute, get_local_libs
 
 
 def connect(profile):

@@ -10,7 +10,14 @@ import time
 from os.path import expanduser
 from ssh_config import SSHConfig, Host
 
-from databrickslabs_jupyterlab.utils import (bye, print_ok, print_error, print_warning, question)
+from databrickslabs_jupyterlab.utils import (
+    bye,
+    print_ok,
+    print_error,
+    print_warning,
+    question,
+    execute,
+)
 
 # add all missing keys to ssh_config
 Host.attrs += [
@@ -87,31 +94,6 @@ Host.attrs += [
     ("VisualHostKey", str),
     ("XAuthLocation", str)
 ]
-
-def utf8_decode(text):
-    if isinstance(text, str):
-        return text
-        
-    try:
-        return text.decode("utf-8")
-    except:
-        # ok, let's replace the "bad" characters
-        return text.decode("utf-8", "replace")
-
-def execute(cmd):
-    """Execute suprpcess
-    
-    Args:
-        cmd (list(str)): Command as list of cmd parts (e.g. ["ls", "-l"])
-    """
-    try:
-        # Cannot use encoding arg at the moment, since need to support python 3.5
-        result = subprocess.run(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE).__dict__
-        result["stderr"] = utf8_decode(result["stderr"])
-        result["stdout"] = utf8_decode(result["stdout"])
-        return result
-    except Exception as ex:
-        return {'args': cmd, 'returncode': -1, 'stdout': '', 'stderr': str(ex)}
 
 
 def conda_version():
