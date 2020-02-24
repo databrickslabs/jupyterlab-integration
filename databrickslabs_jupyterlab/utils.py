@@ -6,10 +6,13 @@ import subprocess
 import sys
 import tempfile
 import time
+from html import escape
 
 import ssh_config
 import questionary
 from prompt_toolkit.styles import Style
+
+from prompt_toolkit import print_formatted_text, HTML
 
 
 is_windows = platform.platform(1, 1).split("-")[0] == "Windows"
@@ -26,36 +29,38 @@ def bye(status=0):
     sys.exit(status)
 
 
-class Colors:
-    ERROR = "\033[91m"
-    OK = "\033[92m"
-    WARNING = "\033[93m"
-    RESET = "\033[0m"
-
-
 def _print(color, *args):
-    print(color, end="")
-    print(*args, end="")
-    print(Colors.RESET)
+    style = Style.from_dict({"error": "#ff0000", "ok": "#00ff00", "warning": "#ff00ff"})
+    print_formatted_text(
+        HTML(
+            "<{color}>{message}</{color}>".format(
+                color=color, message=escape(" ".join(args))
+            )
+        ),
+        style=style,
+    )
 
 
 def print_ok(*args):
-    _print(Colors.OK, *args)
+    _print("ok", *args)
 
 
 def print_error(*args):
-    _print(Colors.ERROR, *args)
+    _print("error", *args)
 
 
 def print_warning(*args):
-    _print(Colors.WARNING, *args)
+    _print("warning", *args)
 
 
 def question(tag, message, choices):
     custom_style_fancy = Style(
         [
             ("answer", "fg:#f44336 bold"),  # submitted answer text behind the question
-            ("highlighted", "fg:#f44336 bold"),  # pointed-at choice in select and checkbox prompts
+            (
+                "highlighted",
+                "fg:#f44336 bold",
+            ),  # pointed-at choice in select and checkbox prompts
         ]
     )
 
@@ -82,13 +87,23 @@ def execute(cmd):
     Args:
         cmd (list(str)): Command as list of cmd parts (e.g. ["ls", "-l"])
     """
+    if is_windows and cmd[0] == "conda":
+        cmd[0] = "conda.bat"
+    print(cmd)
     try:
         # Cannot use encoding arg at the moment, since need to support python 3.5
-        result = subprocess.run(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE).__dict__
+        result = subprocess.run(
+            cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE
+        ).__dict__
         result["stderr"] = utf8_decode(result["stderr"])
         result["stdout"] = utf8_decode(result["stdout"])
+        print(result["returncode"])
+        print(result["stdout"])
+        print(result["stderr"])
         return result
     except Exception as ex:
+        print(ex.args)
+        print(ex.with_traceback)
         return {"args": cmd, "returncode": -1, "stdout": "", "stderr": str(ex)}
 
 

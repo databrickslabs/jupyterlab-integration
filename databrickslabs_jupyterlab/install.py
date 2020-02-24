@@ -197,7 +197,10 @@ def _set_conda_env(env_name):
     if env_name is None:
         return ""
     else:
-        return "source $(conda info | awk '/base env/ {print $4}')/bin/activate '%s'" % env_name
+        return (
+            "source $(conda info | awk '/base env/ {print $4}')/bin/activate '%s'"
+            % env_name
+        )
 
 
 def validate(env_name=None, labext=False):
@@ -224,7 +227,9 @@ def update_env(env_file):
 
     print("* Updating conda environment")
     execute_script(
-        script, "Successfully updated conda environment", "Error while updating conda environment",
+        script,
+        "Successfully updated conda environment",
+        "Error while updating conda environment",
     )
     validate()
 
@@ -242,8 +247,10 @@ def install_env(env_file, env_name):
 
 
 def install_labextensions(labext_file, env_name=None):
+    with open(labext_file, "r") as fd:
+        extensions = " ".join(fd.read().split("\n"))
     script = _set_conda_env(env_name)
-    script += "jupyter labextension install --no-build $(cat %s)\n" % labext_file
+    script += "jupyter labextension install --no-build %s\n" % extensions
     script += "jupyter lab build --dev-build=True --minimize=False\n"
 
     print("* Installing jupyterlab extensions")
@@ -258,10 +265,10 @@ def install_labextensions(labext_file, env_name=None):
 def update_local():
     module_path = os.path.dirname(databrickslabs_jupyterlab.__file__)
 
-    env_file = os.path.join(module_path, "lib/env.yml")
+    env_file = os.path.join(module_path, "lib", "env.yml")
     update_env(env_file)
 
-    labext_file = os.path.join(module_path, "lib/labextensions.txt")
+    labext_file = os.path.join(module_path, "lib", "labextensions.txt")
     install_labextensions(labext_file)
     usage(os.environ.get("CONDA_DEFAULT_ENV", "unknown"))
 
@@ -297,7 +304,7 @@ def install(profile, host, token, cluster_id, cluster_name, use_whitelist):
             ds_yml += "    - %s==%s\n" % (lib["name"], version)
 
     module_path = os.path.dirname(databrickslabs_jupyterlab.__file__)
-    env_file = os.path.join(module_path, "lib/env.yml")
+    env_file = os.path.join(module_path, "lib", "env.yml")
     with open(env_file, "r") as fd:
         master_yml = fd.read()
     lines = master_yml.split("\n")
@@ -321,13 +328,15 @@ def install(profile, host, token, cluster_id, cluster_name, use_whitelist):
             fd.write("\n")
 
         env_name = cluster_name.replace(" ", "_")
-        answer = input("    => Provide a conda environment name (default = %s): " % env_name)
+        answer = input(
+            "    => Provide a conda environment name (default = %s): " % env_name
+        )
         if answer != "":
             env_name = answer.replace(" ", "_")
 
         install_env(env_file, env_name)
 
-        labext_file = os.path.join(module_path, "lib/labextensions.txt")
+        labext_file = os.path.join(module_path, "lib", "labextensions.txt")
         install_labextensions(labext_file, env_name)
 
     usage(env_name)
