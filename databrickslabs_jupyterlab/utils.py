@@ -8,21 +8,11 @@ import tempfile
 import time
 
 import ssh_config
+import questionary
+from prompt_toolkit.styles import Style
+
 
 is_windows = platform.platform(1, 1).split("-")[0] == "Windows"
-
-if is_windows:
-    from pick import pick
-else:
-    import inquirer
-    from inquirer.themes import Default, term
-
-    class Dark(Default):
-        """Dark Theme for inquirer"""
-
-        def __init__(self):
-            super().__init__()
-            self.List.selection_color = term.cyan
 
 
 def bye(status=0):
@@ -62,12 +52,17 @@ def print_warning(*args):
 
 
 def question(tag, message, choices):
-    if is_windows:
-        option, _ = pick(choices, message)
-        return {tag: option}
-    else:
-        choice = [inquirer.List(tag, message=message, choices=choices)]
-        return inquirer.prompt(choice, theme=Dark())
+    custom_style_fancy = Style(
+        [
+            ("answer", "fg:#f44336 bold"),  # submitted answer text behind the question
+            ("highlighted", "fg:#f44336 bold"),  # pointed-at choice in select and checkbox prompts
+        ]
+    )
+
+    answer = questionary.select(
+        message, choices=choices, style=custom_style_fancy,
+    ).ask()  # returns value of selection
+    return {tag: answer}
 
 
 def utf8_decode(text):
@@ -87,7 +82,6 @@ def execute(cmd):
     Args:
         cmd (list(str)): Command as list of cmd parts (e.g. ["ls", "-l"])
     """
-    print(cmd)
     try:
         # Cannot use encoding arg at the moment, since need to support python 3.5
         result = subprocess.run(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE).__dict__
