@@ -27,7 +27,7 @@ setup(
     install_requires=[
         'notebook==%s' % notebook_version(),
         'version_parser',
-        'inquirer',
+        'questionary',
         'ssh_config',
         'databricks_cli'
     ],

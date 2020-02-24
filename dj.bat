@@ -1,1 +1,5 @@
-python c:\users\bwalt\appdata\local\continuum\miniconda3\envs\db-jlab\Scripts\databrickslabs-jupyterlab
+@echo off
+for /f "tokens=2,3 delims=:" %%a in ('conda info ^| findstr location') do (
+  set CONDA_PATH=%%a:%%b
+)
+python %CONDA_PATH%\Scripts\databrickslabs-jupyterlab
