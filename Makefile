@@ -22,6 +22,11 @@ prepare: clean
 tests: 
 	cd tests && python -m unittest
 
+ext:
+	cd extensions/databrickslabs_jupyterlab_statusbar && \
+	jupyter labextension install --no-build && \
+	jupyter lab build --dev-build=True --minimize=False
+
 # Version commands
 
 bump:
