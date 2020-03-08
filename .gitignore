@@ -8,3 +8,4 @@ dist
 examples/artifacts
 TODO
 labextensions.txt.bak
+node_modules
