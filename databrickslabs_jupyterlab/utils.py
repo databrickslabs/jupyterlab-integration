@@ -32,11 +32,7 @@ def bye(status=0):
 def _print(color, *args):
     style = Style.from_dict({"error": "#ff0000", "ok": "#00ff00", "warning": "#ff00ff"})
     print_formatted_text(
-        HTML(
-            "<{color}>{message}</{color}>".format(
-                color=color, message=escape(" ".join(args))
-            )
-        ),
+        HTML("<{color}>{message}</{color}>".format(color=color, message=escape(" ".join(args)))),
         style=style,
     )
 
@@ -57,10 +53,7 @@ def question(tag, message, choices):
     custom_style_fancy = Style(
         [
             ("answer", "fg:#f44336 bold"),  # submitted answer text behind the question
-            (
-                "highlighted",
-                "fg:#f44336 bold",
-            ),  # pointed-at choice in select and checkbox prompts
+            ("highlighted", "fg:#f44336 bold",),  # pointed-at choice in select and checkbox prompts
         ]
     )
 
@@ -89,17 +82,15 @@ def execute(cmd):
     """
     if is_windows and cmd[0] == "conda":
         cmd[0] = "conda.bat"
-    print(cmd)
+
     try:
         # Cannot use encoding arg at the moment, since need to support python 3.5
-        result = subprocess.run(
-            cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE
-        ).__dict__
+        result = subprocess.run(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE).__dict__
         result["stderr"] = utf8_decode(result["stderr"])
         result["stdout"] = utf8_decode(result["stdout"])
-        print(result["returncode"])
-        print(result["stdout"])
-        print(result["stderr"])
+        # print(result["returncode"])
+        # print(result["stdout"])
+        # print(result["stderr"])
         return result
     except Exception as ex:
         print(ex.args)
