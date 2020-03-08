@@ -24,10 +24,7 @@ from databrickslabs_jupyterlab.utils import SshConfig
 from databrickslabs_jupyterlab.local import get_db_config, prepare_ssh_config
 from databricks_cli.clusters.api import ClusterApi
 
-if os.environ.get("DEBUG", None) is None:
-    DEBUG_LEVEL = "INFO"
-else:
-    DEBUG_LEVEL = os.environ.get["DEBUG"]
+DEBUG_LEVEL = os.environ.get("DEBUG", "INFO")
 
 _LOG_FMT = (
     "%(color)s[%(levelname)1.1s %(asctime)s.%(msecs).03d " "%(name)s]%(end_color)s %(message)s"
@@ -209,7 +206,7 @@ class DbStatusHandler(KernelHandler):
 
         from ssh_ipykernel.status import Status as KernelStatus
 
-        kernel_status = KernelStatus(conn_info)
+        kernel_status = KernelStatus(conn_info, _logger)
 
         status = None
         start_status = global_status.get_status(profile, cluster_id)
