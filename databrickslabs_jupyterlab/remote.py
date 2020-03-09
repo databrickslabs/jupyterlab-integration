@@ -354,16 +354,17 @@ def is_reachable(public_dns):
     Returns:
         bool: True if reachable else False
     """
-    return subprocess.call(["nc", "-z", public_dns, "2200"]) == 0
-    # sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # sock.settimeout(3)
-    # result = sock.connect_ex((public_dns, 2200))
-    # try:
-    #     sock.close()
-    # except:
-    #     pass
-    # return result == 0
+    # return subprocess.call(["nc", "-z", public_dns, "2200"]) == 0
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(3)
+    try:
+        result = sock.connect_ex((public_dns, 2200))
+        result = (result == 0)
+    except:
+        result = False
 
+    sock.close()
+    return result
 
 def get_library_state(profile, cluster_id):
     """Get the state of the library installation on the remote cluster
