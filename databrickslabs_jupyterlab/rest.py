@@ -1,5 +1,6 @@
 import time
 import os
+from urllib.parse import urljoin
 
 import requests
 import xml.etree.ElementTree
@@ -93,7 +94,7 @@ class Rest(object):
             dict: A dict representing the JSON result of the call 
                   or in error case with keys status_code, error_code, message.
         """
-        full_url = os.path.join(url, "api/%s" % api_version, path)
+        full_url = urljoin(url, "api/%s/%s" % (api_version, path.lstrip("/")))
         try:
             response = requests.get(full_url, auth=("token", token), headers=self.headers)
         except Exception as ex:
@@ -121,7 +122,7 @@ class Rest(object):
             dict: A dict representing the JSON result of the call 
             or in error case with keys status_code, error_code, message.
         """
-        full_url = os.path.join(url, "api/%s" % api_version, path)
+        full_url = urljoin(url, "api/%s/%s" % (api_version, path.lstrip("/")))
         try:
             response = requests.post(
                 full_url,
