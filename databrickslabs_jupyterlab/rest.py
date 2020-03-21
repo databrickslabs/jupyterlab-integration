@@ -157,10 +157,11 @@ class Context(Rest):
         id (str): Context ID
     """
 
-    def __init__(self, url, cluster_id, token):
+    def __init__(self, url, cluster_id, token, language="python"):
         self.token = token
         self.url = url
         self.cluster_id = cluster_id
+        self.language = "python"
         self.id = None
 
     def create(self):
@@ -169,7 +170,7 @@ class Context(Rest):
         Returns:
             str: Context ID
         """
-        data = {"language": "python", "clusterId": self.cluster_id}
+        data = {"language": self.language, "clusterId": self.cluster_id}
         response = self.post(self.url, "1.2", "contexts/create", data=data, token=self.token)
         self.id = response.get("id", None)
         if self.id is None:
@@ -211,11 +212,12 @@ class Command(Rest):
         context (Context): The Execution Context for the commands
     """
 
-    def __init__(self, url, cluster_id, token):
+    def __init__(self, url, cluster_id, token, language="python"):
         self.token = token
         self.url = url
         self.cluster_id = cluster_id
-        self.context = Context(url, cluster_id, token)
+        self.language = language
+        self.context = Context(url, cluster_id, token, language=language)
         self.context.create()
 
     def execute(self, command):
@@ -227,7 +229,11 @@ class Command(Rest):
         Returns:
             str: The ID of the command
         """
-        data = {"language": "python", "contextId": self.context.id, "clusterId": self.cluster_id}
+        data = {
+            "language": self.language,
+            "contextId": self.context.id,
+            "clusterId": self.cluster_id,
+        }
         files = {"command": command}
         response = self.post(
             self.url, "1.2", "commands/execute", data=data, files=files, token=self.token
@@ -237,11 +243,14 @@ class Command(Rest):
             raise DatabricksApiException(403, 4, "Command ID missing")
 
         finished = False
+        count = 0
         while not finished:
             print(".", end="", flush=True)
-            time.sleep(1)
+            count += 1
+            time.sleep(0.5)
             result = self.status(command_id)
             finished = result["status"] == "Finished"
+        print("\r", " " * (count + 1))
 
         if result["results"]["resultType"] == "error":
             return (-1, result["results"]["cause"])

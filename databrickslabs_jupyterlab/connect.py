@@ -12,6 +12,11 @@ from IPython.core.magic import line_magic, line_cell_magic
 from IPython import get_ipython
 from IPython.display import HTML, display
 
+from IPython import get_ipython
+from IPython.core.magic import Magics, magics_class, line_magic, cell_magic, line_cell_magic
+from databrickslabs_jupyterlab.rest import Command
+
+
 sys.path.insert(0, "/databricks/spark/python/lib/py4j-0.10.7-src.zip")
 sys.path.insert(0, "/databricks/spark/python")
 sys.path.insert(0, "/databricks/jars/spark--driver--spark--resources-resources.jar")
@@ -75,6 +80,92 @@ class DbjlUtils:
         <b>secrets: SecretUtils</b> -&gt; Provides utilities for leveraging secrets within notebooks
         """
         display(HTML(html))
+
+
+@magics_class
+class DbjlMagics(Magics):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.url = os.environ["DBJL_HOST"]
+        self.cluster = os.environ["DBJL_CLUSTER"]
+        self.scope = None
+        self.key = None
+        self.command = None
+
+    @line_cell_magic
+    def scala(self, line, cell=None):
+        "Magic that allows to create scala context and execute scala in a notebook"
+        if cell is None:
+            sline = line.strip(" ")
+
+            if sline in ["-s", "--stop"] and self.command:
+                self.command.close()
+                print("Scala execution context closed")
+                return
+
+            if sline == "":
+                args = []
+            else:
+                args = sline.split(" ")
+
+            if len(args) == 0:
+                scope = "dbjl_creds"
+                key = os.environ["DBJL_PROFILE"]
+            elif len(args) == 2:
+                scope, key = args
+            else:
+                print("Error: Either no parameter or two (scope, key)")
+
+            try:
+                self.scope = scope
+                self.key = key
+                dbutils = get_ipython().user_ns["dbutils"]
+                pat = dbutils.secrets.get(scope, key)
+            except Exception as ex:
+                self.scope = None
+                self.key = None
+                print("Error: Couldn't retrieve secret\n", str(ex))
+                return
+
+            try:
+                self.command = Command(
+                    url=self.url, cluster_id=self.cluster, token=pat, language="scala"
+                )
+                print("Scala execution context created")
+                del pat
+            except Exception as ex:
+                self.command = None
+                print("Error: Couldn't create Scala execution context\n", str(ex))
+                return
+        else:
+            try:
+                result = self.command.execute(cell)
+            except Exception as ex:
+                result = (-1, str(ex))
+
+            if result[0] == 0:
+                print(result[1])
+            else:
+                print("Error: " + result[1])
+
+    @line_cell_magic
+    def sql(line, cell=None):
+        """Cell magic th execute SQL commands
+        
+        Args:
+            line (str): line behind %sql
+            cell (str, optional): cell below %sql. Defaults to None.
+        
+        Returns:
+            DataFrame: DataFrame of the SQL result
+        """
+        ip = get_ipython()
+        spark = ip.user_ns["spark"]
+        if cell == None:
+            code = line
+        else:
+            code = cell
+        return spark.sql(code)
 
 
 class DatabricksBrowser:
@@ -169,45 +260,6 @@ def dbcontext(progressbar=True, gw_port=None, gw_token=None):
     ip = get_ipython()
 
     print("Connect: Gateway port = {}, token = {}".format(gw_port, gw_token))
-    if gw_port is not None and gw_token is not None:
-        auth_token, port = gw_token, gw_port
-    else:
-        if not is_remote():
-            return "This is not a remote Databricks kernel"
-
-        # Create a Databricks virtual python environment and start thew py4j gateway
-        #
-
-        spark = ip.user_ns.get("spark")
-        if spark is not None:
-            print("Spark context already exists")
-            load_css()
-            show_status(spark, sparkUi)
-            return None
-            token = getpass.getpass(
-                "Creating a Spark execution context:\nEnter personal access token for profile '%s'"
-                % profile
-            )
-
-        try:
-            command = Command(url=host, cluster_id=clusterId, token=token)
-        except DatabricksApiException as ex:
-            print(ex)
-            return None
-
-        print("Gateway created for cluster '%s' " % (clusterId), end="", flush=True)
-
-        # Fetch auth_token and gateway port ...
-        #
-        cmd = 'c=sc._gateway.client.gateway_client; print(c.gateway_parameters.auth_token + "|" + str(c.port))'
-        result = command.execute(cmd)
-
-        if result[0] != 0:
-            print(result[1])
-            return None
-
-        auth_token, port = result[1].split("|")
-        port = int(port)
 
     interpreter = "/databricks/python/bin/python"
     # Ensure that driver and executors use the same python
@@ -217,7 +269,7 @@ def dbcontext(progressbar=True, gw_port=None, gw_token=None):
 
     # ... and connect to this gateway
     #
-    gateway = get_existing_gateway(port, True, auth_token)
+    gateway = get_existing_gateway(gw_port, True, gw_token)
     print(". connected")
 
     # Retrieve spark session, sqlContext and sparkContext
@@ -302,34 +354,8 @@ def dbcontext(progressbar=True, gw_port=None, gw_token=None):
 
     # Register sql magic
     #
-    ip.register_magic_function(sql, magic_kind="line_cell")
-
-    if gw_port is None or gw_token is None:
-        # Ensure that the virtual python environment and py4j gateway gets shut down
-        # when the python interpreter shuts down
-        # Only register if execution context is created above in this method
-        #
-        def shutdown_kernel(command):
-            def handler():
-                from IPython import get_ipython
-
-                ip = get_ipython()
-
-                ip = get_ipython()
-                if ip.user_ns.get("spark", None) is not None:
-                    del ip.user_ns["spark"]
-                if ip.user_ns.get("sc", None) is not None:
-                    del ip.user_ns["sc"]
-                if ip.user_ns.get("sqlContext", None) is not None:
-                    del ip.user_ns["sqlContext"]
-                if ip.user_ns.get("dbutils", None) is not None:
-                    del ip.user_ns["dbutils"]
-                # Context is a singleton
-                command.close()
-
-            return handler
-
-        atexit.register(shutdown_kernel(command))
+    # ip.register_magic_function(sql, magic_kind="line_cell")
+    ip.register_magics(DbjlMagics)
 
     # Forward spark variables to the user namespace
     #
@@ -350,23 +376,3 @@ def dbcontext(progressbar=True, gw_port=None, gw_token=None):
 
     show_status(spark, sparkUi)
     return None
-
-
-@line_cell_magic
-def sql(line, cell=None):
-    """Cell magic th execute SQL commands
-    
-    Args:
-        line (str): line behind %sql
-        cell (str, optional): cell below %sql. Defaults to None.
-    
-    Returns:
-        DataFrame: DataFrame of the SQL result
-    """
-    ip = get_ipython()
-    spark = ip.user_ns["spark"]
-    if cell == None:
-        code = line
-    else:
-        code = cell
-    return spark.sql(code)
