@@ -60,6 +60,23 @@ class JobInfo:
         self.group_id = None
 
 
+class DbjlUtils:
+    def __init__(self, shell, entry_point):
+        self._dbutils = DBUtils(shell, entry_point)
+        self.fs = self._dbutils.fs
+        self.secrets = self._dbutils.secrets
+
+    def help(self):
+        html = """
+        This module provides a subset of the DBUtils tools working for Jupyterlab Integration
+        <br/><br/>
+        <b>fs: DbfsUtils</b> -&gt; Manipulates the Databricks filesystem (DBFS) from the console
+        <br/>
+        <b>secrets: SecretUtils</b> -&gt; Provides utilities for leveraging secrets within notebooks
+        """
+        display(HTML(html))
+
+
 class DatabricksBrowser:
     """[summary]
     Args:
@@ -274,7 +291,7 @@ def dbcontext(progressbar=True, gw_port=None, gw_token=None):
 
     # Initialize dbutils
     #
-    dbutils = DBUtils(shell, entry_point)
+    dbutils = DbjlUtils(shell, entry_point)
 
     # Setting up Spark progress bar
     #
