@@ -1,13 +1,17 @@
 import configparser
+import getpass
 import json
 from jupyter_client import kernelspec
 import os
+import re
 import shutil
 import subprocess
 import sys
 import textwrap
 import time
 from os.path import expanduser
+import tempfile
+from jupyter_client import kernelspec as ks
 from ssh_config import SSHConfig, Host
 
 from databrickslabs_jupyterlab.utils import (
@@ -18,6 +22,8 @@ from databrickslabs_jupyterlab.utils import (
     question,
     execute,
 )
+
+PREFIX = "ssh_"
 
 # add all missing keys to ssh_config
 Host.attrs += [
@@ -300,6 +306,7 @@ def create_kernelspec(
         sudo=True,
         env=env,
         timeout=5,
+        module="databrickslabs_jupyterlab",
     )
     print("   => Kernel specification 'SSH %s %s' created or updated" % (cluster_id, display_name))
 

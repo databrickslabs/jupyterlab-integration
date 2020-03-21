@@ -196,52 +196,53 @@ class DbStatusHandler(KernelHandler):
         kernel_id = self.get_argument("id", None, True)
 
         kernel = self.get_kernel(kernel_id)
-        conn_info = {
-            "control_port": kernel.control_port,
-            "hb_port": kernel.hb_port,
-            "iopub_port": kernel.iopub_port,
-            "shell_port": kernel.shell_port,
-            "stdin_port": kernel.stdin_port,
-        }
-
-        from ssh_ipykernel.status import Status as KernelStatus
-
-        kernel_status = KernelStatus(conn_info, _logger)
-
-        status = None
-        start_status = global_status.get_status(profile, cluster_id)
-
-        if global_status.installing(profile, cluster_id):
-            # While the DbStartHandler is installing the kernel, provide the global starting status
-            status = start_status
+        if kernel is None:
+            status = "KERNEL_KILLED"
+            start_status = "KERNEL_KILLED"
+            status_message = "Kernel killed"
         else:
+            conn_info = {
+                "control_port": kernel.control_port,
+                "hb_port": kernel.hb_port,
+                "iopub_port": kernel.iopub_port,
+                "shell_port": kernel.shell_port,
+                "stdin_port": kernel.stdin_port,
+            }
 
-            if kernel_status.is_running():
-                status = "Connected"
-            elif kernel_status.is_starting():
-                status = "Starting"
-            elif kernel_status.is_unknown():
-                # Use REST API to determine status
-                global_status.reset_status(profile, cluster_id)
-                status = global_status.get_status(profile, cluster_id)
-            elif kernel_status.is_connect_failed():
-                status = "CONNECT FAILED"
+            from ssh_ipykernel.status import Status as KernelStatus
+
+            kernel_status = KernelStatus(conn_info, _logger)
+
+            status = None
+            start_status = global_status.get_status(profile, cluster_id)
+
+            if global_status.installing(profile, cluster_id):
+                # While the DbStartHandler is installing the kernel, provide the global starting status
+                status = start_status
             else:
-                # just swallow the intermediate UNREACHABLE after a restart
-                if global_status.ignore_next_unreachable():
+
+                if kernel_status.is_running():
+                    status = "Connected"
+                elif kernel_status.is_starting():
                     status = "Starting"
+                elif kernel_status.is_unknown():
+                    # Use REST API to determine status
+                    global_status.reset_status(profile, cluster_id)
+                    status = global_status.get_status(profile, cluster_id)
+                elif kernel_status.is_connect_failed():
+                    status = "CONNECT FAILED"
                 else:
-                    status = "UNREACHABLE"
+                    # just swallow the intermediate UNREACHABLE after a restart
+                    if global_status.ignore_next_unreachable():
+                        status = "Starting"
+                    else:
+                        status = "UNREACHABLE"
+            status_message = kernel_status.get_status_message()
 
         result = {"status": "%s" % status}
         _logger.debug(
             "DbStatusHandler: installing: '%s'; start_status: '%s'; kernel_status: '%s'; status: '%s'"
-            % (
-                global_status.installing(profile, cluster_id),
-                start_status,
-                kernel_status.get_status_message(),
-                result,
-            )
+            % (global_status.installing(profile, cluster_id), start_status, status_message, result,)
         )
         self.finish(json.dumps(result))
 
@@ -311,4 +312,3 @@ def _jupyter_server_extension_paths():
     Set up the server extension for status handling
     """
     return [{"module": "databrickslabs_jupyterlab",}]
-

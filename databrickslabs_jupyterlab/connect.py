@@ -98,7 +98,7 @@ def is_azure():
     return os.environ.get("DBJL_ORG", None) is not None
 
 
-def dbcontext(progressbar=True):
+def dbcontext(progressbar=True, gw_port=None, gw_token=None):
     """Create a databricks context
     The following objects will be created
     - Spark Session
@@ -140,45 +140,57 @@ def dbcontext(progressbar=True):
     clusterId = os.environ.get("DBJL_CLUSTER", None)
     organisation = os.environ.get("DBJL_ORG", None)
 
+    print(
+        "profile={}, organisation={}. cluster_id={}, host={}".format(
+            profile, organisation, clusterId, host
+        )
+    )
     sparkUi = get_sparkui_url(host, organisation, clusterId)
 
-    if not is_remote():
-        return "This is not a remote Databricks kernel"
+    print("Spark UI = {}".format(sparkUi))
 
     ip = get_ipython()
-    spark = ip.user_ns.get("spark")
-    if spark is not None:
-        print("Spark context already exists")
-        load_css()
-        show_status(spark, sparkUi)
-        return None
 
-    # Create a Databricks virtual python environment and start thew py4j gateway
-    #
-    token = getpass.getpass(
-        "Creating a Spark execution context:\nEnter personal access token for profile '%s'"
-        % profile
-    )
+    print("Connect: Gateway port = {}, token = {}".format(gw_port, gw_token))
+    if gw_port is not None and gw_token is not None:
+        auth_token, port = gw_token, gw_port
+    else:
+        if not is_remote():
+            return "This is not a remote Databricks kernel"
 
-    try:
-        command = Command(url=host, cluster_id=clusterId, token=token)
-    except DatabricksApiException as ex:
-        print(ex)
-        return None
+        # Create a Databricks virtual python environment and start thew py4j gateway
+        #
 
-    print("Gateway created for cluster '%s' " % (clusterId), end="", flush=True)
+        spark = ip.user_ns.get("spark")
+        if spark is not None:
+            print("Spark context already exists")
+            load_css()
+            show_status(spark, sparkUi)
+            return None
+            token = getpass.getpass(
+                "Creating a Spark execution context:\nEnter personal access token for profile '%s'"
+                % profile
+            )
 
-    # Fetch auth_token and gateway port ...
-    #
-    cmd = 'c=sc._gateway.client.gateway_client; print(c.gateway_parameters.auth_token + "|" + str(c.port))'
-    result = command.execute(cmd)
+        try:
+            command = Command(url=host, cluster_id=clusterId, token=token)
+        except DatabricksApiException as ex:
+            print(ex)
+            return None
 
-    if result[0] != 0:
-        print(result[1])
-        return None
+        print("Gateway created for cluster '%s' " % (clusterId), end="", flush=True)
 
-    auth_token, port = result[1].split("|")
-    port = int(port)
+        # Fetch auth_token and gateway port ...
+        #
+        cmd = 'c=sc._gateway.client.gateway_client; print(c.gateway_parameters.auth_token + "|" + str(c.port))'
+        result = command.execute(cmd)
+
+        if result[0] != 0:
+            print(result[1])
+            return None
+
+        auth_token, port = result[1].split("|")
+        port = int(port)
 
     interpreter = "/databricks/python/bin/python"
     # Ensure that driver and executors use the same python
@@ -190,7 +202,6 @@ def dbcontext(progressbar=True):
     #
     gateway = get_existing_gateway(port, True, auth_token)
     print(". connected")
-    # print("Python interpreter: %s" % interpreter)
 
     # Retrieve spark session, sqlContext and sparkContext
     #
@@ -276,30 +287,32 @@ def dbcontext(progressbar=True):
     #
     ip.register_magic_function(sql, magic_kind="line_cell")
 
-    # Ensure that the virtual python environment and py4j gateway gets shut down
-    # when the python interpreter shuts down
-    #
-    def shutdown_kernel(command):
-        def handler():
-            from IPython import get_ipython
+    if gw_port is None or gw_token is None:
+        # Ensure that the virtual python environment and py4j gateway gets shut down
+        # when the python interpreter shuts down
+        # Only register if execution context is created above in this method
+        #
+        def shutdown_kernel(command):
+            def handler():
+                from IPython import get_ipython
 
-            ip = get_ipython()
+                ip = get_ipython()
 
-            ip = get_ipython()
-            if ip.user_ns.get("spark", None) is not None:
-                del ip.user_ns["spark"]
-            if ip.user_ns.get("sc", None) is not None:
-                del ip.user_ns["sc"]
-            if ip.user_ns.get("sqlContext", None) is not None:
-                del ip.user_ns["sqlContext"]
-            if ip.user_ns.get("dbutils", None) is not None:
-                del ip.user_ns["dbutils"]
-            # Context is a singleton
-            command.close()
+                ip = get_ipython()
+                if ip.user_ns.get("spark", None) is not None:
+                    del ip.user_ns["spark"]
+                if ip.user_ns.get("sc", None) is not None:
+                    del ip.user_ns["sc"]
+                if ip.user_ns.get("sqlContext", None) is not None:
+                    del ip.user_ns["sqlContext"]
+                if ip.user_ns.get("dbutils", None) is not None:
+                    del ip.user_ns["dbutils"]
+                # Context is a singleton
+                command.close()
 
-        return handler
+            return handler
 
-    atexit.register(shutdown_kernel(command))
+        atexit.register(shutdown_kernel(command))
 
     # Forward spark variables to the user namespace
     #
