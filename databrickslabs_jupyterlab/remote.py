@@ -239,6 +239,7 @@ def get_cluster(profile, host, token, cluster_id=None, status=None):
             except DatabricksApiException as ex:
                 print_error(ex)
                 return (None, None, None, None)
+
             installing = any([s in ["PENDING", "RESOLVING", "INSTALLING"] for s in states])
             if installing:
                 if status is not None:
@@ -359,12 +360,13 @@ def is_reachable(public_dns):
     sock.settimeout(3)
     try:
         result = sock.connect_ex((public_dns, 2200))
-        result = (result == 0)
+        result = result == 0
     except:
         result = False
 
     sock.close()
     return result
+
 
 def get_library_state(profile, cluster_id):
     """Get the state of the library installation on the remote cluster
