@@ -73,6 +73,10 @@ release:
 	git commit -m "Latest release: $(CURRENT_VERSION)"
 	git tag -a v$(CURRENT_VERSION) -m "Latest release: $(CURRENT_VERSION)"
 
+install_wheel: dist
+	scp dist/databrickslabs_jupyterlab-$(CURRENT_VERSION)-py3-none-any.whl $(CLUSTER):/tmp
+	ssh $(CLUSTER) sudo /databricks/python/bin/pip3 install --upgrade /tmp/databrickslabs_jupyterlab-$(CURRENT_VERSION)-py3-none-any.whl
+
 install: dist
 	@echo "$(OK_COLOR)=> Installing databrickslabs_jupyterlab$(NO_COLOR)"
 	@pip install --upgrade .
