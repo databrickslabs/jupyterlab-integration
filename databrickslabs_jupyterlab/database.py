@@ -1,5 +1,4 @@
 import os
-from sidecar import Sidecar
 from ipywidgets import Accordion, Select, VBox, Button, Output, Layout
 from IPython.display import display, HTML
 
@@ -20,11 +19,6 @@ class Databases(object):
             self.spark = spark
 
         def create(self):
-            """Create the sidecar view"""
-            self.sc = Sidecar(
-                title="Databases-%s" % os.environ["DBJL_CLUSTER"].split("-")[-1],
-                layout=Layout(width="300px"),
-            )
             self.refresh = Button(description="refresh")
             self.refresh.on_click(self.on_refresh)
             self.output = Output(
@@ -36,8 +30,7 @@ class Databases(object):
             self.selects = []
             self.accordion = Accordion(children=[])
 
-            with self.sc:
-                display(VBox([self.refresh, self.accordion, self.output]))
+            display(VBox([self.refresh, self.accordion, self.output]))
 
             self.update()
             self.set_css()
@@ -108,7 +101,6 @@ class Databases(object):
         def close(self):
             """Close view"""
             self.selects = []
-            self.sc.close()
 
         def set_css(self):
             """Set CSS"""

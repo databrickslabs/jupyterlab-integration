@@ -279,7 +279,7 @@ def get_python_path(host, conda_env=None):
 
 
 def install_libs(cluster_id, host, token):
-    """Install ipywidgets, sidecar and databrickslabs_jupyterlab libraries on the driver
+    """Install ipywidgets, databrickslabs_jupyterlab libraries on the driver
     
     Args:
         host (str): host from databricks cli config for given profile string
@@ -288,14 +288,9 @@ def install_libs(cluster_id, host, token):
     python_path = get_python_path(cluster_id)
 
     packages = get_local_libs()
-    deps = {
-        p["name"]: p["version"]
-        for p in packages
-        if p["name"] in ["ipywidgets", "sidecar", "ipykernel"]
-    }
+    deps = {p["name"]: p["version"] for p in packages if p["name"] in ["ipywidgets", "ipykernel"]}
     libs = [
         "ipywidgets==%s" % deps["ipywidgets"],
-        "sidecar==%s" % deps["sidecar"],
         "ipykernel==%s" % deps["ipykernel"],
         "databrickslabs-jupyterlab==%s" % __version__,
     ]

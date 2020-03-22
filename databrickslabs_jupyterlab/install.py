@@ -164,7 +164,6 @@ BLACKLIST = [
     "scour",
     "send2trash",
     "setuptools",
-    "sidecar",
     "simplegeneric",
     "singledispatch",
     "six",
@@ -197,10 +196,7 @@ def _set_conda_env(env_name):
     if env_name is None:
         return ""
     else:
-        return (
-            "source $(conda info | awk '/base env/ {print $4}')/bin/activate '%s'"
-            % env_name
-        )
+        return "source $(conda info | awk '/base env/ {print $4}')/bin/activate '%s'" % env_name
 
 
 def validate(env_name=None, labext=False):
@@ -227,9 +223,7 @@ def update_env(env_file):
 
     print("* Updating conda environment")
     execute_script(
-        script,
-        "Successfully updated conda environment",
-        "Error while updating conda environment",
+        script, "Successfully updated conda environment", "Error while updating conda environment",
     )
     validate()
 
@@ -328,9 +322,7 @@ def install(profile, host, token, cluster_id, cluster_name, use_whitelist):
             fd.write("\n")
 
         env_name = cluster_name.replace(" ", "_")
-        answer = input(
-            "    => Provide a conda environment name (default = %s): " % env_name
-        )
+        answer = input("    => Provide a conda environment name (default = %s): " % env_name)
         if answer != "":
             env_name = answer.replace(" ", "_")
 
@@ -402,4 +394,3 @@ databrickslabs-jupyterlab:
 """
         % env_name
     )
-

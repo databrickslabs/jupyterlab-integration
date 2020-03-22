@@ -1,7 +1,6 @@
 import os
 import re
 
-from sidecar import Sidecar
 from ipywidgets import Select, VBox, HBox, Button, Output
 from IPython.display import display
 
@@ -22,7 +21,6 @@ class Dbfs(object):
             self.dbutils = dbutils
 
         def create(self, rows=30, path="/", height="400px"):
-            """Create the sidecar view"""
             self.path = path
             self.flist = Select(options=[], disabled=False, layout={"height": height})
             self.flist.observe(self.on_click, names="value")
