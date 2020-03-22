@@ -20,6 +20,7 @@ from databrickslabs_jupyterlab.remote import (
     check_installed,
     install_libs,
 )
+from databrickslabs_jupyterlab.kernel import DatabricksKernelStatus
 from databrickslabs_jupyterlab.utils import SshConfig
 from databrickslabs_jupyterlab.local import get_db_config, prepare_ssh_config
 from databricks_cli.clusters.api import ClusterApi
@@ -94,7 +95,7 @@ class Status:
             if state in ["PENDING", "RESTARTING"]:
                 status = "Starting"  # special status, don't set in global state
             elif state in ["RUNNING", "RESIZING"]:
-                status = "Running"  # standard status
+                status = "Connected"  # standard status
             elif state in ["TERMINATING", "TERMINATED"]:
                 status = "UNREACHABLE"  # standard status
             else:
@@ -208,10 +209,7 @@ class DbStatusHandler(KernelHandler):
                 "shell_port": kernel.shell_port,
                 "stdin_port": kernel.stdin_port,
             }
-
-            from ssh_ipykernel.status import Status as KernelStatus
-
-            kernel_status = KernelStatus(conn_info, _logger)
+            kernel_status = DatabricksKernelStatus(conn_info, _logger)
 
             status = None
             start_status = global_status.get_status(profile, cluster_id)
@@ -222,7 +220,9 @@ class DbStatusHandler(KernelHandler):
             else:
 
                 if kernel_status.is_running():
-                    status = "Connected"
+                    status = "Running"
+                elif kernel_status.is_spark_running():
+                    status = "Running (Spark)"
                 elif kernel_status.is_starting():
                     status = "Starting"
                 elif kernel_status.is_unknown():
