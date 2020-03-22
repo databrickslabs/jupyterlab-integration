@@ -149,7 +149,7 @@ class DbjlMagics(Magics):
                 print("Error: " + result[1])
 
     @line_cell_magic
-    def sql(line, cell=None):
+    def sql(self, line, cell=None):
         """Cell magic th execute SQL commands
         
         Args:
@@ -179,9 +179,9 @@ class DatabricksBrowser:
         self.spark = spark
         self.dbutils = dbutils
 
-    def dbfs(self):
+    def dbfs(self, rows=30, path="/"):
         """Start dbfs browser"""
-        Dbfs(self.dbutils).create()
+        Dbfs(self.dbutils).create(rows, path)
 
     def databases(self):
         """Start Database browser"""
