@@ -1,0 +1,26 @@
+.db-bar {
+    height: 12px !important;
+    overflow: hidden !important;
+}
+
+.db-label {
+    height: 14px !important;
+    line-height: 11px !important;
+    font-size: 11px !important;
+    color: #999 !important;
+}
+
+div.db-bar label {
+    font-size: 11px;
+    color: #999 !important;
+}
+
+.db-button {
+    width: 13px !important;
+    height: 12px !important;
+    padding: 0px !important;
+}
+
+.db-button .fa {
+    display: block !important;
+}
