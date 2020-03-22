@@ -58,7 +58,7 @@ def get_conda_version(lib, channels):
         print_error(result["stderr"])
         return None
     else:
-        return json.loads(result["stdout"])[lib][-1]
+        return json.loads(result["stdout"])[lib.replace("conda-forge::", "")][-1]
 
 
 def get_npm_version(ext):

@@ -21,22 +21,35 @@ class Dbfs(object):
         def __init__(self, dbutils):
             self.dbutils = dbutils
 
-        def create(self):
+        def create(self, rows=30, path="/", height="400px"):
             """Create the sidecar view"""
-            self.sc = Sidecar(title="DBFS-%s" % os.environ["DBJL_CLUSTER"].split("-")[-1])
-            self.path = "/"
-            self.flist = Select(options=[], rows=40, disabled=False)
+            self.path = path
+            self.flist = Select(options=[], disabled=False, layout={"height": height})
             self.flist.observe(self.on_click, names="value")
 
-            self.refresh = Button(description="refresh")
+            self.refresh = Button(icon="refresh", layout={"width": "40px"})
             self.refresh.on_click(self.on_refresh)
-            self.output = Output()
+            self.path_view = Output()
+            self.preview = Output(
+                layout={
+                    "width": "800px",
+                    "height": height,
+                    "overflow": "scroll",
+                    "border": "1px solid gray",
+                }
+            )
 
-            self.up = Button(description="up")
+            self.up = Button(icon="arrow-up", layout={"width": "40px"})
             self.up.on_click(self.on_up)
 
-            with self.sc:
-                display(VBox([HBox([self.up, self.refresh]), self.flist, self.output]))
+            display(
+                VBox(
+                    [
+                        HBox([self.refresh, self.up, self.path_view]),
+                        HBox([self.flist, self.preview]),
+                    ]
+                )
+            )
 
             self.update()
 
@@ -64,9 +77,17 @@ class Dbfs(object):
 
         def update(self):
             """Update the view when an element was selected"""
-            with self.output:
+            self.path_view.clear_output()
+            self.preview.clear_output()
+            with self.path_view:
                 print("updating ...")
-            fobjs = self.dbutils.fs.ls(self.path)
+            try:
+                fobjs = self.dbutils.fs.ls(self.path)
+            except Exception as ex:
+                with self.path_view:
+                    print("Error: Cannot access folder")
+                return False
+
             self.show_path(self.path)
 
             dirs = sorted([fobj.name for fobj in fobjs if fobj.isDir()], key=lambda x: x.lower())
@@ -79,6 +100,7 @@ class Dbfs(object):
                 key=lambda x: x[0].lower(),
             )
             self.flist.options = [""] + dirs + files
+            return True
 
         def show_path(self, path):
             """Show path in output widget
@@ -86,9 +108,32 @@ class Dbfs(object):
             Args:
                 path (str): Currently selected path
             """
-            self.output.clear_output()
-            with self.output:
+            self.path_view.clear_output()
+            with self.path_view:
                 print("dbfs:" + re.sub(r"\s\(.*?\)$", "", path))
+
+        def show_preview(self, path):
+            """Show preview of csv, md or txt in output widget
+            
+            Args:
+                path (str): Currently selected path
+            """
+            real_path = re.sub(r"\s\(.*?\)$", "", path)
+            parts = real_path.split(".")
+            if len(parts) > 0 and parts[-1].lower() in [
+                "md",
+                "csv",
+                "txt",
+                "sh",
+                "sql",
+                "py",
+                "scala",
+                "json",
+            ]:
+                text = self.dbutils.fs.head(real_path)
+                self.preview.clear_output()
+                with self.preview:
+                    print(text)
 
         def on_refresh(self, b):
             """Refresh handler
@@ -119,10 +164,13 @@ class Dbfs(object):
             new_path = os.path.join(self.path, change["new"])
             if change["old"] is not None:
                 if change["new"][-1] == "/":
+                    old_path = self.path
                     self.path = new_path
-                    self.update()
+                    if not self.update():
+                        self.path = old_path
                 else:
                     self.show_path(new_path)
+                    self.show_preview(new_path)
 
         def close(self):
             """Close view"""
