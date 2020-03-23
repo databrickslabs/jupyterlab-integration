@@ -11,102 +11,152 @@ from enum import Enum
 from version_parser import Version
 
 import databrickslabs_jupyterlab
-from databrickslabs_jupyterlab.remote import (bye, check_installed, configure_ssh, connect, download_notebook,
-                                              get_cluster, get_python_path, get_remote_packages, install_libs,
-                                              is_reachable, version_check)
-from databrickslabs_jupyterlab.local import (bye, conda_version, create_kernelspec, get_db_config, prepare_ssh_config,
-                                             print_error, print_ok, remove_kernelspecs, show_profiles, write_config)
+from databrickslabs_jupyterlab.remote import (
+    bye,
+    check_installed,
+    configure_ssh,
+    connect,
+    download_notebook,
+    get_cluster,
+    get_python_path,
+    get_remote_packages,
+    install_libs,
+    is_reachable,
+    version_check,
+)
+from databrickslabs_jupyterlab.local import (
+    bye,
+    conda_version,
+    create_kernelspec,
+    get_db_config,
+    prepare_ssh_config,
+    print_error,
+    print_ok,
+    remove_kernelspecs,
+    show_profiles,
+    write_config,
+)
 from databrickslabs_jupyterlab.install import install, update_local
 
 
 class VCheck(Enum):
-    a = 'all'
-    d = 'diff'
-    s = 'same'
+    a = "all"
+    d = "diff"
+    s = "same"
 
     def __str__(self):
         return self.value
 
-parser = argparse.ArgumentParser(description='Configure remote Databricks access with Jupyter Lab')
 
-parser.add_argument('profile', nargs='?', type=str, default="", help='A databricks-cli profile')
-parser.add_argument('-b',
-                    '--bootstrap',
-                    dest='bootstrap',
-                    action='store_true',
-                    help='Bootstrap the local databrickslabs-jupyterlab environment')
-parser.add_argument('-d',
-                    '--delete',
-                    dest='delete',
-                    action='store_true',
-                    help='Delete a jupyter kernelspec')
-parser.add_argument('-m',
-                    '--mirror',
-                    dest='mirror',
-                    action='store_true',
-                    help='Mirror a a remote Databricks environment')
-parser.add_argument('-c',
-                    '--clipboard',
-                    dest='clipboard',
-                    action='store_true',
-                    help='Copy the personal access token to the clipboard')
-parser.add_argument('-D',
-                    '--debug',
-                    dest='debug',
-                    action='store_true',
-                    help='Debug calls to REST API')
-parser.add_argument('-i', '--id', dest='cluster_id', help='The cluster_id to avoid manual selection')
-parser.add_argument('-k', '--kernelspec', dest='kernelspec', action='store_true', help='Create a kernel specification')
-parser.add_argument('-l', '--lab', dest='lab', action='store_true', help='Safely start Jupyter Lab')
-parser.add_argument('-n', '--notebook_url', dest='notebook_url', help='Download demo notebook')
-parser.add_argument('-o', '--organisation', dest='organisation', help='The organisation for Azure Databricks')
-parser.add_argument('-p',
-                    '--profiles',
-                    dest='profiles',
-                    action='store_true',
-                    help='Show all databricks cli profiles and check SSH key')
-parser.add_argument('-r',
-                    '--reconfigure',
-                    dest='reconfigure',
-                    action='store_true',
-                    help='Reconfigure cluster with id cluster_id')
+parser = argparse.ArgumentParser(description="Configure remote Databricks access with Jupyter Lab")
+
+parser.add_argument("profile", nargs="?", type=str, default="", help="A databricks-cli profile")
+parser.add_argument(
+    "-b",
+    "--bootstrap",
+    dest="bootstrap",
+    action="store_true",
+    help="Bootstrap the local databrickslabs-jupyterlab environment",
+)
+parser.add_argument(
+    "-d", "--delete", dest="delete", action="store_true", help="Delete a jupyter kernelspec"
+)
+parser.add_argument(
+    "-m",
+    "--mirror",
+    dest="mirror",
+    action="store_true",
+    help="Mirror a a remote Databricks environment",
+)
+parser.add_argument(
+    "-c",
+    "--clipboard",
+    dest="clipboard",
+    action="store_true",
+    help="Copy the personal access token to the clipboard",
+)
+parser.add_argument(
+    "-D", "--debug", dest="debug", action="store_true", help="Debug calls to REST API"
+)
+parser.add_argument(
+    "-i", "--id", dest="cluster_id", help="The cluster_id to avoid manual selection"
+)
+parser.add_argument(
+    "-k",
+    "--kernelspec",
+    dest="kernelspec",
+    action="store_true",
+    help="Create a kernel specification",
+)
+parser.add_argument("-l", "--lab", dest="lab", action="store_true", help="Safely start Jupyter Lab")
+parser.add_argument("-n", "--notebook_url", dest="notebook_url", help="Download demo notebook")
+parser.add_argument(
+    "-o", "--organisation", dest="organisation", help="The organisation for Azure Databricks"
+)
+parser.add_argument(
+    "-p",
+    "--profiles",
+    dest="profiles",
+    action="store_true",
+    help="Show all databricks cli profiles and check SSH key",
+)
+parser.add_argument(
+    "-r",
+    "--reconfigure",
+    dest="reconfigure",
+    action="store_true",
+    help="Reconfigure cluster with id cluster_id",
+)
 # parser.add_argument('-s', '--sshfs', dest='sshfs', action='store_true', help='Mount remote filesystem via sshfs')
-parser.add_argument('-s',
-                    '--ssh-config',
-                    dest='sshconfig',
-                    action='store_true',
-                    help='Configure SSH acces for a cluster')
-parser.add_argument('-v',
-                    '--version',
-                    dest='version',
-                    action='store_true',
-                    help='Check version of databrickslabs-jupyterlab')
-parser.add_argument('-V',
-                    '--versioncheck',
-                    dest='versioncheck',
-                    type=VCheck,
-                    choices=list(VCheck),
-                    help='Check version of local env with remote env')
-parser.add_argument('-w',
-                    '--whitelist',
-                    dest='use_whitelist',
-                    action='store_true',
-                    help='Use a whitelist (include pkg) of packages to install instead of blacklist (exclude pkg)')
-parser.add_argument('-W',
-                    '--print-whitelist',
-                    dest='whitelist',
-                    action='store_true',
-                    help='Print whitelist (include pkg) of packages to install')
-parser.add_argument('-B',
-                    '--print-blacklist',
-                    dest='blacklist',
-                    action='store_true',
-                    help='Print blacklist (exclude pkg) of packages to install')
+parser.add_argument(
+    "-s",
+    "--ssh-config",
+    dest="sshconfig",
+    action="store_true",
+    help="Configure SSH access for a cluster",
+)
+parser.add_argument(
+    "-v",
+    "--version",
+    dest="version",
+    action="store_true",
+    help="Check version of databrickslabs-jupyterlab",
+)
+parser.add_argument(
+    "-V",
+    "--versioncheck",
+    dest="versioncheck",
+    type=VCheck,
+    choices=list(VCheck),
+    help="Check version of local env with remote env",
+)
+parser.add_argument(
+    "-w",
+    "--whitelist",
+    dest="use_whitelist",
+    action="store_true",
+    help="Use a whitelist (include pkg) of packages to install instead of blacklist (exclude pkg)",
+)
+parser.add_argument(
+    "-W",
+    "--print-whitelist",
+    dest="whitelist",
+    action="store_true",
+    help="Print whitelist (include pkg) of packages to install",
+)
+parser.add_argument(
+    "-B",
+    "--print-blacklist",
+    dest="blacklist",
+    action="store_true",
+    help="Print blacklist (exclude pkg) of packages to install",
+)
 
 args = parser.parse_args()
 
 if args.debug:
     import http.client as http_client
+
     http_client.HTTPConnection.debuglevel = 1
 
 #
@@ -114,6 +164,7 @@ if args.debug:
 #
 if args.version:
     import databrickslabs_jupyterlab._version
+
     print(databrickslabs_jupyterlab._version.__version__)
     bye()
 
@@ -122,6 +173,7 @@ if args.version:
 #
 if args.whitelist:
     import databrickslabs_jupyterlab.install
+
     print("   => If package exists in remote cluster an this list, it will be installed:")
     print(databrickslabs_jupyterlab.install.WHITELIST)
     bye()
@@ -131,6 +183,7 @@ if args.whitelist:
 #
 if args.blacklist:
     import databrickslabs_jupyterlab.install
+
     print("   => These packages will note be installed:")
     print(databrickslabs_jupyterlab.install.BLACKLIST)
     bye()
@@ -181,15 +234,19 @@ else:
 #
 if args.profile == "":
     parser.print_help()
-    print_error("\ndatabrickslabs-jupyterlab: error: the following arguments are required: profile\n")
+    print_error(
+        "\ndatabrickslabs-jupyterlab: error: the following arguments are required: profile\n"
+    )
     bye(1)
 
 
 print("\n* Getting host and token from .databrickscfg")
 host, token = get_db_config(profile)
 if ("azuredatabricks.net" in host) and args.kernelspec and not args.organisation:
-    print_error("\n    Error: To configure an Azure Databricks cluster, " +
-                "the organization id (-o id) is required")
+    print_error(
+        "\n    Error: To configure an Azure Databricks cluster, "
+        + "the organization id (-o id) is required"
+    )
     bye(1)
 
 #
@@ -206,7 +263,7 @@ if args.sshconfig:
 # Check the ssh key for the given profile and retrieve host and token from ~/.databrickscfg
 #
 if not os.path.exists(os.path.expanduser("~/.ssh/id_%s.pub" % profile)):
-    print_error("\n    Error: ssh key for profile '%s' is missing:" %profile)
+    print_error("\n    Error: ssh key for profile '%s' is missing:" % profile)
     print("    Use 'databrickslabs-jupyterlab %s -s' to configure ssh access" % profile)
     bye(1)
 
@@ -216,6 +273,7 @@ if not os.path.exists(os.path.expanduser("~/.ssh/id_%s.pub" % profile)):
 #
 if args.clipboard:
     import pyperclip
+
     pyperclip.copy(token)
     print_ok("   => Personal access token copied to clipboard")
 
@@ -224,7 +282,9 @@ if args.clipboard:
 #
 if args.kernelspec or args.reconfigure or args.lab or args.versioncheck or args.mirror:
     print("\n* Select remote cluster\n")
-    cluster_id, public_ip, cluster_name, conda_env = get_cluster(profile, host, token, args.cluster_id)
+    cluster_id, public_ip, cluster_name, conda_env = get_cluster(
+        profile, host, token, args.cluster_id
+    )
     if cluster_name is None:
         bye(1)
 
@@ -271,6 +331,7 @@ if args.kernelspec or args.reconfigure or args.lab:
 #
 if args.lab:
     import jupyterlab.labapp
+
     sys.argv = sys.argv[:1]
     print(sys.argv)
     jupyterlab.labapp.main()
@@ -282,8 +343,15 @@ if args.kernelspec:
     print("\n* Creating remote kernel spec")
     python_path = get_python_path(cluster_id)
     # Using local conda environment name avoids overwriting of kernelspecs from different environments
-    create_kernelspec(profile, args.organisation, host, cluster_id, cluster_name, os.environ['CONDA_DEFAULT_ENV'],
-                      python_path)
+    create_kernelspec(
+        profile,
+        args.organisation,
+        host,
+        cluster_id,
+        cluster_name,
+        os.environ["CONDA_DEFAULT_ENV"],
+        python_path,
+    )
     print_ok("   => OK")
 
     print("\n* Setting global config of jupyter lab (autorestart, timeout)")
