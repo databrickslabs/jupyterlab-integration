@@ -510,10 +510,12 @@ def configure_ssh(profile, host, token, cluster_id):
         "enable_elastic_disk",
         "init_scripts_safe_mode",
         "node_type_id",
-        "spark_env_vars",
         "spark_version",
     ]:
         request[key] = response[key]
+
+    if response.get("spark_env_vars", None) is not None:
+        request["spark_env_vars"] = response["spark_env_vars"]
 
     if response.get("aws_attributes", None) is not None:
         request["aws_attributes"] = response["aws_attributes"]
