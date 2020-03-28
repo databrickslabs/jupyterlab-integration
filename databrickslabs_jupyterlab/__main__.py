@@ -6,7 +6,7 @@ from databrickslabs_jupyterlab.connect import dbcontext
 from databrickslabs_jupyterlab.kernel import DatabricksKernel
 
 
-def main(host, connection_info, python_path, sudo, timeout, env):
+def main(host, connection_info, python_path, sudo, timeout, env, no_spark=False):
     """Main function to be called as module to create DatabricksKernel
 
     Arguments:
@@ -17,9 +17,8 @@ def main(host, connection_info, python_path, sudo, timeout, env):
         timeout {int} -- SSH connection timeout (default: {5})
         env {str} -- Environment variables passd to the ipykernel "VAR1=VAL1 VAR2=VAL2" (default: {""})
     """
-    print("==> main: " + str(connection_info))
+    kernel = DatabricksKernel(host, connection_info, python_path, sudo, timeout, env, no_spark)
 
-    kernel = DatabricksKernel(host, connection_info, python_path, sudo, timeout, env)
     try:
         kernel.create_remote_connection_info()
         kernel.start_kernel_and_tunnels()
@@ -52,6 +51,9 @@ if __name__ == "__main__":
     optional.add_argument(
         "-s", action="store_true", help="sudo required to start kernel on the remote machine"
     )
+    optional.add_argument(
+        "--no-spark", dest="no_spark", action="store_true", help="Do not create a Spark Session"
+    )
 
     required = parser.add_argument_group("required arguments")
     required.add_argument("--file", "-f", required=True, help="jupyter kernel connection file")
@@ -66,4 +68,6 @@ if __name__ == "__main__":
         print(ex)
         sys.exit(1)
 
-    sys.exit(main(args.host, connection_info, args.python, args.s, args.timeout, args.env))
+    sys.exit(
+        main(args.host, connection_info, args.python, args.s, args.timeout, args.env, args.no_spark)
+    )

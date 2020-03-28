@@ -20,22 +20,26 @@ class DatabricksKernelStatus(Status):
         """
         return self._get_status() == DatabricksKernelStatus.SPARK_RUNNING
 
-    def set_spark_running(self):
+    def set_spark_running(self, pid=None, sudo=None):
         """Set current status to Status.SPARK_RUNNING
         """
-        self._set_status(DatabricksKernelStatus.SPARK_RUNNING, self.get_pid(), self.is_sudo())
+        self._set_status(DatabricksKernelStatus.SPARK_RUNNING, pid, sudo)
 
 
 class DatabricksKernel(SshKernel):
-    def __init__(self, host, connection_info, python_path, sudo, timeout, env):
+    def __init__(self, host, connection_info, python_path, sudo, timeout, env, no_spark):
         super().__init__(host, connection_info, python_path, sudo, timeout, env)
+        self.no_spark = no_spark
         self.dbjl_env = dict([e.split("=") for e in env[0].split(" ")])
         self._logger.debug("Environment = {}".format(self.env))
-        self._logger.debug("==> kernel: " + str(connection_info))
         self.kernel_status = DatabricksKernelStatus(connection_info, self._logger)
         self.command = None
 
     def kernel_customize(self):
+        if self.no_spark:
+            self._logger.info("This kernel will have no Spark Session (--no-spark)")
+            return None
+
         self._logger.debug("Create Spark Session")
 
         profile = self.dbjl_env.get("DBJL_PROFILE", None)
@@ -49,7 +53,6 @@ class DatabricksKernel(SshKernel):
             return None
 
         host, token = get_db_config(profile)
-
         self._logger.debug("profile={}, host={}, cluster_id={}".format(profile, host, cluster_id))
 
         try:
@@ -90,12 +93,13 @@ class DatabricksKernel(SshKernel):
                 self.kernel_status.set_spark_running()
             else:
                 self._logger.error("Error: Cluster unreachable")
-                self.kernel_status.set_unreachable(self.kernel_pid, True)  # CORRECT IT !!!!!!!!!
+                self.kernel_status.set_unreachable()
 
         except Exception as ex:
             self._logger.error("Error: " + str(ex))
             self.kernel_status.set_connect_failed()
 
     def close(self):
-        self.command.close()
+        if not self.no_spark:
+            self.command.close()
         super().close()

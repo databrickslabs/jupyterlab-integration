@@ -68,13 +68,13 @@ parser.add_argument(
     action="store_true",
     help="Mirror a a remote Databricks environment",
 )
-parser.add_argument(
-    "-c",
-    "--clipboard",
-    dest="clipboard",
-    action="store_true",
-    help="Copy the personal access token to the clipboard",
-)
+# parser.add_argument(
+#     "-c",
+#     "--clipboard",
+#     dest="clipboard",
+#     action="store_true",
+#     help="Copy the personal access token to the clipboard",
+# )
 parser.add_argument(
     "-D", "--debug", dest="debug", action="store_true", help="Debug calls to REST API"
 )
@@ -150,6 +150,9 @@ parser.add_argument(
     dest="blacklist",
     action="store_true",
     help="Print blacklist (exclude pkg) of packages to install",
+)
+parser.add_argument(
+    "-N", "--no-spark", dest="no_spark", action="store_true", help="Do not create a Spark Session",
 )
 
 args = parser.parse_args()
@@ -271,11 +274,11 @@ if not os.path.exists(os.path.expanduser("~/.ssh/id_%s.pub" % profile)):
 #
 # Copy PAT to clipboard. Can be combined with every other flag
 #
-if args.clipboard:
-    import pyperclip
+# if args.clipboard:
+#     import pyperclip
 
-    pyperclip.copy(token)
-    print_ok("   => Personal access token copied to clipboard")
+#     pyperclip.copy(token)
+#     print_ok("   => Personal access token copied to clipboard")
 
 #
 # Select remote cluster if not given by either -i or being in the respective mirror environment
@@ -339,6 +342,7 @@ if args.lab:
 #
 # Create a jupyter kernelspecification
 #
+print(args.no_spark)
 if args.kernelspec:
     print("\n* Creating remote kernel spec")
     python_path = get_python_path(cluster_id)
@@ -351,6 +355,7 @@ if args.kernelspec:
         cluster_name,
         os.environ["CONDA_DEFAULT_ENV"],
         python_path,
+        args.no_spark,
     )
     print_ok("   => OK")
 

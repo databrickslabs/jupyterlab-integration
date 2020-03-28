@@ -273,7 +273,7 @@ def show_profiles():
 
 
 def create_kernelspec(
-    profile, organisation, host, cluster_id, cluster_name, local_env, python_path
+    profile, organisation, host, cluster_id, cluster_name, local_env, python_path, no_spark
 ):
     """Create or edit the ssh_ipykernel specification for jupyter lab
     
@@ -295,8 +295,16 @@ def create_kernelspec(
 
     if cluster_name.replace(" ", "_") == local_env:
         display_name = "SSH %s %s:%s" % (cluster_id, profile, cluster_name)
+        if not no_spark:
+            display_name += "(Spark)"
     else:
-        display_name = "SSH %s %s:%s (%s)" % (cluster_id, profile, cluster_name, local_env)
+        display_name = "SSH %s %s:%s (%s%s)" % (
+            cluster_id,
+            profile,
+            cluster_name,
+            local_env,
+            ("" if no_spark else "/Spark"),
+        )
 
     add_kernel(
         host=cluster_id,
@@ -307,6 +315,7 @@ def create_kernelspec(
         env=env,
         timeout=5,
         module="databrickslabs_jupyterlab",
+        opt_args=["--no-spark"] if no_spark else [],
     )
     print("   => Kernel specification 'SSH %s %s' created or updated" % (cluster_id, display_name))
 
