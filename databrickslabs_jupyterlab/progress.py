@@ -1,190 +1,207 @@
+import os
 import threading
 import time
-import uuid
 
-from IPython.display import HTML, display
+from IPython.display import display
 from IPython import get_ipython
 
 try:
     from ipywidgets import FloatProgress, Label, HBox, VBox, Layout, Button
 
     has_ipywidgets = True
-except:
+except ImportError:
     has_ipywidgets = False
 
 
-class Progress(object):
-    def __init__(self, sc, job_info):
-        self.sc = sc
-        self.job_info = job_info
-        self.tracker = sc.statusTracker()
-        self.progressbar_showing = False
+def debug():
+    return os.environ.get("PROGRESS_DEBUG", None) == "TRUE"
 
-    def worker(self):
-        def cancel(b):
-            self.sc.cancelJobGroup(self.job_info.group_id)
 
-        def toggle(widget):
-            def f(b):
-                for w in widget.children:
-                    h = w.layout.height
-                    if h is None or h == "16px":
-                        w.layout.height = "0px"
-                        b.icon = "arrow-circle-down"
-                    else:
-                        w.layout.height = "16px"
-                        b.icon = "arrow-circle-right"
+class ProgressBars:
+    def __init__(self):
+        self.style = {"description_width": "initial"}
+        self.bars = {}
+        self.labels = {}
+        self.last_job = None
 
-            return f
-
-        style = {"description_width": "initial"}
-        bars = {}
-        labels = {}
-        lastJob = None
-
-        progressbars = VBox([])
+        self.progressbars = VBox([])
 
         cancel_button = Button(button_style="", tooltip="Cancel Spark Job", icon="window-close")
         cancel_button.add_class("db-button")
-        cancel_button.on_click(cancel)
 
         toggle_button = Button(
             button_style="", tooltip="Toggle progress bar", icon="arrow-circle-right"
         )
         toggle_button.add_class("db-button")
-        toggle_button.on_click(toggle(progressbars))
+        toggle_button.on_click(self._toggle(self.progressbars))
 
-        indicator = HBox([toggle_button, progressbars])
+        self.indicator = HBox([toggle_button, self.progressbars])
+        self.progressbar_showing = False
 
-        while self.running == 1:
-            time.sleep(0.2)
+    def _toggle(self, widget):
+        def f(b):
+            for w in widget.children:
+                h = w.layout.height
+                if h is None or h == "16px":
+                    w.layout.height = "0px"
+                    b.icon = "arrow-circle-down"
+                else:
+                    w.layout.height = "16px"
+                    b.icon = "arrow-circle-right"
+
+        return f
+
+    def bar_needed(self, job):
+        return self.bars.get(job, None) is None
+
+    def add_bar(self, job):
+        self.bars[job] = FloatProgress(
+            value=0.0,
+            min=0.0,
+            max=100.0,
+            description="Job: %04d Stage: %04d" % (job, 0),
+            bar_style="info",
+            orientation="horizontal",
+            style=self.style,
+        )
+        self.bars[job].add_class("db-bar")
+        self.labels[job] = Label(
+            value="",
+            description="Code:",
+            disabled=False,
+            layout=Layout(width="800px", height="100%", margin="0 0 0 5px"),
+        )
+        self.labels[job].add_class("db-label")
+
+        progressbar = HBox([self.bars[job], self.labels[job]])
+        self.progressbars.children = self.progressbars.children + (progressbar,)
+        if not self.progressbar_showing:
+            self.progressbar_showing = True
+            display(self.indicator)
+
+    def set_last_job(self, job):
+        self.last_job = job
+
+    def finish_last_job(self):
+        if self.last_job is not None:
+            self.bars[self.last_job].value = 100.0
+
+    def update_bar(self, job, description, label):
+        self.bars[job].description = description
+        self.labels[job].value = label
+
+    def update_progress(self, job, value):
+        self.bars[job].value = value
+
+
+class Progress:
+    def __init__(self, sc, job_info):
+        self.sc = sc
+        self.job_info = job_info
+        self.thread = None
+        self.tracker = sc.statusTracker()
+        self.progressbars = ProgressBars()
+
+    def start(self):
+        self.job_info.dump("START")
+        self.thread = threading.Thread(target=self.worker, args=(self.progressbars,), daemon=True)
+        self.job_info.current_thread = self.thread
+        self.thread.start()
+
+        # Re-attach to ensure main thread has group_id
+        # Sometimes this was reset to last group_id, reason unclear
+        self.job_info.attach()
+        self.job_info.dump("POST START")
+
+    def worker(self, progressbars):
+        self.job_info.attach()
+        self.job_info.is_running[self.job_info.group_id] = True
+        self.job_info.dump("RUNNING")
+
+        while self.job_info.is_running[self.job_info.group_id]:
             jobs = [
                 (jobid, self.tracker.getJobInfo(jobid))
                 for jobid in self.tracker.getJobIdsForGroup(self.job_info.group_id)
                 if self.tracker.getJobInfo(jobid).status == "RUNNING"
             ]
-
+            if debug():
+                print("==> jobs", jobs, self.job_info.group_id)
             for j, job in jobs:
-                if bars.get(j, None) is None:
-                    if lastJob is not None:
-                        bars[lastJob].value = 100.0
-                    bars[j] = FloatProgress(
-                        value=0.0,
-                        min=0.0,
-                        max=100.0,
-                        description="Job: %04d Stage: %04d" % (j, 0),
-                        bar_style="info",
-                        orientation="horizontal",
-                        style=style,
-                    )
-                    bars[j].add_class("db-bar")
-                    labels[j] = Label(
-                        value="",
-                        description="Code:",
-                        disabled=False,
-                        layout=Layout(width="800px", height="100%", margin="0 0 0 5px"),
-                    )
-                    labels[j].add_class("db-label")
+                if progressbars.bar_needed(j):
+                    progressbars.finish_last_job()
+                    progressbars.add_bar(j)
+                    progressbars.set_last_job(j)
 
-                    progressbar = HBox([bars[j], labels[j]])
-                    progressbars.children = progressbars.children + (progressbar,)
-                    if not self.progressbar_showing:
-                        self.progressbar_showing = True
-                        display(indicator)
-
-                lastJob = j
                 stageIds = sorted(job.stageIds)
                 for s in stageIds:
                     stageInfo = self.tracker.getStageInfo(s)
-                    bars[j].description = "Job: %04d Stage: %04d" % (j, s)
-                    labels[j].value = "code: '%s' / stages: %s" % (
-                        stageInfo.name,
-                        str(stageIds)[1:-1],
-                    )
+                    description = "Job: %04d Stage: %04d" % (j, s)
+                    label = "code: '%s' / stages: %s" % (stageInfo.name, str(stageIds)[1:-1])
+                    progressbars.update_bar(j, description, label)
                     if stageInfo.numActiveTasks > 0:
                         progress = int(100 * stageInfo.numCompletedTasks / stageInfo.numTasks)
-                        bars[j].value = progress
+                        progressbars.update_progress(j, progress)
+            time.sleep(0.2)
 
-        if lastJob is not None and self.running == 0:
-            bars[lastJob].value = 100.0
+        progressbars.finish_last_job()
 
-    def start_progressbar(self, info):
-        self.sc.setLocalProperty("spark.scheduler.pool", self.job_info.pool_id)
-        self.job_info.group_id = self.job_info.pool_id + "_" + uuid.uuid4().hex
-        self.sc.setJobGroup(self.job_info.group_id, "jupyterlab job group", True)
+        self.job_info.dump("LEFT LOOP")
 
-        self.running = 1
-        self.progressbar_showing = False
-        self.t = threading.Thread(target=self.worker)
-        self.t.start()
 
-    def stop_progressbar(self, result):
-        # print("stop_progressbar")
-        def is_running():
-            job_status = [
-                self.tracker.getJobInfo(jobid).status
-                for jobid in self.tracker.getJobIdsForGroup(self.job_info.group_id)
-            ]
-            return any(status == "RUNNING" for status in job_status)
+def is_running(tracker, group_id):
+    job_status = [tracker.getJobInfo(jobid).status for jobid in tracker.getJobIdsForGroup(group_id)]
+    return any(status == "RUNNING" for status in job_status)
 
-        if is_running():
+
+def start_wrapper(sc, job_info):
+    def start_progressbar(_):
+        job_info.new_group_id()
+        job_info.dump("INIT")
+        prog_bar = Progress(sc, job_info)
+        prog_bar.start()
+
+    return start_progressbar
+
+
+def stop_wrapper(sc, job_info):
+    def stop_progressbar(_):
+        job_info.is_running[job_info.group_id] = False
+
+        # job_info.attach()
+        job_info.dump("STOPPED")
+
+        tracker = sc.statusTracker()
+
+        if is_running(tracker, job_info.group_id):
             print("Killing spark job ", end="")
-            while is_running():
-                self.sc.cancelJobGroup(self.job_info.group_id)
+            while is_running(tracker, job_info.group_id):
+                sc.cancelJobGroup(job_info.group_id)
                 print(".", end="")
                 time.sleep(1)
             print(". Spark job killed")
-            self.running = -1
-        else:
-            # print("done")
-            self.running = 0
+
+        if job_info.current_thread is not None:
+            if debug():
+                print("\nWAITING for thread to stop")
+            job_info.current_thread.join()
+            if debug():
+                print("\nTHREAD STOPPED")
+        job_info.stop_all()
+
+    return stop_progressbar
 
 
-def load_css():
+def load_progressbar(sc, job_info):
+    def unregister(ip, event, func_name):
+        f = [f for f in ip.events.callbacks[event] if f.__name__ == func_name]
+        if len(f) > 0:
+            ip.events.unregister(event, f[0])
+
     if has_ipywidgets:
-        display(
-            HTML(
-                """
-        <style>
-        .db-bar {
-            height: 12px;
-            overflow: hidden;
-        }
-
-        .db-label {
-            height: 14px;
-            line-height: 11px !important;
-            font-size: 11px;
-            color: #999 !important;
-        }
-        div.db-bar label {
-            font-size: 11px;
-            color: #999 !important;
-        }
-        .db-button {
-            width: 13px;
-            height: 12px;
-            padding: 0px;
-        }
-        .db-button .fa {
-            display: block;
-        }
-        </style>
-        """
-            )
-        )
-
-
-def load_progressbar(ip, sc, job_info):
-    if has_ipywidgets:
-        progress = Progress(sc, job_info)
+        ip = get_ipython()
         for event, name, func in (
-            ("pre_run_cell", "start_progressbar", progress.start_progressbar),
-            ("post_run_cell", "stop_progressbar", progress.stop_progressbar),
+            ("pre_run_cell", "start_progressbar", start_wrapper(sc, job_info)),
+            ("post_run_cell", "stop_progressbar", stop_wrapper(sc, job_info)),
         ):
-            register = True
-            for m in ip.events.callbacks["pre_run_cell"]:
-                if m.__name__ == name:
-                    register = False
-            if register:
-                ip.events.register(event, func)
+            unregister(ip, event, name)
+            ip.events.register(event, func)

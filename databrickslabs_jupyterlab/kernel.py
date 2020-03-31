@@ -1,7 +1,8 @@
-from databrickslabs_jupyterlab.local import get_db_config
-from databrickslabs_jupyterlab.rest import Command, DatabricksApiException
 from ssh_ipykernel.status import Status
 from ssh_ipykernel.kernel import SshKernel
+
+from databrickslabs_jupyterlab.local import get_db_config
+from databrickslabs_jupyterlab.rest import Command, DatabricksApiException
 
 
 class DatabricksKernelStatus(Status):
@@ -31,7 +32,7 @@ class DatabricksKernel(SshKernel):
         super().__init__(host, connection_info, python_path, sudo, timeout, env)
         self.no_spark = no_spark
         self.dbjl_env = dict([e.split("=") for e in env[0].split(" ")])
-        self._logger.debug("Environment = {}".format(self.env))
+        self._logger.debug("Environment = %s", self.env)
         self.kernel_status = DatabricksKernelStatus(connection_info, self._logger)
         self.command = None
 
@@ -53,7 +54,7 @@ class DatabricksKernel(SshKernel):
             return None
 
         host, token = get_db_config(profile)
-        self._logger.debug("profile={}, host={}, cluster_id={}".format(profile, host, cluster_id))
+        self._logger.debug("profile=%s, host=%s, cluster_id=%s", profile, host, cluster_id)
 
         try:
             self.command = Command(url=host, cluster_id=cluster_id, token=token)
@@ -61,23 +62,26 @@ class DatabricksKernel(SshKernel):
             self._logger.error(str(ex))
             return None
 
-        self._logger.info("Gateway created for cluster '{}'".format(cluster_id))
+        self._logger.info("Gateway created for cluster '%s'", cluster_id)
 
         # Fetch auth_token and gateway port ...
         #
         try:
-            cmd = 'c=sc._gateway.client.gateway_client; print(c.gateway_parameters.auth_token + "|" + str(c.port))'
+            cmd = (
+                "c=sc._gateway.client.gateway_client; "
+                + 'print(c.gateway_parameters.auth_token + "|" + str(c.port))'
+            )
             result = self.command.execute(cmd)
-        except Exception as ex:
+        except Exception as ex:  # pylint: disable=broad-except
             result = (-1, str(ex))
 
         if result[0] != 0:
-            self._logger.error("error {}: {}".format(*result))
+            self._logger.error("error %s: %s", *result)
             return None
 
         gw_token, gw_port = result[1].split("|")
         gw_port = int(gw_port)
-        self._logger.debug("Gateway token={}, port={}".format(gw_token, gw_port))
+        self._logger.debug("Gateway token=%s, port=%s", gw_token, gw_port)
 
         cmd = (
             "from databrickslabs_jupyterlab.connect import dbcontext, is_remote; "
@@ -95,8 +99,8 @@ class DatabricksKernel(SshKernel):
                 self._logger.error("Error: Cluster unreachable")
                 self.kernel_status.set_unreachable()
 
-        except Exception as ex:
-            self._logger.error("Error: " + str(ex))
+        except Exception as ex:  # pylint: disable=broad-except
+            self._logger.error("Error: %s", str(ex))
             self.kernel_status.set_connect_failed()
 
     def close(self):

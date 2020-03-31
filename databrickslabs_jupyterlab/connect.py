@@ -1,21 +1,19 @@
-import atexit
-import base64
-import configparser
-import getpass
+import datetime
 import io
 import os
 import random
 import sys
-import time
+import threading
+import uuid
 
-from IPython.core.magic import line_magic, line_cell_magic
 from IPython import get_ipython
 from IPython.display import HTML, display
+from IPython.core.magic import Magics, magics_class, line_cell_magic
 
-from IPython import get_ipython
-from IPython.core.magic import Magics, magics_class, line_magic, cell_magic, line_cell_magic
 from databrickslabs_jupyterlab.rest import Command
-
+from databrickslabs_jupyterlab.progress import load_progressbar, debug
+from databrickslabs_jupyterlab.dbfs import Dbfs
+from databrickslabs_jupyterlab.database import Databases
 
 sys.path.insert(0, "/databricks/spark/python/lib/py4j-0.10.7-src.zip")
 sys.path.insert(0, "/databricks/spark/python")
@@ -23,7 +21,6 @@ sys.path.insert(0, "/databricks/jars/spark--driver--spark--resources-resources.j
 
 # will only work on the Databricks side
 try:
-    from pyspark.context import SparkContext
     from pyspark.conf import SparkConf
     from pyspark.sql import HiveContext
 
@@ -34,7 +31,7 @@ try:
         # Suppress py4j loading message on stderr by redirecting sys.stderr
         stderr_orig = sys.stderr
         sys.stderr = io.StringIO()
-        from PythonShell import get_existing_gateway, RemoteContext  # pylint: disable=import-error
+        from PythonShell import get_existing_gateway, RemoteContext
 
         out = sys.stderr.getvalue()
         # Restore sys.stderr
@@ -43,26 +40,67 @@ try:
         if not "py4j imported" in out:
             print(out, file=sys.stderr)
 
-    from dbutils import DBUtils  # pylint: disable=import-error
-except:
+    from dbutils import DBUtils
+except ImportError:
     pass
-
-from databrickslabs_jupyterlab.rest import Command, DatabricksApiException
-from databrickslabs_jupyterlab.progress import load_progressbar, load_css
-from databrickslabs_jupyterlab.dbfs import Dbfs
-from databrickslabs_jupyterlab.database import Databases
 
 
 class JobInfo:
     """Job info class for Spark jobs
     Args:
-        pool_id (str): Pool ID to separate Spark jobs from each other
-        group_id (str): Group ID to enable killing jobs and progress bar
+        sc (SparkContext): Spark Context
     """
 
-    def __init__(self, pool_id):
-        self.pool_id = pool_id
-        self.group_id = None
+    def __init__(self, sc):
+        self.pool_id = str(random.getrandbits(64))
+        self.group_id = "jupyterlab-default-group"
+        self.is_running = {}
+        self.current_thread = None
+        self.sc = sc
+
+    def dump(self, tag):
+        if debug():
+            print(
+                tag,
+                "%s (%s)"
+                % (
+                    datetime.datetime.now().isoformat(),
+                    threading.current_thread().__class__.__name__,
+                ),
+            )
+            print("%s: pool_id              %s" % (tag, self.pool_id))
+            print("%s: group_id             %s" % (tag, self.group_id))
+            print(
+                "%s: spark.scheduler.pool %s"
+                % (tag, self.sc.getLocalProperty("spark.scheduler.pool"))
+            )
+            print(
+                "%s: spark.jobGroup.id    %s" % (tag, self.sc.getLocalProperty("spark.jobGroup.id"))
+            )
+            print("%s: running              %s" % (tag, self.is_running.get(self.group_id, None)))
+
+    def attach(self):
+        if debug():
+            print(
+                "\nATTACHING to ",
+                self.group_id,
+                "in",
+                threading.current_thread().__class__.__name__,
+            )
+        self.sc.setLocalProperty("spark.scheduler.pool", self.pool_id)
+        self.sc.setJobGroup(self.group_id, "jupyterlab job group", True)
+
+    def stop_all(self):
+        if debug():
+            print("\nSTOPPING all running threads")
+        for k, v in self.is_running.items():
+            if v:
+                print(k, v)
+            self.is_running[k] = False
+
+    def new_group_id(self):
+        self.group_id = self.pool_id + "_" + uuid.uuid4().hex
+        self.attach()
 
 
 class DbjlUtils:
@@ -121,7 +159,7 @@ class DbjlMagics(Magics):
                 self.key = key
                 dbutils = get_ipython().user_ns["dbutils"]
                 pat = dbutils.secrets.get(scope, key)
-            except Exception as ex:
+            except Exception as ex:  # pylint: disable=broad-except
                 self.scope = None
                 self.key = None
                 print("Error: Couldn't retrieve secret\n", str(ex))
@@ -133,14 +171,14 @@ class DbjlMagics(Magics):
                 )
                 print("Scala execution context created")
                 del pat
-            except Exception as ex:
+            except Exception as ex:  # pylint: disable=broad-except
                 self.command = None
                 print("Error: Couldn't create Scala execution context\n", str(ex))
                 return
         else:
             try:
                 result = self.command.execute(cell)
-            except Exception as ex:
+            except Exception as ex:  # pylint: disable=broad-except
                 result = (-1, str(ex))
 
             if result[0] == 0:
@@ -151,7 +189,7 @@ class DbjlMagics(Magics):
     @line_cell_magic
     def sql(self, line, cell=None):
         """Cell magic th execute SQL commands
-        
+
         Args:
             line (str): line behind %sql
             cell (str, optional): cell below %sql. Defaults to None.
@@ -161,7 +199,7 @@ class DbjlMagics(Magics):
         """
         ip = get_ipython()
         spark = ip.user_ns["spark"]
-        if cell == None:
+        if cell is None:
             code = line
         else:
             code = cell
@@ -215,7 +253,7 @@ def dbcontext(progressbar=True, gw_port=None, gw_token=None):
     - DBUtils (fs module only)
     
     Args:
-        progressbar (bool, optional): If True the spark progressbar will be installed. Defaults to True.
+        progressbar (bool, optional): If True spark progressbars will be shown. Default: True.
     """
 
     def get_sparkui_url(host, organisation, clusterId):
@@ -225,7 +263,7 @@ def dbcontext(progressbar=True, gw_port=None, gw_token=None):
             sparkUi = "%s/?o=%s#/setting/clusters/%s/sparkUi" % (host, organisation, clusterId)
         return sparkUi
 
-    def show_status(spark, sparkUi):
+    def show_status(spark):
         output = """
         <div>
             <dl>
@@ -237,7 +275,7 @@ def dbcontext(progressbar=True, gw_port=None, gw_token=None):
         """.format(
             sc=spark.sparkContext,
             sparkUi=get_sparkui_url(host, organisation, clusterId),
-            num_executors=len(spark.sparkContext._jsc.sc().statusTracker().getExecutorInfos()),
+            # num_executors=len(spark.sparkContext._jsc.sc().statusTracker().getExecutorInfos()),
         )
         display(HTML(output))
 
@@ -286,9 +324,8 @@ def dbcontext(progressbar=True, gw_port=None, gw_token=None):
     spark.conf.set("spark.sql.repl.eagerEval.enabled", "true")
 
     # Define a separate pool for the fair scheduler
-    # Todo: Find a better way to store pool_id instead of this hack
     #
-    job_info = JobInfo(str(random.getrandbits(64)))
+    job_info = JobInfo(sc)
 
     # Patch the remote spark UI into the _repr_html_ call
     #
@@ -311,23 +348,26 @@ def dbcontext(progressbar=True, gw_port=None, gw_token=None):
         return sc_repr_html
 
     sc_repr_html = repr_html(sparkUi)
-    sc._repr_html_ = sc_repr_html
+    sc._repr_html_ = sc_repr_html  # pylint: disable=protected-access
 
     # Monkey patch Databricks Cli to allow mlflow tracking with the credentials provided
     # by this routine
     # Only necessary when mlflow is installed
     #
     try:
-        from databricks_cli.configure.provider import ProfileConfigProvider, DatabricksConfig
+        from databricks_cli.configure.provider import (  # pylint: disable=import-outside-toplevel
+            ProfileConfigProvider,
+            DatabricksConfig,
+        )
 
-        def get_config(self):
-            config = DatabricksConfig(host, None, None, token, False)
+        def get_config(self):  # pylint: disable=unused-argument
+            config = DatabricksConfig(host, None, None, gw_token, False)
             if config.is_valid:
                 return config
             return None
 
         ProfileConfigProvider.get_config = get_config
-    except:
+    except Exception:  # pylint: disable=broad-except
         pass
 
     # Initialize the ipython shell with spark context
@@ -339,7 +379,7 @@ def dbcontext(progressbar=True, gw_port=None, gw_token=None):
 
     # Retrieve the py4j gateway entrypoint
     #
-    entry_point = spark.sparkContext._gateway.entry_point
+    entry_point = spark.sparkContext._gateway.entry_point  # pylint: disable=protected-access
 
     # Initialize dbutils
     #
@@ -349,8 +389,7 @@ def dbcontext(progressbar=True, gw_port=None, gw_token=None):
     #
     if progressbar:
         # print("Set up Spark progress bar")
-        load_progressbar(ip, sc, job_info)
-        load_css()
+        load_progressbar(sc, job_info)
 
     # Register sql magic
     #
@@ -374,5 +413,5 @@ def dbcontext(progressbar=True, gw_port=None, gw_token=None):
     print("              - dbbrowser.dbfs()")
     print("              - dbbrowser.databases()\n")
 
-    show_status(spark, sparkUi)
+    show_status(spark)
     return None
