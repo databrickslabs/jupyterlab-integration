@@ -75,7 +75,7 @@ release:
 
 install_wheel: dist
 	scp dist/databrickslabs_jupyterlab-$(CURRENT_VERSION)-py3-none-any.whl $(CLUSTER):/tmp
-	ssh $(CLUSTER) sudo /databricks/python/bin/pip3 install --upgrade /tmp/databrickslabs_jupyterlab-$(CURRENT_VERSION)-py3-none-any.whl
+	ssh $(CLUSTER) sudo /databricks/python/bin/python -m pip install --upgrade /tmp/databrickslabs_jupyterlab-$(CURRENT_VERSION)-py3-none-any.whl
 
 install: dist
 	@echo "$(OK_COLOR)=> Installing databrickslabs_jupyterlab$(NO_COLOR)"
