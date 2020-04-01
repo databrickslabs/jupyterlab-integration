@@ -84,7 +84,7 @@ class DatabricksKernel(SshKernel):
         self._logger.debug("Gateway token=%s, port=%s", gw_token, gw_port)
 
         cmd = (
-            "from databrickslabs_jupyterlab.connect import dbcontext, is_remote; "
+            "from databrickslabs_jupyterlab.connect import dbcontext; "
             + "dbcontext(progressbar=True, gw_port={gw_port}, gw_token='{gw_token}')".format(
                 gw_port=gw_port, gw_token=gw_token
             )

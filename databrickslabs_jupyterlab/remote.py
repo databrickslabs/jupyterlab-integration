@@ -2,23 +2,19 @@ import base64
 import json
 import os
 import re
-import sys
 import time
 from os.path import expanduser
 import socket
-import subprocess
-import uuid
-import glob
-
-import requests
 from urllib.parse import unquote
 
-from databricks_cli.configure.provider import get_config, ProfileConfigProvider
+import requests
+
+from databricks_cli.configure.provider import ProfileConfigProvider
 from databricks_cli.sdk.api_client import ApiClient
 from databricks_cli.clusters.api import ClusterApi
 from databricks_cli.libraries.api import LibrariesApi
 
-import databrickslabs_jupyterlab
+# import databrickslabs_jupyterlab
 from databrickslabs_jupyterlab._version import __version__
 from databrickslabs_jupyterlab.rest import Command, DatabricksApiException
 from databrickslabs_jupyterlab.utils import (
@@ -92,14 +88,13 @@ def select_cluster(clusters):
     return clusters[int(answer["cluster_id"].split(":")[0])]
 
 
-def get_cluster(profile, host, token, cluster_id=None, status=None):
+def get_cluster(profile, cluster_id=None, status=None):
     """Get the cluster configuration from remote
     
     Args:
         profile (str): Databricks CLI profile string
-        host (str): host from databricks cli config for given profile string
-        token (str): token from databricks cli config for given profile stringf
-        cluster_id (str, optional): If cluster_id is given, the user will not be asked to select one. Defaults to None.
+        cluster_id (str, optional): If cluster_id is given, the user will not be asked to select one.
+                                    Defaults to None.
         status (Status, optional): A Status class providing set_status. Defaults to None.
     
     Returns:
@@ -441,7 +436,7 @@ def version_check(cluster_id, host, token, flag):
             key
             for key in joint_keys
             if deps.get(key, None) != remote_deps.get(key, None)
-            #            and deps.get(key, None) is not None and remote_deps.get(key, None) is not None
+            # and deps.get(key, None) is not None and remote_deps.get(key, None) is not None
         ]
     for key in scope:
         result = "%-30s %-10s  %-10s" % (key, deps.get(key, "--"), remote_deps.get(key, "--"))
@@ -562,9 +557,10 @@ def download_notebook(url):
             "execution_count": 0,
         }
 
-    cell1 = """# Retrieve Spark Context
-from databrickslabs_jupyterlab.connect import dbcontext, is_remote
-dbcontext()"""
+    #     cell1 = """# Retrieve Spark Context
+    # from databrickslabs_jupyterlab.connect import dbcontext
+    # from databrickslabs_jupyterlab.remote import is_remote
+    # dbcontext()"""
 
     cell2 = """# Setup MLflow (optional)
 import os
@@ -599,7 +595,8 @@ remote_mlflow_setup(experiment_name)"""
         nb = json.loads(unquote(base64.b64decode(s[0]).decode("utf-8")))
         cells = [c["command"] for c in nb["commands"]]
         ipy = {
-            "cells": [wrap("code", cell1), wrap("code", cell2)],
+            # "cells": [wrap("code", cell1), wrap("code", cell2)],
+            "cells": [wrap("code", cell2)],
             "nbformat": 4,
             "nbformat_minor": 4,
             "metadata": {},

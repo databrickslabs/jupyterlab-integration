@@ -18,3 +18,22 @@ if os.environ.get("DBJL_HOST") is None:
         nbapp.web_app.add_handlers(
             ".*", [(status_route, DbStatusHandler), (start_route, DbStartHandler)]
         )
+
+
+else:
+
+    def is_remote():
+        """Check whether the current context is on the remote cluster
+        
+        Returns:
+            bool: True if remote else False
+        """
+        return os.environ.get("DBJL_HOST", None) is not None
+
+    def is_azure():
+        """Check whether the current context is on Azure Databricks
+        
+        Returns:
+            bool: True if Azure Databricks else False
+        """
+        return os.environ.get("DBJL_ORG", None) is not None

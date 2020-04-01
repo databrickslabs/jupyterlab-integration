@@ -1,14 +1,16 @@
+import datetime
+from functools import reduce
+import os
+import tempfile
+import warnings
+
+from IPython.display import HTML, display
+import pandas as pd
 import mlflow
 import mlflow.sklearn
 from mlflow.tracking import MlflowClient
-from IPython.display import HTML, display
-import os
-import pandas as pd
-import datetime
-import tempfile
-import warnings
-from functools import reduce
-from databrickslabs_jupyterlab.connect import is_remote
+
+from databrickslabs_jupyterlab import is_remote
 
 
 class GridSearchCV:
@@ -26,13 +28,13 @@ class GridSearchCV:
         self.results = None
 
         if is_remote():
-            import spark_sklearn  # pylint: disable=import-error
+            import spark_sklearn  # pylint: disable=import-error,import-outside-toplevel
 
             self.gs = spark_sklearn.GridSearchCV(
                 spark.sparkContext, estimator, param_grid, *args, **kwargs
             )
         else:
-            import sklearn.model_selection
+            import sklearn.model_selection  # pylint: disable=import-error,import-outside-toplevel
 
             self.gs = sklearn.model_selection.GridSearchCV(estimator, param_grid, *args, **kwargs)
 
@@ -62,7 +64,8 @@ class GridSearchCV:
             experiment (str): experiment ID
             name (str): Name of the experiment artifact (prefix)
             tracking_uri (str, optional): URI of the tracking server. 
-                                         Defaults to None, which will use remote tracking in remote case
+                                          Defaults to None, which will use remote 
+                                          tracking in remote case
         """
         cv_results = self.results.cv_results_
         best = self.results.best_index_
