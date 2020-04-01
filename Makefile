@@ -68,6 +68,9 @@ dist:
 	@cp env.yml labextensions.txt "databrickslabs_jupyterlab/lib/"
 	@python setup.py sdist bdist_wheel
 
+dev_tag:
+	git tag -a v$(CURRENT_VERSION) -m "Dev release: $(CURRENT_VERSION)"
+
 release:
 	git add .
 	git status
