@@ -1,10 +1,12 @@
 import datetime
+import glob
 import io
 import os
 import random
 import sys
 import threading
 import uuid
+import warnings
 
 from IPython import get_ipython
 from IPython.display import HTML, display
@@ -15,34 +17,29 @@ from databrickslabs_jupyterlab.progress import load_progressbar, debug
 from databrickslabs_jupyterlab.dbfs import Dbfs
 from databrickslabs_jupyterlab.database import Databases
 
-sys.path.insert(0, "/databricks/spark/python/lib/py4j-0.10.7-src.zip")
+
+py4j = glob.glob("/databricks/spark/python/lib/py4j-*-src.zip")[0]
+sys.path.insert(0, py4j)
 sys.path.insert(0, "/databricks/spark/python")
 sys.path.insert(0, "/databricks/jars/spark--driver--spark--resources-resources.jar")
 
-# will only work on the Databricks side
-try:
-    from pyspark.conf import SparkConf
-    from pyspark.sql import HiveContext
+from pyspark.conf import SparkConf  # pylint: disable=import-error,wrong-import-position
 
-    import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    # Suppress py4j loading message on stderr by redirecting sys.stderr
+    stderr_orig = sys.stderr
+    sys.stderr = io.StringIO()
+    from PythonShell import get_existing_gateway, RemoteContext  # pylint: disable=import-error
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        # Suppress py4j loading message on stderr by redirecting sys.stderr
-        stderr_orig = sys.stderr
-        sys.stderr = io.StringIO()
-        from PythonShell import get_existing_gateway, RemoteContext
+    out = sys.stderr.getvalue()
+    # Restore sys.stderr
+    sys.stderr = stderr_orig
+    # Print any other error message to stderr
+    if not "py4j imported" in out:
+        print(out, file=sys.stderr)
 
-        out = sys.stderr.getvalue()
-        # Restore sys.stderr
-        sys.stderr = stderr_orig
-        # Print any other error message to stderr
-        if not "py4j imported" in out:
-            print(out, file=sys.stderr)
-
-    from dbutils import DBUtils
-except ImportError:
-    pass
+from dbutils import DBUtils  # pylint: disable=import-error,wrong-import-position
 
 
 class JobInfo:
@@ -87,8 +84,15 @@ class JobInfo:
                 "in",
                 threading.current_thread().__class__.__name__,
             )
-        self.sc.setLocalProperty("spark.scheduler.pool", self.pool_id)
-        self.sc.setJobGroup(self.group_id, "jupyterlab job group", True)
+        # Catch [SPARK-22340][PYTHON] Add a mode to pin Python thread into JVM's
+        # This code explicitely attaches both python threads to the value Spark Context is set to
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            self.sc.setLocalProperty("spark.scheduler.pool", self.pool_id)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            self.sc.setJobGroup(self.group_id, "jupyterlab job group", True)
 
     def stop_all(self):
         if debug():
@@ -226,24 +230,6 @@ class DatabricksBrowser:
         Databases(self.spark).create()
 
 
-def is_remote():
-    """Check whether the current context is on the remote cluster
-    
-    Returns:
-        bool: True if remote else False
-    """
-    return os.environ.get("DBJL_HOST", None) is not None
-
-
-def is_azure():
-    """Check whether the current context is on Azure Databricks
-    
-    Returns:
-        bool: True if Azure Databricks else False
-    """
-    return os.environ.get("DBJL_ORG", None) is not None
-
-
 def dbcontext(progressbar=True, gw_port=None, gw_token=None):
     """Create a databricks context
     The following objects will be created
@@ -307,15 +293,33 @@ def dbcontext(progressbar=True, gw_port=None, gw_token=None):
 
     # ... and connect to this gateway
     #
-    gateway = get_existing_gateway(gw_port, True, gw_token)
+    try:
+        # up to DBR version 6.4
+        gateway = get_existing_gateway(gw_port, True, gw_token)
+    except TypeError:
+        # for DBR 6.5 and higher
+        gateway = get_existing_gateway(gw_port, True, gw_token, False)
+
     print(". connected")
 
     # Retrieve spark session, sqlContext and sparkContext
     #
-    conf = SparkConf(_jconf=gateway.entry_point.getSparkConf())
-    sqlContext = RemoteContext(gateway=gateway, conf=conf)
 
-    sqlContext = HiveContext(sqlContext, gateway.entry_point.getSQLContext())
+    conf = SparkConf(_jconf=gateway.entry_point.getSparkConf())
+    sc = RemoteContext(gateway=gateway, conf=conf)
+    if sc.version < "3.0":
+        from pyspark.sql import HiveContext  # pylint: disable=import-error,import-outside-toplevel
+
+        sqlContext = HiveContext(sc, gateway.entry_point.getSQLContext())
+    else:
+        from pyspark.sql import SQLContext  # pylint: disable=import-error,import-outside-toplevel
+        from pyspark.sql.session import (  # pylint: disable=import-error,import-outside-toplevel
+            SparkSession,
+        )
+
+        jsqlContext = gateway.entry_point.getSQLContext()
+        sqlContext = SQLContext(sc, SparkSession(sc, jsqlContext.sparkSession()), jsqlContext)
+
     spark = sqlContext.sparkSession
     sc = spark.sparkContext
 
