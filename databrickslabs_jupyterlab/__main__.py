@@ -1,12 +1,12 @@
 import argparse
 import json
-import os
 import sys
-from databrickslabs_jupyterlab.connect import dbcontext
+
+# from databrickslabs_jupyterlab.connect import dbcontext
 from databrickslabs_jupyterlab.kernel import DatabricksKernel
 
 
-def main(host, connection_info, python_path, sudo, timeout, env, no_spark=False):
+def main(host, conn_info, python_path, sudo, timeout, env, no_spark=False):
     """Main function to be called as module to create DatabricksKernel
 
     Arguments:
@@ -15,9 +15,10 @@ def main(host, connection_info, python_path, sudo, timeout, env, no_spark=False)
         python_path {str} -- Remote python path to be used to start ipykernel
         sudo {bool} -- Start ipykernel as root if necessary (default: {False})
         timeout {int} -- SSH connection timeout (default: {5})
-        env {str} -- Environment variables passd to the ipykernel "VAR1=VAL1 VAR2=VAL2" (default: {""})
+        env {str} -- Environment variables passd to the ipykernel "VAR1=VAL1 VAR2=VAL2" 
+                     (default: {""})
     """
-    kernel = DatabricksKernel(host, connection_info, python_path, sudo, timeout, env, no_spark)
+    kernel = DatabricksKernel(host, conn_info, python_path, sudo, timeout, env, no_spark)
 
     try:
         kernel.create_remote_connection_info()
