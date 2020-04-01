@@ -7,6 +7,7 @@ ERROR_COLOR = \x1b[31;01m
 PYCACHE := $(shell find . -name '__pycache__')
 EGGS := $(wildcard '*.egg-info')
 CURRENT_VERSION := $(shell awk '/current_version/ {print $$3}' .bumpversion.cfg)
+NORMALIZED_VERSION := $(subst -,.,$(CURRENT_VERSION))
 
 clean:
 	@echo "$(OK_COLOR)=> Cleaning$(NO_COLOR)"
@@ -74,8 +75,8 @@ release:
 	git tag -a v$(CURRENT_VERSION) -m "Latest release: $(CURRENT_VERSION)"
 
 install_wheel: dist
-	scp dist/databrickslabs_jupyterlab-$(CURRENT_VERSION)-py3-none-any.whl $(CLUSTER):/tmp
-	ssh $(CLUSTER) sudo /databricks/python/bin/python -m pip install --upgrade /tmp/databrickslabs_jupyterlab-$(CURRENT_VERSION)-py3-none-any.whl
+	scp dist/databrickslabs_jupyterlab-$(NORMALIZED_VERSION)-py3-none-any.whl $(CLUSTER):/tmp
+	ssh $(CLUSTER) sudo -H /databricks/python/bin/python -m pip install --upgrade /tmp/databrickslabs_jupyterlab-$(NORMALIZED_VERSION)-py3-none-any.whl
 
 install: dist
 	@echo "$(OK_COLOR)=> Installing databrickslabs_jupyterlab$(NO_COLOR)"
