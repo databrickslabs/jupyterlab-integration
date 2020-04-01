@@ -2,7 +2,6 @@ import argparse
 import json
 import sys
 
-# from databrickslabs_jupyterlab.connect import dbcontext
 from databrickslabs_jupyterlab.kernel import DatabricksKernel
 
 
