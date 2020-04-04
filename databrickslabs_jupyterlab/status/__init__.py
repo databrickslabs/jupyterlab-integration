@@ -281,7 +281,7 @@ class DbStartHandler(KernelHandler):
 
             host, token = get_db_config(profile)
             cluster_id, public_ip, cluster_name, dummy = get_cluster(
-                profile, host, token, cluster_id, global_status
+                profile, cluster_id, global_status
             )
             if cluster_name is None:
                 global_status.set_status(profile, cluster_id, "ERROR: Cluster could not be found")
