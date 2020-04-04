@@ -120,7 +120,7 @@ def write_config():
     """
     config = {
         "c.KernelManager.autorestart": False,
-        "c.MappingKernelManager.kernel_info_timeout": 600,
+        "c.MappingKernelManager.kernel_info_timeout": 20,
     }
 
     full_path = os.path.expanduser("~/.jupyter")
@@ -323,8 +323,7 @@ def create_kernelspec(
 def remove_kernelspecs():
     km = kernelspec.KernelSpecManager()
 
-    kernel_id = None
-    while kernel_id != "done":
+    while True:
 
         remote_kernels = {
             kernelspec.get_kernel_spec(k).display_name: k
@@ -340,12 +339,11 @@ def remove_kernelspecs():
             "Which kernel spec to delete (Ctrl-C to finish)?",
             list(remote_kernels.keys()),
         )
+        kernel_name = answer["kernel_name"]
 
-        if answer is None:
+        if kernel_name is None:
             break
 
-        kernel_name = answer["kernel_name"]
-        if kernel_id != "done":
-            answer = input("Really delete kernels spec '%s' (y/n) " % kernel_name)
-            if answer.lower() == "y":
-                km.remove_kernel_spec(remote_kernels[kernel_name])
+        answer = input("Really delete kernels spec '%s' (y/n) " % kernel_name)
+        if answer.lower() == "y":
+            km.remove_kernel_spec(remote_kernels[kernel_name])
