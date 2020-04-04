@@ -25,7 +25,7 @@ from databrickslabs_jupyterlab.utils import SshConfig
 from databrickslabs_jupyterlab.local import get_db_config, prepare_ssh_config
 from databricks_cli.clusters.api import ClusterApi
 
-DEBUG_LEVEL = os.environ.get("DEBUG", "INFO")
+DEBUG_LEVEL = os.environ.get("DEBUG_STATUS", "INFO")
 
 _LOG_FMT = (
     "%(color)s[%(levelname)1.1s %(asctime)s.%(msecs).03d " "%(name)s]%(end_color)s %(message)s"
