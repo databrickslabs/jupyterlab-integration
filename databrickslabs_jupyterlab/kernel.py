@@ -1,5 +1,5 @@
 from ssh_ipykernel.status import Status
-from ssh_ipykernel.kernel import SshKernel
+from ssh_ipykernel.kernel import SshKernel, SshKernelException
 
 from databrickslabs_jupyterlab.local import get_db_config
 from databrickslabs_jupyterlab.rest import Command, DatabricksApiException
@@ -60,7 +60,7 @@ class DatabricksKernel(SshKernel):
             self.command = Command(url=host, cluster_id=cluster_id, token=token)
         except DatabricksApiException as ex:
             self._logger.error(str(ex))
-            return None
+            raise SshKernelException("Cannot create execution context on remote cluster")
 
         self._logger.info("Gateway created for cluster '%s'", cluster_id)
 
@@ -73,11 +73,8 @@ class DatabricksKernel(SshKernel):
             )
             result = self.command.execute(cmd)
         except Exception as ex:  # pylint: disable=broad-except
-            result = (-1, str(ex))
-
-        if result[0] != 0:
             self._logger.error("error %s: %s", *result)
-            return None
+            raise SshKernelException("Cannot retrieve py4j gateway from remote cluster")
 
         gw_token, gw_port = result[1].split("|")
         gw_port = int(gw_port)
@@ -98,12 +95,18 @@ class DatabricksKernel(SshKernel):
             else:
                 self._logger.error("Error: Cluster unreachable")
                 self.kernel_status.set_unreachable()
+                raise SshKernelException("Cannot create SparkSession on remote cluster")
 
         except Exception as ex:  # pylint: disable=broad-except
             self._logger.error("Error: %s", str(ex))
             self.kernel_status.set_connect_failed()
+            raise SshKernelException("Cannot access kernel on remote cluster")
 
     def close(self):
         if not self.no_spark:
-            self.command.close()
+            try:
+                self.command.close()
+            except Exception as ex:  # pylint: disable=broad-except
+                pass
+        print(self._connection)
         super().close()

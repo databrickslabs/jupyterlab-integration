@@ -19,12 +19,11 @@ def main(host, conn_info, python_path, sudo, timeout, env, no_spark=False):
     """
     kernel = DatabricksKernel(host, conn_info, python_path, sudo, timeout, env, no_spark)
 
-    try:
-        kernel.create_remote_connection_info()
-        kernel.start_kernel_and_tunnels()
-    except:
-        kernel._logger.error("Kernel could not be started")
-    kernel._logger.info("Kernel stopped")
+    success = True
+    kernel.create_remote_connection_info()
+    kernel.start_kernel_and_tunnels()
+
+    # kernel._logger.info("Kernel stopped")
     kernel.close()
 
 
@@ -61,13 +60,9 @@ if __name__ == "__main__":
     required.add_argument("--python", "-p", required=True, help="remote python_path")
     args = parser.parse_args()
 
-    try:
-        with open(args.file, "r") as fd:
-            connection_info = json.loads(fd.read())
-    except Exception as ex:
-        print(ex)
-        sys.exit(1)
+    with open(args.file, "r") as fd:
+        connection_info = json.loads(fd.read())
 
-    sys.exit(
-        main(args.host, connection_info, args.python, args.s, args.timeout, args.env, args.no_spark)
-    )
+    #    sys.exit(
+    main(args.host, connection_info, args.python, args.s, args.timeout, args.env, args.no_spark)
+#   )
