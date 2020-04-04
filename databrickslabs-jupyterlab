@@ -285,9 +285,7 @@ if not os.path.exists(os.path.expanduser("~/.ssh/id_%s.pub" % profile)):
 #
 if args.kernelspec or args.reconfigure or args.lab or args.versioncheck or args.mirror:
     print("\n* Select remote cluster\n")
-    cluster_id, public_ip, cluster_name, conda_env = get_cluster(
-        profile, host, token, args.cluster_id
-    )
+    cluster_id, public_ip, cluster_name, conda_env = get_cluster(profile, args.cluster_id)
     if cluster_name is None:
         bye(1)
 
