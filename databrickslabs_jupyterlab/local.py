@@ -1,17 +1,13 @@
 import configparser
-import getpass
 import json
-from jupyter_client import kernelspec
 import os
-import re
 import shutil
-import subprocess
 import sys
 import textwrap
 import time
 from os.path import expanduser
-import tempfile
-from jupyter_client import kernelspec as ks
+
+from jupyter_client import kernelspec
 from ssh_config import SSHConfig, Host
 
 from databrickslabs_jupyterlab.utils import (
@@ -159,7 +155,7 @@ def get_local_libs():
 
     try:
         return json.loads(result["stdout"])
-    except Exception as ex:
+    except Exception as ex:  # pylint: disable=broad-except
         print_error(ex)
         return False
 
@@ -226,7 +222,7 @@ def prepare_ssh_config(cluster_id, profile, public_dns):
     shutil.copy(config, os.path.expanduser(backup))
     try:
         sc = SSHConfig.load(config)
-    except:
+    except:  # pylint: disable=bare-except
         sc = SSHConfig(config)
     hosts = [h.name for h in sc.hosts()]
     if cluster_id in hosts:
@@ -286,7 +282,7 @@ def create_kernelspec(
         local_env (str): Name of the local conda environment
         python_path (str): Remote python path to be used for kernel
     """
-    from ssh_ipykernel.manage import add_kernel
+    from ssh_ipykernel.manage import add_kernel  # pylint: disable=import-outside-toplevel
 
     print("   => Creating kernel specification for profile '%s'" % profile)
     env = "DBJL_PROFILE=%s DBJL_HOST=%s DBJL_CLUSTER=%s" % (profile, host, cluster_id)

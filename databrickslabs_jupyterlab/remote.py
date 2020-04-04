@@ -93,12 +93,13 @@ def get_cluster(profile, cluster_id=None, status=None):
     
     Args:
         profile (str): Databricks CLI profile string
-        cluster_id (str, optional): If cluster_id is given, the user will not be asked to select one.
+        cluster_id (str, optional): If cluster_id is given, users will not be asked to select one.
                                     Defaults to None.
         status (Status, optional): A Status class providing set_status. Defaults to None.
     
     Returns:
-        tuple: Cluster configs: cluster_id, public_ip, cluster_name and a flag whether it was started
+        tuple: Cluster configs: cluster_id, public_ip, cluster_name and a flag 
+                                whether it was started
     
     Returns:
         tuple: (cluster_id, public_ip, cluster_name, started)
@@ -106,7 +107,7 @@ def get_cluster(profile, cluster_id=None, status=None):
     with open("%s/.ssh/id_%s.pub" % (expanduser("~"), profile)) as fd:
         try:
             ssh_pub = fd.read().strip()
-        except:
+        except:  # pylint: disable=bare-except
             print_error(
                 "   Error: ssh key for profile 'id_%s.pub' does not exist in %s/.ssh"
                 % (profile, expanduser("~"))
@@ -117,7 +118,7 @@ def get_cluster(profile, cluster_id=None, status=None):
         apiclient = connect(profile)
         client = ClusterApi(apiclient)
         clusters = client.list_clusters()
-    except Exception as ex:
+    except Exception as ex:  # pylint: disable=broad-except
         print_error(ex)
         return (None, None, None, None)
 
@@ -152,26 +153,33 @@ def get_cluster(profile, cluster_id=None, status=None):
 
         if not my_clusters:
             print_error(
-                "    Error: There is no cluster in the workspace for profile '%s' configured with ssh key '~/.ssh/id_%s':"
-                % (profile, profile)
+                "    Error: There is no cluster in the workspace for profile '%s'"
+                + "configured with ssh key '~/.ssh/id_%s':",
+                profile,
+                profile,
             )
             print(
-                "    Use 'databrickslabs_jupyterlab %s -s' to configure ssh for clusters in this workspace\n"
-                % profile
+                "    Use 'databrickslabs_jupyterlab %s -s' to configure ssh for clusters"
+                + "in this workspace\n" % profile
             )
             return (None, None, None, None)
 
         current_conda_env = os.environ.get("CONDA_DEFAULT_ENV", None)
         found = None
+        ind = -1
         for i, c in enumerate(my_clusters):
             if c["cluster_name"].replace(" ", "_") == current_conda_env:
                 found = c["cluster_name"]
+                ind = i
                 break
 
         if found is not None:
             print_warning(
-                "\n   => The current conda environment is '%s'.\n      You might want to select cluster %d with the name '%s'?\n"
-                % (current_conda_env, i, found)
+                ("\n   => The current conda environment is '%s'. " + current_conda_env)
+                + (
+                    "\n      You might want to select cluster %d with the name '%s'?\n"
+                    % (ind, found)
+                )
             )
 
         cluster = select_cluster(my_clusters)
@@ -181,7 +189,7 @@ def get_cluster(profile, cluster_id=None, status=None):
 
     try:
         response = client.get_cluster(cluster_id)
-    except Exception as ex:
+    except Exception as ex:  # pylint: disable=broad-except
         print_error(ex)
         return (None, None, None, None)
 
@@ -193,7 +201,7 @@ def get_cluster(profile, cluster_id=None, status=None):
                 status.set_status(profile, cluster_id, "Cluster Starting")
             try:
                 response = client.start_cluster(cluster_id)
-            except Exception as ex:
+            except Exception as ex:  # pylint: disable=broad-except
                 print_error(ex)
                 return (None, None, None, None)
 
@@ -207,7 +215,7 @@ def get_cluster(profile, cluster_id=None, status=None):
             time.sleep(5)
             try:
                 response = client.get_cluster(cluster_id)
-            except Exception as ex:
+            except Exception as ex:  # pylint: disable=broad-except
                 print_error(ex)
                 return (None, None, None, None)
 
@@ -258,7 +266,7 @@ def get_cluster(profile, cluster_id=None, status=None):
     return (cluster_id, public_ip, cluster_name, None)
 
 
-def get_python_path(host, conda_env=None):
+def get_python_path(host, conda_env=None):  # pylint: disable=unused-argument
     # conda_default_env = ssh(host, "echo $DEFAULT_DATABRICKS_ROOT_CONDA_ENV").strip().decode("utf-8")
     # if conda_default_env == "":
     #     python_path = "/databricks/python3/bin"
@@ -351,7 +359,7 @@ def is_reachable(public_dns):
     try:
         result = sock.connect_ex((public_dns, 2200))
         result = result == 0
-    except:
+    except:  # pylint: disable=bare-except
         result = False
 
     sock.close()
@@ -373,7 +381,7 @@ def get_library_state(profile, cluster_id):
         apiclient = connect(profile)
         client = LibrariesApi(apiclient)
         libraries = client.cluster_status(cluster_id)
-    except Exception as ex:
+    except Exception as ex:  # pylint: disable=broad-except
         print_error(ex)
         return None
 
@@ -446,7 +454,7 @@ def version_check(cluster_id, host, token, flag):
             print_error(result)
 
 
-def configure_ssh(profile, host, token, cluster_id):
+def configure_ssh(profile, cluster_id):
     """Configure SSH for the remote cluster
     
     Args:
@@ -478,13 +486,13 @@ def configure_ssh(profile, host, token, cluster_id):
     try:
         apiclient = connect(profile)
         client = ClusterApi(apiclient)
-    except Exception as ex:
+    except Exception as ex:  # pylint: disable=broad-except
         print_error(ex)
         return None
 
     try:
         response = client.get_cluster(cluster_id)
-    except Exception as ex:
+    except Exception as ex:  # pylint: disable=broad-except
         print_error(ex)
         return None
 
@@ -524,7 +532,8 @@ def configure_ssh(profile, host, token, cluster_id):
     request["ssh_public_keys"] = ssh_public_keys + [sshkey]
 
     print_warning(
-        "   => The ssh key will be added to the cluster. \n   Note: The cluster will be restarted immediately!"
+        "   => The ssh key will be added to the cluster."
+        + "\n   Note: The cluster will be restarted immediately!"
     )
     answer = input(
         "   => Shall the ssh key be added and the cluster be restarted (y/n)? (default = n): "

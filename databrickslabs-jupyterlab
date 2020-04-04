@@ -1,31 +1,22 @@
 #!/usr/bin/env python
 
 import argparse
-import base64
-import json
 import os
 import sys
-import uuid
-from getpass import getpass
 from enum import Enum
 from version_parser import Version
 
 import databrickslabs_jupyterlab
 from databrickslabs_jupyterlab.remote import (
-    bye,
-    check_installed,
     configure_ssh,
-    connect,
     download_notebook,
     get_cluster,
     get_python_path,
-    get_remote_packages,
     install_libs,
     is_reachable,
     version_check,
 )
 from databrickslabs_jupyterlab.local import (
-    bye,
     conda_version,
     create_kernelspec,
     get_db_config,
@@ -37,6 +28,7 @@ from databrickslabs_jupyterlab.local import (
     write_config,
 )
 from databrickslabs_jupyterlab.install import install, update_local
+from databrickslabs_jupyterlab.utils import bye
 
 
 class VCheck(Enum):
@@ -107,7 +99,9 @@ parser.add_argument(
     action="store_true",
     help="Reconfigure cluster with id cluster_id",
 )
-# parser.add_argument('-s', '--sshfs', dest='sshfs', action='store_true', help='Mount remote filesystem via sshfs')
+# parser.add_argument(
+#     "-s", "--sshfs", dest="sshfs", action="store_true", help="Mount remote filesystem via sshfs"
+# )
 parser.add_argument(
     "-s",
     "--ssh-config",
@@ -168,7 +162,7 @@ if args.debug:
 if args.version:
     import databrickslabs_jupyterlab._version
 
-    print(databrickslabs_jupyterlab._version.__version__)
+    print(databrickslabs_jupyterlab._version.__version__)  # pylint: disable=protected-access
     bye()
 
 #
@@ -259,7 +253,7 @@ if args.sshconfig:
     if not args.cluster_id:
         print_error("   => Error: Provide '-i cluster_id' with '-s' ")
         bye(1)
-    configure_ssh(profile, host, token, args.cluster_id)
+    configure_ssh(profile, args.cluster_id)
     bye()
 
 #
@@ -344,7 +338,8 @@ print(args.no_spark)
 if args.kernelspec:
     print("\n* Creating remote kernel spec")
     python_path = get_python_path(cluster_id)
-    # Using local conda environment name avoids overwriting of kernelspecs from different environments
+    # Using local conda environment name avoids overwriting of kernelspecs from different
+    # environments
     create_kernelspec(
         profile,
         args.organisation,

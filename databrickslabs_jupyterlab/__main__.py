@@ -1,6 +1,5 @@
 import argparse
 import json
-import sys
 
 from databrickslabs_jupyterlab.kernel import DatabricksKernel
 
@@ -19,7 +18,6 @@ def main(host, conn_info, python_path, sudo, timeout, env, no_spark=False):
     """
     kernel = DatabricksKernel(host, conn_info, python_path, sudo, timeout, env, no_spark)
 
-    success = True
     kernel.create_remote_connection_info()
     kernel.start_kernel_and_tunnels()
 

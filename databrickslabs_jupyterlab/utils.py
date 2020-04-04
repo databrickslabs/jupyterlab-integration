@@ -1,11 +1,8 @@
 import os
-from collections import defaultdict
 import platform
-import random
 import subprocess
 import sys
 import tempfile
-import time
 from html import escape
 
 import ssh_config
@@ -69,7 +66,7 @@ def utf8_decode(text):
 
     try:
         return text.decode("utf-8")
-    except:
+    except:  # pylint: disable=bare-except
         # ok, let's replace the "bad" characters
         return text.decode("utf-8", "replace")
 
@@ -85,14 +82,16 @@ def execute(cmd):
 
     try:
         # Cannot use encoding arg at the moment, since need to support python 3.5
-        result = subprocess.run(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE).__dict__
+        result = subprocess.run(
+            cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE, check=False
+        ).__dict__
         result["stderr"] = utf8_decode(result["stderr"])
         result["stdout"] = utf8_decode(result["stdout"])
         # print(result["returncode"])
         # print(result["stdout"])
         # print(result["stderr"])
         return result
-    except Exception as ex:
+    except Exception as ex:  # pylint: disable=broad-except
         print(ex.args)
         print(ex.with_traceback)
         return {"args": cmd, "returncode": -1, "stdout": "", "stderr": str(ex)}
@@ -137,4 +136,3 @@ class SshConfig:
         if self._get_mtime() > self.mtime:
             self.load()
         return self.hosts.get(host_name, None)
-

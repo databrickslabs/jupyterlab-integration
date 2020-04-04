@@ -1,9 +1,8 @@
 import time
-import os
 from urllib.parse import urljoin
+import xml.etree.ElementTree
 
 import requests
-import xml.etree.ElementTree
 
 from databrickslabs_jupyterlab._version import __version__
 
@@ -23,6 +22,7 @@ class DatabricksApiException(Exception):
     """
 
     def __init__(self, status_code, error_code, error_message):
+        super().__init__()
         self.status_code = status_code
         self.error_code = error_code
         self.error_message = error_message
@@ -61,7 +61,7 @@ class Rest(object):
             result = "".join(xml.etree.ElementTree.fromstring(text).itertext()).replace(
                 "\n\n", "\n"
             )
-        except:
+        except:  # pylint: disable=bare-except
             result = text
         return result
 
@@ -113,8 +113,8 @@ class Rest(object):
             path (str): Additional path for the request
             token (str): Authentication token
             json (str, optional): json data to send in the body of the request. Defaults to None.
-            data ([type], optional): Dictionary, list of tuples, bytes, or file-like object to send in 
-                                     the body of the request. Defaults to None.
+            data ([type], optional): Dictionary, list of tuples, bytes, or file-like object to send
+                                     in the body of the request. Defaults to None.
             files ([type], optional): Files to send with the request. Defaults to None.
             key (str, optional): Key to select from the converted JSON string. Defaults to None.
         
@@ -161,7 +161,7 @@ class Context(Rest):
         self.token = token
         self.url = url
         self.cluster_id = cluster_id
-        self.language = "python"
+        self.language = language
         self.id = None
 
     def create(self):

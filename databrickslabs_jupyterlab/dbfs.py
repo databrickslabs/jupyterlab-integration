@@ -4,7 +4,7 @@ import re
 import pandas as pd
 
 from ipywidgets import Select, VBox, HBox, Button, Output
-from IPython.display import display, HTML, Markdown, Code, JSON, Image
+from IPython.display import display, HTML, Markdown, Code, Image
 
 
 class Dbfs(object):
@@ -17,8 +17,14 @@ class Dbfs(object):
     def __init__(self, dbutils):
         self.dbutils = dbutils
         self.running = False
+        self.path = None
+        self.flist = None
+        self.refresh = None
+        self.path_view = None
+        self.preview = None
+        self.up = None
 
-    def create(self, rows=30, path="/", height="400px"):
+    def create(self, path="/", height="400px"):
         if self.running:
             print("dbfs browser already running. Use close() first")
             return
@@ -78,7 +84,7 @@ class Dbfs(object):
             print("updating ...")
         try:
             fobjs = self.dbutils.fs.ls(self.path)
-        except Exception as ex:
+        except:  # pylint: disable=bare-except
             with self.path_view:
                 print("Error: Cannot access folder")
             return False
@@ -150,7 +156,7 @@ class Dbfs(object):
                     with open(filename, "r") as fd:
                         print(fd.read())
 
-    def on_refresh(self, b):
+    def on_refresh(self, _):
         """Refresh handler
 
         Args:
@@ -158,7 +164,7 @@ class Dbfs(object):
         """
         self.update()
 
-    def on_up(self, b):
+    def on_up(self, _):
         """Up handler
 
         Args:

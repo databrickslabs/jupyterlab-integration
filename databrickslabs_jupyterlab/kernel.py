@@ -106,7 +106,7 @@ class DatabricksKernel(SshKernel):
         if not self.no_spark:
             try:
                 self.command.close()
-            except Exception as ex:  # pylint: disable=broad-except
+            except:  # pylint: disable=bare-except
                 pass
         print(self._connection)
         super().close()

@@ -8,8 +8,9 @@ import threading
 import time
 from notebook.base.handlers import IPythonHandler
 from tornado import web
-from collections import defaultdict
 from tornado.log import LogFormatter
+
+from databricks_cli.clusters.api import ClusterApi
 
 import databrickslabs_jupyterlab
 from databrickslabs_jupyterlab.remote import (
@@ -20,10 +21,10 @@ from databrickslabs_jupyterlab.remote import (
     check_installed,
     install_libs,
 )
+
 from databrickslabs_jupyterlab.kernel import DatabricksKernelStatus
 from databrickslabs_jupyterlab.utils import SshConfig
 from databrickslabs_jupyterlab.local import get_db_config, prepare_ssh_config
-from databricks_cli.clusters.api import ClusterApi
 
 DEBUG_LEVEL = os.environ.get("DEBUG_STATUS", "INFO")
 
@@ -58,7 +59,7 @@ def get_cluster_state(profile, cluster_id):
         client = ClusterApi(apiclient)
         cluster = client.get_cluster(cluster_id)
         state = cluster.get("state", None)
-    except:
+    except:  # pylint: disable=bare-except
         _logger.warning("DbStatusHandler cluster not reachable")
         state = "TERMINATED"
     # if state == "TERMINATED":
@@ -114,7 +115,8 @@ class Status:
             profile (str): Databricks CLI profile string
             cluster_id (str): Cluster ID
             status (str): Status value
-            new_status (bool, optional): If True, number of progress dots is set to 0. Defaults to True.
+            new_status (bool, optional): If True, number of progress dots is set to 0. 
+                                         Defaults to True.
         """
         self.dots = 0 if new_status else (self.dots + 1) % 6
         self.status[profile][cluster_id] = status + ("." * self.dots)
@@ -183,6 +185,9 @@ class KernelHandler(IPythonHandler):
         else:
             return None
 
+    def data_received(self, chunk):
+        pass
+
 
 class DbStatusHandler(KernelHandler):
     """Databricks cluster status handler"""
@@ -215,7 +220,8 @@ class DbStatusHandler(KernelHandler):
             start_status = global_status.get_status(profile, cluster_id)
 
             if global_status.installing(profile, cluster_id):
-                # While the DbStartHandler is installing the kernel, provide the global starting status
+                # While the DbStartHandler is installing the kernel, provide the
+                # global starting status
                 status = start_status
             else:
 
@@ -241,8 +247,11 @@ class DbStatusHandler(KernelHandler):
 
         result = {"status": "%s" % status}
         _logger.debug(
-            "DbStatusHandler: installing: '%s'; start_status: '%s'; kernel_status: '%s'; status: '%s'"
-            % (global_status.installing(profile, cluster_id), start_status, status_message, result,)
+            "DbStatusHandler: installing: '%s'; start_status: '%s'; kernel_status: '%s'; status: '%s'",
+            global_status.installing(profile, cluster_id),
+            start_status,
+            status_message,
+            result,
         )
         self.finish(json.dumps(result))
 
@@ -274,9 +283,9 @@ class DbStartHandler(KernelHandler):
         global_status = KernelHandler.status
 
         if global_status.installing(profile, cluster_id):
-            _logger.info("DbStartHandler cluster %s:%s already starting" % (profile, cluster_id))
+            _logger.info("DbStartHandler cluster %s:%s already starting", profile, cluster_id)
         else:
-            _logger.info("DbStartHandler cluster %s:%s start triggered" % (profile, cluster_id))
+            _logger.info("DbStartHandler cluster %s:%s start triggered", profile, cluster_id)
             global_status.set_installing(profile, cluster_id)
 
             host, token = get_db_config(profile)

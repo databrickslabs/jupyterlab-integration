@@ -1,14 +1,12 @@
 import json
 import os
 import re
-import subprocess
-import sys
 import tempfile
 
 import databrickslabs_jupyterlab
-from databrickslabs_jupyterlab.remote import get_python_path, get_remote_packages
+from databrickslabs_jupyterlab.remote import get_remote_packages
 from databrickslabs_jupyterlab.local import print_ok, print_error
-from databrickslabs_jupyterlab.utils import bye, execute, execute_script
+from databrickslabs_jupyterlab.utils import bye, execute_script
 
 
 WHITELIST = [

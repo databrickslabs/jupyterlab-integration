@@ -1,5 +1,4 @@
-import os
-from ipywidgets import Accordion, Select, HBox, VBox, Button, Output, Layout
+from ipywidgets import Select, HBox, VBox, Button, Output
 from IPython.display import display, HTML
 import pandas as pd
 
@@ -15,6 +14,8 @@ class DBList:
         self.height = 200
         self.db = None
         self.tbl = None
+        self.list = None
+        self.refresh = None
 
     def _set_status(self, status):
         with self.console:
@@ -33,7 +34,7 @@ class DBList:
         self.list.observe(self.on_click, names="value")
         self.update()
 
-    def on_refresh(self, b):
+    def on_refresh(self, _):
         self.update()
 
     def on_click(self, change):
@@ -51,13 +52,14 @@ class DatabaseList(DBList):
         super().__init__(spark, console)
         self.tbl = tbl
 
-    def update(self, db=None):
-        if db is None:
+    def update(self, selected=None):
+        if selected is None:
             self._set_status("loading databases")
             result = [db.name for db in self.spark.catalog.listDatabases()]
             self.list.options = [""] + result
             self._clear_status()
         else:
+            db = selected
             self.tbl.set_db(db)
 
 
@@ -85,8 +87,6 @@ class TableList(DBList):
         self.db = db
         self.update()
 
-        import pandas as pd
-
     def to_dict(self, c):
         return {
             "name": c.name,
@@ -97,7 +97,8 @@ class TableList(DBList):
             "is_bucket": c.isBucket,
         }
 
-    def update(self, tbl=None):
+    def update(self, selected=None):
+        tbl = selected
         if self.db is None:
             result = []
         elif tbl is None:
@@ -114,7 +115,7 @@ class TableList(DBList):
                 df = pd.DataFrame(
                     [self.to_dict(col) for col in self.spark.catalog.listColumns(tbl, self.db)]
                 )
-            except:
+            except:  # pylint: disable=bare-except
                 self._display_schema("Cannot load schema")
 
             if df is None or df.empty:
@@ -138,7 +139,7 @@ class TableList(DBList):
                         "select * from %s.%s limit %d" % (self.db, tbl, self.sample_size)
                     ).toPandas()
                     self._display_data(result)
-                except:
+                except:  # pylint: disable=bare-except
                     self._display_data("Cannot load data")
                 self._clear_status()
 

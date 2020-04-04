@@ -221,9 +221,9 @@ class DatabricksBrowser:
         self.spark = spark
         self.dbutils = dbutils
 
-    def dbfs(self, rows=30, path="/"):
+    def dbfs(self, path="/", height="400px"):
         """Start dbfs browser"""
-        Dbfs(self.dbutils).create(rows, path)
+        Dbfs(self.dbutils).create(path, height)
 
     def databases(self):
         """Start Database browser"""
