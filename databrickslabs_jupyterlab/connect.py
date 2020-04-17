@@ -16,7 +16,7 @@ from databrickslabs_jupyterlab.rest import Command
 from databrickslabs_jupyterlab.progress import load_progressbar, debug
 from databrickslabs_jupyterlab.dbfs import Dbfs
 from databrickslabs_jupyterlab.database import Databases
-
+from databrickslabs_jupyterlab.notebook import Notebook
 
 py4j = glob.glob("/databricks/spark/python/lib/py4j-*-src.zip")[0]
 sys.path.insert(0, py4j)
@@ -112,6 +112,7 @@ class DbjlUtils:
         self._dbutils = DBUtils(shell, entry_point)
         self.fs = self._dbutils.fs
         self.secrets = self._dbutils.secrets
+        self.notebook = Notebook()
 
     def help(self):
         html = """
@@ -120,6 +121,8 @@ class DbjlUtils:
         <b>fs: DbfsUtils</b> -&gt; Manipulates the Databricks filesystem (DBFS) from the console
         <br/>
         <b>secrets: SecretUtils</b> -&gt; Provides utilities for leveraging secrets within notebooks
+        <br/>
+        <b>notebook: NotebookUtils</b> -&gt; Utilities for the control flow of a notebook (EXPERIMENTAL)
         """
         display(HTML(html))
 
