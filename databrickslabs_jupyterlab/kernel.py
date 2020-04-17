@@ -1,5 +1,6 @@
 from ssh_ipykernel.status import Status
 from ssh_ipykernel.kernel import SshKernel, SshKernelException
+from ssh_ipykernel.utils import setup_logging
 
 from databrickslabs_jupyterlab.local import get_db_config
 from databrickslabs_jupyterlab.rest import Command, DatabricksApiException
@@ -29,12 +30,66 @@ class DatabricksKernelStatus(Status):
 
 class DatabricksKernel(SshKernel):
     def __init__(self, host, connection_info, python_path, sudo, timeout, env, no_spark):
-        super().__init__(host, connection_info, python_path, sudo, timeout, env)
+        self._logger = setup_logging("DatabricksKernel")
+
         self.no_spark = no_spark
+
         self.dbjl_env = dict([e.split("=") for e in env[0].split(" ")])
-        self._logger.debug("Environment = %s", self.env)
-        self.kernel_status = DatabricksKernelStatus(connection_info, self._logger)
+        self._logger.debug("Environment = %s", self.dbjl_env)
+        self.profile = self.dbjl_env.get("DBJL_PROFILE", None)
+        self.cluster_id = self.dbjl_env.get("DBJL_CLUSTER", None)
+
         self.command = None
+        if not no_spark:
+            # create remote executions context and retrieve its python path
+            python_path = self.create_execution_context()
+        self._logger.info("Remote python path: %s", python_path)
+
+        super().__init__(
+            host,
+            connection_info,
+            python_path,
+            sudo=sudo,
+            timeout=timeout,
+            env=env,
+            logger=self._logger,
+        )
+
+        self.kernel_status = DatabricksKernelStatus(connection_info, self._logger)
+
+    def create_execution_context(self):
+        if self.profile is None:
+            self._logger.error("Environment variable DBJL_PROFILE is not set")
+            self.no_spark = True
+            return None
+
+        if self.cluster_id is None:
+            self._logger.error("Environment variable DBJL_CLUSTER is not set")
+            self.no_spark = True
+            return None
+
+        self._logger.debug("Create Execution Context")
+        host, token = get_db_config(self.profile)
+        self._logger.debug(
+            "profile=%s, host=%s, cluster_id=%s", self.profile, host, self.cluster_id
+        )
+
+        try:
+            self.command = Command(url=host, cluster_id=self.cluster_id, token=token)
+        except DatabricksApiException as ex:
+            self._logger.error(str(ex))
+            raise SshKernelException("Cannot create execution context on remote cluster")
+
+        self._logger.info("Gateway created for cluster '%s'", self.cluster_id)
+
+        try:
+            cmd = "import sys; print(sys.executable.split('/bin/')[0])"
+            result = self.command.execute(cmd)
+        except Exception as ex:  # pylint: disable=broad-except
+            self._logger.error("error %s: %s", *result)
+            raise SshKernelException("Cannot retrieve python executable from remote cluster")
+
+        return result[1]
 
     def kernel_customize(self):
         if self.no_spark:
@@ -42,27 +97,6 @@ class DatabricksKernel(SshKernel):
             return None
 
         self._logger.debug("Create Spark Session")
-
-        profile = self.dbjl_env.get("DBJL_PROFILE", None)
-        if profile is None:
-            self._logger.error("Environment variable DBJL_PROFILE is not set")
-            return None
-
-        cluster_id = self.dbjl_env.get("DBJL_CLUSTER", None)
-        if cluster_id is None:
-            self._logger.error("Environment variable DBJL_CLUSTER is not set")
-            return None
-
-        host, token = get_db_config(profile)
-        self._logger.debug("profile=%s, host=%s, cluster_id=%s", profile, host, cluster_id)
-
-        try:
-            self.command = Command(url=host, cluster_id=cluster_id, token=token)
-        except DatabricksApiException as ex:
-            self._logger.error(str(ex))
-            raise SshKernelException("Cannot create execution context on remote cluster")
-
-        self._logger.info("Gateway created for cluster '%s'", cluster_id)
 
         # Fetch auth_token and gateway port ...
         #
