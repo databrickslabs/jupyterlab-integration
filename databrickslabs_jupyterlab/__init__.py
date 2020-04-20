@@ -9,7 +9,6 @@ def load_jupyter_server_extension(nbapp):
     """
     Called during notebook start
     """
-    print("Loading server extension ...")
     KernelHandler.nbapp = nbapp
     base_url = nbapp.web_app.settings["base_url"]
     status_route = url_path_join(base_url, "/databrickslabs-jupyterlab-status")
