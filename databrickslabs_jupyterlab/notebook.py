@@ -15,7 +15,7 @@ class Notebook:
         self.ipython._showtraceback = self._exception_handler
 
     def run(self, notebook):
-        if os.path.splitext(notebook) != "ipynb":
+        if os.path.splitext(notebook) != ".ipynb":
             notebook += ".ipynb"
         return self.ipython.magic("run %s" % notebook)
 
@@ -27,4 +27,3 @@ class Notebook:
 
     def exit(self, msg):
         raise NotebookExit(msg)
-
