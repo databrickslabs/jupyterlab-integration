@@ -180,13 +180,13 @@ def stop_wrapper(sc, job_info):
                 time.sleep(1)
             print(". Spark job killed")
 
+        job_info.stop_all()
         if job_info.current_thread is not None:
             if debug():
                 print("\nWAITING for thread to stop")
             job_info.current_thread.join()
             if debug():
                 print("\nTHREAD STOPPED")
-        job_info.stop_all()
 
     return stop_progressbar
 
