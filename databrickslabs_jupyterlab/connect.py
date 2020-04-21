@@ -232,8 +232,12 @@ class DatabricksBrowser:
         """Start Database browser"""
         Databases(self.spark).create()
 
+    def experiments(self, experiment_name):
+        """Start the experiment browser for a given experiment name"""
+        return MLflowBrowser(experiment_name)
 
-def dbcontext(progressbar=True, gw_port=None, gw_token=None):
+
+def dbcontext(progressbar=True, gw_port=None, gw_token=None, token=None):
     """Create a databricks context
     The following objects will be created
     - Spark Session
@@ -361,6 +365,8 @@ def dbcontext(progressbar=True, gw_port=None, gw_token=None):
     # by this routine
     # Only necessary when mlflow is installed
     #
+
+    print("Configuring mlflow")
     try:
         from databricks_cli.configure.provider import (  # pylint: disable=import-outside-toplevel
             ProfileConfigProvider,
@@ -368,14 +374,14 @@ def dbcontext(progressbar=True, gw_port=None, gw_token=None):
         )
 
         def get_config(self):  # pylint: disable=unused-argument
-            config = DatabricksConfig(host, None, None, gw_token, False)
+            config = DatabricksConfig(host, None, None, token, False)
             if config.is_valid:
                 return config
             return None
 
         ProfileConfigProvider.get_config = get_config
     except Exception:  # pylint: disable=broad-except
-        pass
+        print("Cannot initialize mlflow")
 
     # Initialize the ipython shell with spark context
     #
