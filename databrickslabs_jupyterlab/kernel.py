@@ -37,6 +37,8 @@ class DatabricksKernel(SshKernel):
         self.dbjl_env = dict([e.split("=") for e in env[0].split(" ")])
         self._logger.debug("Environment = %s", self.dbjl_env)
         self.profile = self.dbjl_env.get("DBJL_PROFILE", None)
+        self.host, self.token = get_db_config(self.profile)
+
         self.cluster_id = self.dbjl_env.get("DBJL_CLUSTER", None)
 
         self.command = None
@@ -69,13 +71,13 @@ class DatabricksKernel(SshKernel):
             return None
 
         self._logger.debug("Create Execution Context")
-        host, token = get_db_config(self.profile)
+
         self._logger.debug(
-            "profile=%s, host=%s, cluster_id=%s", self.profile, host, self.cluster_id
+            "profile=%s, host=%s, cluster_id=%s", self.profile, self.host, self.cluster_id
         )
 
         try:
-            self.command = Command(url=host, cluster_id=self.cluster_id, token=token)
+            self.command = Command(url=self.host, cluster_id=self.cluster_id, token=self.token)
         except DatabricksApiException as ex:
             self._logger.error(str(ex))
             raise SshKernelException("Cannot create execution context on remote cluster")
@@ -116,8 +118,9 @@ class DatabricksKernel(SshKernel):
 
         cmd = (
             "from databrickslabs_jupyterlab.connect import dbcontext; "
-            + "dbcontext(progressbar=True, gw_port={gw_port}, gw_token='{gw_token}')".format(
-                gw_port=gw_port, gw_token=gw_token
+            + "dbcontext(progressbar=True"
+            + ", gw_port={gw_port}, gw_token='{gw_token}', token='{token}')".format(
+                gw_port=gw_port, gw_token=gw_token, token=self.token
             )
         )
         try:
