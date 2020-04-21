@@ -17,6 +17,7 @@ from databrickslabs_jupyterlab.progress import load_progressbar, debug
 from databrickslabs_jupyterlab.dbfs import Dbfs
 from databrickslabs_jupyterlab.database import Databases
 from databrickslabs_jupyterlab.notebook import Notebook
+from databrickslabs_jupyterlab.mlflow import MLflowBrowser
 
 py4j = glob.glob("/databricks/spark/python/lib/py4j-*-src.zip")[0]
 sys.path.insert(0, py4j)
@@ -98,8 +99,8 @@ class JobInfo:
         if debug():
             print("\nSTOPPING all running threads")
         for k, v in self.is_running.items():
-            if v:
-                print(k, v)
+            if v and debug():
+                print("- Job to be stopped:", k)
             self.is_running[k] = False
 
     def new_group_id(self):
@@ -280,17 +281,18 @@ def dbcontext(progressbar=True, gw_port=None, gw_token=None, token=None):
     organisation = os.environ.get("DBJL_ORG", None)
 
     print(
-        "profile={}, organisation={}. cluster_id={}, host={}".format(
+        "Remote init: profile={}, organisation={}. cluster_id={}, host={}".format(
             profile, organisation, clusterId, host
         )
     )
     sparkUi = get_sparkui_url(host, organisation, clusterId)
 
-    print("Spark UI = {}".format(sparkUi))
+    print("Remote init: Spark UI = {}".format(sparkUi))
 
     ip = get_ipython()
 
-    print("Connect: Gateway port = {}, token = {}".format(gw_port, gw_token))
+    if os.environ.get("DEBUG") == "DEBUG":
+        print("Remote init: Gateway port = {}, token = {}".format(gw_port, gw_token))
 
     interpreter = "/databricks/python/bin/python"
     # Ensure that driver and executors use the same python
@@ -307,7 +309,7 @@ def dbcontext(progressbar=True, gw_port=None, gw_token=None, token=None):
         # for DBR 6.5 and higher
         gateway = get_existing_gateway(gw_port, True, gw_token, False)
 
-    print(". connected")
+    print("Remote init: Connected")
 
     # Retrieve spark session, sqlContext and sparkContext
     #
@@ -329,6 +331,8 @@ def dbcontext(progressbar=True, gw_port=None, gw_token=None, token=None):
 
     spark = sqlContext.sparkSession
     sc = spark.sparkContext
+
+    print("Remote init: Spark Session created")
 
     # Enable pretty printing of dataframes
     #
@@ -417,7 +421,7 @@ def dbcontext(progressbar=True, gw_port=None, gw_token=None, token=None):
     ip.user_ns["dbutils"] = dbutils
     ip.user_ns["dbbrowser"] = DatabricksBrowser(spark, dbutils)
 
-    print("The following global variables have been created:")
+    print("Remote init: The following global variables have been created:")
     print("- spark       Spark session")
     print("- sc          Spark context")
     print("- sqlContext  Hive Context")
