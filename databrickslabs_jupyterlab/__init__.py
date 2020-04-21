@@ -2,20 +2,6 @@ import os
 from notebook.utils import url_path_join
 
 from databrickslabs_jupyterlab._version import __version__, __version_info__
-from databrickslabs_jupyterlab.status import KernelHandler, DbStartHandler, DbStatusHandler
-
-
-def load_jupyter_server_extension(nbapp):
-    """
-    Called during notebook start
-    """
-    KernelHandler.nbapp = nbapp
-    base_url = nbapp.web_app.settings["base_url"]
-    status_route = url_path_join(base_url, "/databrickslabs-jupyterlab-status")
-    start_route = url_path_join(base_url, "/databrickslabs-jupyterlab-start")
-    nbapp.web_app.add_handlers(
-        ".*", [(status_route, DbStatusHandler), (start_route, DbStartHandler)]
-    )
 
 
 def is_remote():
@@ -34,3 +20,19 @@ def is_azure():
         bool: True if Azure Databricks else False
     """
     return os.environ.get("DBJL_ORG", None) is not None
+
+
+def load_jupyter_server_extension(nbapp):
+    """
+    Called during notebook start
+    """
+    if not is_remote():
+        from databrickslabs_jupyterlab.status import KernelHandler, DbStartHandler, DbStatusHandler
+
+        KernelHandler.nbapp = nbapp
+        base_url = nbapp.web_app.settings["base_url"]
+        status_route = url_path_join(base_url, "/databrickslabs-jupyterlab-status")
+        start_route = url_path_join(base_url, "/databrickslabs-jupyterlab-start")
+        nbapp.web_app.add_handlers(
+            ".*", [(status_route, DbStatusHandler), (start_route, DbStartHandler)]
+        )
