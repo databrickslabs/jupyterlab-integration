@@ -105,7 +105,12 @@ def conda_version():
         print_error(result["stderr"])
         sys.exit(1)
 
-    return result["stdout"].strip().split(" ")[1]
+    if result["stdout"].startswith("conda"):
+        return result["stdout"].strip().split(" ")[1]
+    elif result["stderr"].startswith("conda"):
+        return result["stderr"].strip().split(" ")[1]
+    else:
+        return None
 
 
 def write_config():
