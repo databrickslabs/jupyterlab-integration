@@ -8,7 +8,7 @@
 
   ```bash
   sudo launchctl limit maxfiles 65536 200000
-  ``` 
+  ```
 
 - Edit `config.yaml` and start clusters
 
@@ -23,7 +23,7 @@
   ```
 
 - Execute tests
-  - For dev tests (the current version is not published to pypi), enable `03-install-wheel_test.py`, i.e. comment the skip marks decorating the test. 
+  - For dev tests (the current version is not published to pypi), enable `03-install-wheel_test.py`, i.e. comment the skip marks decorating the test.
   
   Execute the tests
 
@@ -70,7 +70,6 @@ In case the jupyter labextions has been changed:
     ```
 
 4. Process with **Python package** since labextensions.txt is changed!
-
 
 ### 3 Python package
 
