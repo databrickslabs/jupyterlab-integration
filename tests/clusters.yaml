@@ -1,0 +1,15 @@
+profile: aws-ffm
+hostname_start: ec2
+org: 0
+
+spark_versions:
+- 5.5.x-scala2.11
+- 5.5.x-cpu-ml-scala2.11
+- 6.3.x-scala2.11
+- 6.3.x-cpu-ml-scala2.11
+- 6.4.x-scala2.11
+- 6.4.x-cpu-ml-scala2.11
+- 6.5.x-scala2.11
+- 6.5.x-cpu-ml-scala2.11
+- 7.0.x-scala2.12
+- 7.0.x-cpu-ml-scala2.12
