@@ -17,7 +17,6 @@ from databrickslabs_jupyterlab.progress import load_progressbar, debug
 from databrickslabs_jupyterlab.dbfs import Dbfs
 from databrickslabs_jupyterlab.database import Databases
 from databrickslabs_jupyterlab.notebook import Notebook
-from databrickslabs_jupyterlab.mlflow import MLflowBrowser
 
 py4j = glob.glob("/databricks/spark/python/lib/py4j-*-src.zip")[0]
 sys.path.insert(0, py4j)
@@ -235,6 +234,8 @@ class DatabricksBrowser:
 
     def experiments(self, experiment_name):
         """Start the experiment browser for a given experiment name"""
+        from databrickslabs_jupyterlab.mlflow import MLflowBrowser
+
         return MLflowBrowser(experiment_name)
 
 
