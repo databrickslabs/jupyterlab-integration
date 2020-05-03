@@ -18,7 +18,7 @@ def pytest_generate_tests(metafunc):
             scenarios.append((name, {"name": name, "cluster_id": cluster_id, "spark": spark}))
     idlist = []
     argvalues = []
-    for scenario in scenarios[8:9]:
+    for scenario in scenarios:
         idlist.append(scenario[0])
         items = scenario[1].items()
         argnames = [x[0] for x in items]
