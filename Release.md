@@ -2,7 +2,42 @@
 
 ## Release process
 
-### 1 Labextension
+### 1 Tests
+
+- On Macos set limits:
+
+  ```bash
+  sudo launchctl limit maxfiles 65536 200000
+  ``` 
+
+- Edit `config.yaml` and start clusters
+
+  ```bash
+  python 00-create-clusters.py
+  ```
+
+  or restart clusters:
+
+  ```bash
+  python 01-restart-clusters.py
+  ```
+
+- Execute tests
+  - For dev tests (the current version is not published to pypi), enable `03-install-wheel_test.py`, i.e. comment the skip marks decorating the test. 
+  
+  Execute the tests
+
+  ```bash
+  pytest -v
+  ```
+
+- Remove clusters
+
+  ```bash
+  python 99-destroy-clusters.py
+  ```
+
+### 2 Labextension
 
 In case the jupyter labextions has been changed:
 
@@ -37,7 +72,7 @@ In case the jupyter labextions has been changed:
 4. Process with **Python package** since labextensions.txt is changed!
 
 
-### 2 Python package
+### 3 Python package
 
 In case the jupyter labextions and/or the python code has been changed:
 
@@ -98,7 +133,7 @@ In case the jupyter labextions and/or the python code has been changed:
     make upload
     ```
 
-### 3 Push changes
+### 4 Push changes
 
 1. Push repo and tag
 
