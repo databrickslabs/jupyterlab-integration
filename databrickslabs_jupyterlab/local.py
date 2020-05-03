@@ -180,7 +180,7 @@ def get_db_config(profile):
         print(" The profile '%s' is not available in ~/.databrickscfg:" % profile)
         for p in profiles:
             print("- %s" % p)
-        bye()
+        bye(1)
     else:
         host = config[profile]["host"]
         token = config[profile]["token"]
