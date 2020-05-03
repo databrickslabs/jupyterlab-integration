@@ -66,7 +66,11 @@ endif
 dist:
 	@mkdir -p databrickslabs_jupyterlab/lib
 	@cp env.yml labextensions.txt "databrickslabs_jupyterlab/lib/"
-	@python setup.py sdist bdist_wheel
+ifdef CLUSTER
+	(DB_HOME=/databricks python setup.py sdist bdist_wheel)
+else
+	python setup.py sdist bdist_wheel
+endif
 
 dev_tag:
 	git tag -a v$(CURRENT_VERSION) -m "Dev release: $(CURRENT_VERSION)"
