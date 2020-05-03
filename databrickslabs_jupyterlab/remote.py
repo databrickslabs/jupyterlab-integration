@@ -153,14 +153,18 @@ def get_cluster(profile, cluster_id=None, status=None):
 
         if not my_clusters:
             print_error(
-                "    Error: There is no cluster in the workspace for profile '%s'"
-                + "configured with ssh key '~/.ssh/id_%s':",
-                profile,
-                profile,
+                (
+                    "    Error: There is no cluster in the workspace for profile '%s' "
+                    + "configured with ssh key '~/.ssh/id_%s':"
+                )
+                % (profile, profile)
             )
             print(
-                "    Use 'databrickslabs_jupyterlab %s -s' to configure ssh for clusters"
-                + "in this workspace\n" % profile
+                (
+                    "    Use 'databrickslabs_jupyterlab %s -s' to configure ssh for clusters "
+                    + "in this workspace\n"
+                )
+                % profile
             )
             return (None, None, None, None)
 
