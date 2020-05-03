@@ -34,7 +34,7 @@
   Execute the tests
 
   ```bash
-  pytest -v
+  pytest -v -o log_cli=true
   ```
 
 - Remove clusters
