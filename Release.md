@@ -22,8 +22,14 @@
   python 01-restart-clusters.py
   ```
 
+- Create secret scope and key for tests (if not already exists)
+
+  ```bash
+  python 05-create-secret-scope.py
+  ```
+
 - Execute tests
-  - For dev tests (the current version is not published to pypi), enable `03-install-wheel_test.py`, i.e. comment the skip marks decorating the test.
+  Note: For dev tests (the current version is not published to pypi), enable `03-install-wheel_test.py`, i.e. comment the skip marks decorating the test.
   
   Execute the tests
 

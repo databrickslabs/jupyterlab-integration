@@ -94,6 +94,16 @@ class TestRunKernel:
         assert result["content"]["user_expressions"]["result"]["status"] == "ok"
         assert result["content"]["user_expressions"]["result"]["data"]["text/plain"] == expected
 
+    def test_hostname(self, name, cluster_id, spark):
+        km, kc = TestRunKernel.get_kernel_client(cluster_id, spark, self.log)
+        l = len(cluster_id)
+        self.kernel_execute(
+            kc,
+            cmd="import socket; result = socket.gethostname()",
+            user_expressions={"result": "result[:%d]" % l},
+            expected="'%s'" % cluster_id,
+        )
+
     def test_simple_command(self, name, cluster_id, spark):
         km, kc = TestRunKernel.get_kernel_client(cluster_id, spark, self.log)
         self.kernel_execute(kc, cmd="a = 42", user_expressions={"result": "a"}, expected="42")
@@ -104,8 +114,8 @@ class TestRunKernel:
             km, kc = TestRunKernel.get_kernel_client(cluster_id, spark, self.log)
             self.kernel_execute(
                 kc,
-                cmd="a = spark.version",
-                user_expressions={"result": "a[:2]"},
+                cmd="result = spark.version",
+                user_expressions={"result": "result[:2]"},
                 expected="'3.'" if "7" in name else "'2.'",
             )
 
@@ -114,9 +124,19 @@ class TestRunKernel:
             km, kc = TestRunKernel.get_kernel_client(cluster_id, spark, self.log)
             self.kernel_execute(
                 kc,
-                cmd='a = "FileStore/" in [f.name for f in dbutils.fs.ls("/")]',
-                user_expressions={"result": "a"},
+                cmd='result = "FileStore/" in [f.name for f in dbutils.fs.ls("/")]',
+                user_expressions={"result": "result"},
                 expected="True",
+            )
+
+    def test_secrets(self, name, cluster_id, spark):
+        if spark:
+            km, kc = TestRunKernel.get_kernel_client(cluster_id, spark, self.log)
+            self.kernel_execute(
+                kc,
+                cmd='result = dbutils.secrets.get("dbjl-pytest", "pytest-key")',
+                user_expressions={"result": "result"},
+                expected="'databrickslabs-jupyterlab'",
             )
 
     def test_rdd(self, name, cluster_id, spark):
@@ -124,8 +144,8 @@ class TestRunKernel:
             km, kc = TestRunKernel.get_kernel_client(cluster_id, spark, self.log)
             self.kernel_execute(
                 kc,
-                cmd="a = sc.range(0,10).map(lambda x:x*x).collect()",
-                user_expressions={"result": "a"},
+                cmd="result = sc.range(0,10).map(lambda x:x*x).collect()",
+                user_expressions={"result": "result"},
                 expected="[0, 1, 4, 9, 16, 25, 36, 49, 64, 81]",
             )
 
