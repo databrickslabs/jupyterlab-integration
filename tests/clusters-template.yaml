@@ -1,6 +1,12 @@
-profile: aws-ffm
-hostname_start: ec2
-org: 0
+aws:
+  profile: aws-profile-name
+  orgid: "0"
+  instances: i3.xlarge
+
+azure:
+  profile: azure-profile-name
+  orgid: "9876543210000000"
+  instances: Standard_DS3_v2
 
 spark_versions:
 - 5.5.x-scala2.11

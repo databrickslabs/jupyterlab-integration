@@ -10,7 +10,22 @@
   sudo launchctl limit maxfiles 65536 200000
   ```
 
-- Edit `config.yaml` and start clusters
+- Copy `config-template.yaml` to `config.yaml` and edit it accordingly
+
+- Depending on whether test should be run against AWS or Azure, set
+
+  ```bash
+  export CLOUD=aws
+  ```
+
+  or 
+
+  ```bash
+  export CLOUD=azure
+  ```
+
+
+- Start clusters
 
   ```bash
   python 00-create-clusters.py

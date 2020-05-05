@@ -1,3 +1,6 @@
+import json
+import os
+import yaml
 from jupyter_client import kernelspec
 
 
@@ -27,16 +30,46 @@ def get_test_kernels():
     return test_kernels
 
 
-# import subprocess
+def is_aws():
+    # shall raise exception if variable CLOUD not set
+    return os.environ["CLOUD"] == "aws"
 
 
-# def get_kernel_path_old(cluster_id, with_spark):
-#     kernels = subprocess.check_output(["jupyter-kernelspec", "list"])
+def is_azure():
+    # shall raise exception if variable CLOUD not set
+    return os.environ["CLOUD"] == "azure"
 
-#     def cond(k):
-#         s = k.endswith("spark")
-#         return s if with_spark else not s
 
-#     kernel = [k for k in kernels.decode("utf-8").split("\n") if cluster_id in k and cond(k)]
-#     assert len(kernel) == 1
-#     return kernel[0].split()
+def get_profile():
+    config = yaml.safe_load(open("clusters.yaml", "r"))
+    return config[os.environ["CLOUD"]]["profile"]
+
+
+def get_instances():
+    config = yaml.safe_load(open("clusters.yaml", "r"))
+    return config[os.environ["CLOUD"]]["instances"]
+
+
+def get_orgid():
+    config = yaml.safe_load(open("clusters.yaml", "r"))
+    return config[os.environ["CLOUD"]]["orgid"]
+
+
+def get_spark_versions():
+    config = yaml.safe_load(open("clusters.yaml", "r"))
+    return config["spark_versions"]
+
+
+def get_running_clusters():
+    with open("/tmp/{}_running_clusters.json".format(os.environ["CLOUD"]), "r") as fd:
+        clusters = json.load(fd)
+    return clusters
+
+
+def save_running_clusters(cluster_ids):
+    with open("/tmp/{}_running_clusters.json".format(os.environ["CLOUD"]), "w") as fd:
+        fd.write(json.dumps(cluster_ids))
+
+
+def remove_running_clusters():
+    os.unlink("/tmp/{}_running_clusters.json".format(os.environ["CLOUD"]))

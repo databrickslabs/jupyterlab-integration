@@ -6,14 +6,14 @@ import time
 
 import pytest
 
-from jupyter_client.manager import start_new_kernel, run_kernel
+from jupyter_client.manager import start_new_kernel
 
-from helpers import get_kernel_path
+from helpers import get_kernel_path, get_running_clusters
 
 
 def pytest_generate_tests(metafunc):
     scenarios = []
-    for name, cluster_id in json.load(open("/tmp/running_clusters.json", "r")).items():
+    for name, cluster_id in get_running_clusters().items():
         for spark in [True, False]:
             scenarios.append((name, {"name": name, "cluster_id": cluster_id, "spark": spark}))
     idlist = []

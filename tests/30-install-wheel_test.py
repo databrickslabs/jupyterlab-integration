@@ -2,13 +2,13 @@ import json
 import subprocess
 import os
 
-import pytest
+from helpers import get_running_clusters
 
 
 def pytest_generate_tests(metafunc):
     scenarios = [
         (name, {"name": name, "cluster_id": cluster_id})
-        for name, cluster_id in json.load(open("/tmp/running_clusters.json", "r")).items()
+        for name, cluster_id in get_running_clusters().items()
     ]
     idlist = []
     argvalues = []

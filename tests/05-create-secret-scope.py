@@ -1,13 +1,12 @@
-import yaml
 import sys
 
 from databricks_cli.secrets.api import SecretApi
 
-from databrickslabs_jupyterlab.local import get_db_config
 from databrickslabs_jupyterlab.remote import connect
 
-config = yaml.safe_load(open("clusters.yaml", "r"))
-profile = config["profile"]
+from helpers import get_profile
+
+profile = get_profile()
 
 try:
     apiclient = connect(profile)

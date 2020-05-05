@@ -1,12 +1,10 @@
-import json
 import sys
-import os
-
-import yaml
 
 from databricks_cli.clusters.api import ClusterApi
 
 from databrickslabs_jupyterlab.remote import connect
+
+from helpers import get_profile, get_running_clusters
 
 
 def restart_cluster(client, cluster_id):
@@ -18,11 +16,8 @@ def restart_cluster(client, cluster_id):
         return None
 
 
-with open("/tmp/running_clusters.json", "r") as fd:
-    clusters = json.load(fd)
-
-config = yaml.safe_load(open("clusters.yaml", "r"))
-profile = config["profile"]
+clusters = get_running_clusters()
+profile = get_profile()
 
 try:
     apiclient = connect(profile)

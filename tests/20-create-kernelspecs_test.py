@@ -4,7 +4,6 @@ import logging
 import subprocess
 
 import yaml
-import pytest
 
 from ssh_config import SSHConfig
 
@@ -28,7 +27,7 @@ from databrickslabs_jupyterlab.local import (
     #    write_config,
 )
 
-from helpers import get_kernel_path
+from helpers import get_kernel_path, get_running_clusters, get_profile, get_orgid, is_azure, is_aws
 
 EXE = "../databrickslabs-jupyterlab"
 
@@ -36,7 +35,7 @@ EXE = "../databrickslabs-jupyterlab"
 def pytest_generate_tests(metafunc):
     scenarios = [
         (name, {"name": name, "cluster_id": cluster_id})
-        for name, cluster_id in json.load(open("/tmp/running_clusters.json", "r")).items()
+        for name, cluster_id in get_running_clusters().items()
     ]
     idlist = []
     argvalues = []
@@ -51,10 +50,9 @@ def pytest_generate_tests(metafunc):
 class TestKernelSpec:
     def setup_method(self):
         config = yaml.safe_load(open("clusters.yaml", "r"))
-        self.profile = config["profile"]
+        self.profile = get_profile()
         self.host, self.token = get_db_config(self.profile)
-        self.hostname_start = config["hostname_start"]
-        self.org = config["org"]
+        self.org = get_orgid()
         self.log = logging.getLogger("TestKernelSpec")
 
     def test_configure_ssh(self, name, cluster_id):
@@ -67,7 +65,6 @@ class TestKernelSpec:
         ssh_config = os.path.expanduser("~/.ssh/config")
         sc = SSHConfig.load(ssh_config)
         host = sc.get(cluster_id)
-        assert host.get("HostName").startswith(self.hostname_start)
         assert host.get("ConnectTimeout") == "5"
         assert host.get("ServerAliveCountMax") == "5760"
         assert host.get("IdentityFile") == "~/.ssh/id_{}".format(self.profile)
@@ -124,7 +121,14 @@ class TestKernelSpec:
             )
 
     def test_create(self, name, cluster_id):
-        result = subprocess.check_output([EXE, self.profile, "-k", "-i", cluster_id])
+        result = None
+        if is_aws():
+            result = subprocess.check_output([EXE, self.profile, "-k", "-i", cluster_id])
+        if is_azure():
+            result = subprocess.check_output(
+                [EXE, self.profile, "-k", "-o", str(self.org), "-i", cluster_id]
+            )
+        assert result is not None
         self.log.info("result %s", result)
 
     def test_ssh_2(self, name, cluster_id):

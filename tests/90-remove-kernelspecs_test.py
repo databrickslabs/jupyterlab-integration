@@ -3,15 +3,13 @@ import os
 
 from jupyter_client import kernelspec
 from ssh_config import SSHConfig
-import pytest
 
-from helpers import get_test_kernels
+from helpers import get_test_kernels, get_running_clusters
 
 
 class TestRemoveConfig:
     def setup_method(self):
-        with open("/tmp/running_clusters.json", "r") as fd:
-            self.clusters = json.load(fd)
+        self.clusters = get_running_clusters()
 
     # @pytest.mark.skip(reason="Keep kernelspecs")
     def test_remove_kernelspecs(self):

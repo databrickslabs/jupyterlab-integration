@@ -1,14 +1,14 @@
-import json
+import os
 from os.path import expanduser
 import random
 import sys
-
-import yaml
 
 from databricks_cli.clusters.api import ClusterApi
 
 from databrickslabs_jupyterlab.local import get_db_config
 from databrickslabs_jupyterlab.remote import connect
+
+from helpers import get_profile, get_instances, get_spark_versions, save_running_clusters
 
 
 AUTOSCALE_CLUSTER = {
@@ -16,8 +16,8 @@ AUTOSCALE_CLUSTER = {
     "cluster_name": "__dummy-to-be-replaced__",
     "spark_version": "__dummy-to-be-replaced__",
     "spark_conf": {},
-    "node_type_id": "i3.xlarge",
-    "driver_node_type_id": "i3.xlarge",
+    "node_type_id": "__dummy-to-be-replaced__",
+    "driver_node_type_id": "__dummy-to-be-replaced__",
     "ssh_public_keys": ["__dummy-to-be-replaced__"],
     "custom_tags": {},
     "spark_env_vars": {"PYSPARK_PYTHON": "/databricks/python3/bin/python3"},
@@ -30,8 +30,8 @@ FIXED_CLUSTER = {
     "cluster_name": "__dummy-to-be-replaced__",
     "spark_version": "__dummy-to-be-replaced__",
     "spark_conf": {},
-    "node_type_id": "i3.xlarge",
-    "driver_node_type_id": "i3.xlarge",
+    "node_type_id": "__dummy-to-be-replaced__",
+    "driver_node_type_id": "__dummy-to-be-replaced__",
     "ssh_public_keys": ["__dummy-to-be-replaced__"],
     "custom_tags": {},
     "spark_env_vars": {"PYSPARK_PYTHON": "/databricks/python3/bin/python3"},
@@ -49,9 +49,12 @@ def create_cluster(client, cluster_conf):
         return None
 
 
-config = yaml.safe_load(open("clusters.yaml", "r"))
-profile = config["profile"]
-spark_versions = config["spark_versions"]
+assert os.environ.get("CLOUD") is not None
+
+profile = get_profile()
+instances = get_instances()
+spark_versions = get_spark_versions()
+
 host, token = get_db_config(profile)
 ssh_key = open(expanduser("~/.ssh/id_{}.pub".format(profile))).read()
 
@@ -77,10 +80,11 @@ for spark_version in spark_versions:
     cluster_conf["spark_version"] = spark_version
     cluster_conf["cluster_name"] = "TEST-" + spark_version.split("-scala")[0]
     cluster_conf["ssh_public_keys"] = [ssh_key]
+    cluster_conf["driver_node_type_id"] = instances
+    cluster_conf["node_type_id"] = instances
 
     print(cluster_conf["cluster_name"])
     result = create_cluster(client, cluster_conf)
     cluster_ids[cluster_conf["cluster_name"]] = result["cluster_id"]
 
-with open("/tmp/running_clusters.json", "w") as fd:
-    fd.write(json.dumps(cluster_ids))
+save_running_clusters(cluster_ids)
