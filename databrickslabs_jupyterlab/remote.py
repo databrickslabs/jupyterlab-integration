@@ -271,16 +271,6 @@ def get_cluster(profile, cluster_id=None, status=None):
 
 
 def get_python_path(host, conda_env=None):  # pylint: disable=unused-argument
-    # conda_default_env = ssh(host, "echo $DEFAULT_DATABRICKS_ROOT_CONDA_ENV").strip().decode("utf-8")
-    # if conda_default_env == "":
-    #     python_path = "/databricks/python3/bin"
-    #     print_ok("   => %s (pip managed cluster)" % python_path)
-    # else:
-    #     if conda_env is None:  # if there is no conda environment variable, use default
-    #         conda_env = conda_default_env
-    #     python_path = "/databricks/conda/envs/%s/bin" % conda_env
-    #     print_ok("   => %s (conda managed cluster)" % python_path)
-
     python_path = "/databricks/python/bin"
     return python_path
 
