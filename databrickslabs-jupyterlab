@@ -2,6 +2,7 @@
 
 import argparse
 import os
+import re
 import sys
 from enum import Enum
 from version_parser import Version
@@ -240,11 +241,16 @@ if args.profile == "":
 print("\n* Getting host and token from .databrickscfg")
 host, token = get_db_config(profile)
 if ("azuredatabricks.net" in host) and args.kernelspec and not args.organisation:
-    print_error(
-        "\n    Error: To configure an Azure Databricks cluster, "
-        + "the organization id (-o id) is required"
-    )
-    bye(1)
+    if host.startswith("https://adb"):
+        r = re.compile(r"https://adb-(\d+)\.\d+.azuredatabricks.net")
+        result = r.match(host)
+        args.organisation = result.group(1)
+    else:
+        print_error(
+            "\n    Error: To configure an Azure Databricks cluster using the old CNAME,\n"
+            + "(<region>.azuredatabricks.net) the organization id (-o id) is required"
+        )
+        bye(1)
 
 #
 # Configure SSH for cluster
