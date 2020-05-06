@@ -1,0 +1,2 @@
+[MESSAGES CONTROL]
+disable=attribute-defined-outside-init,unused-argument,redefined-outer-name,unused-variable
