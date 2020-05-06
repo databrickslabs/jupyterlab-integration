@@ -8,7 +8,7 @@ from databricks_cli.clusters.api import ClusterApi
 from databrickslabs_jupyterlab.local import get_db_config
 from databrickslabs_jupyterlab.remote import connect
 
-from helpers import get_profile, get_instances, get_spark_versions, save_running_clusters
+from helpers import get_profile, get_instances, get_spark_versions, save_running_clusters, is_azure
 
 
 AUTOSCALE_CLUSTER = {
@@ -83,8 +83,11 @@ for spark_version in spark_versions:
     cluster_conf["driver_node_type_id"] = instances
     cluster_conf["node_type_id"] = instances
 
-    print(cluster_conf["cluster_name"])
-    result = create_cluster(client, cluster_conf)
-    cluster_ids[cluster_conf["cluster_name"]] = result["cluster_id"]
+    if is_azure() and (spark_version == "5.5.x-scala2.11"):
+        print(cluster_conf["cluster_name"], "(skipped)")
+    else:
+        print(cluster_conf["cluster_name"])
+        result = create_cluster(client, cluster_conf)
+        cluster_ids[cluster_conf["cluster_name"]] = result["cluster_id"]
 
 save_running_clusters(cluster_ids)

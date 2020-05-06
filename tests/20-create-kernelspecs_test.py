@@ -49,7 +49,6 @@ def pytest_generate_tests(metafunc):
 
 class TestKernelSpec:
     def setup_method(self):
-        config = yaml.safe_load(open("clusters.yaml", "r"))
         self.profile = get_profile()
         self.host, self.token = get_db_config(self.profile)
         self.org = get_orgid()
@@ -125,9 +124,27 @@ class TestKernelSpec:
         if is_aws():
             result = subprocess.check_output([EXE, self.profile, "-k", "-i", cluster_id])
         if is_azure():
-            result = subprocess.check_output(
-                [EXE, self.profile, "-k", "-o", str(self.org), "-i", cluster_id]
-            )
+            if self.host.startswith("https://"):
+                result = subprocess.check_output([EXE, self.profile, "-k", "-i", cluster_id])
+            else:
+                result = subprocess.check_output(
+                    [EXE, self.profile, "-k", "-o", str(self.org), "-i", cluster_id]
+                )
+
+        assert result is not None
+        self.log.info("result %s", result)
+
+    def test_reconfigure(self, name, cluster_id):
+        result = None
+        if is_aws():
+            result = subprocess.check_output([EXE, self.profile, "-r", "-i", cluster_id])
+        if is_azure():
+            if self.host.startswith("https://"):
+                result = subprocess.check_output([EXE, self.profile, "-r", "-i", cluster_id])
+            else:
+                result = subprocess.check_output(
+                    [EXE, self.profile, "-r", "-o", str(self.org), "-i", cluster_id]
+                )
         assert result is not None
         self.log.info("result %s", result)
 

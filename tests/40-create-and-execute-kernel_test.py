@@ -63,7 +63,7 @@ class TestRunKernel:
         kernel_name, _ = get_kernel_path(cluster_id, spark)
 
         km, kc = TestRunKernel.get_kernel_client(cluster_id, spark, self.log)
-
+        self.log.info("Kernel: %s %s", km, kc)
         ready = False
         while not ready:
             try:

@@ -3,6 +3,8 @@ import os
 import yaml
 from jupyter_client import kernelspec
 
+EXE = "../databrickslabs-jupyterlab"
+
 
 def get_kernel_path(cluster_id, with_spark):
     def cond(k):
