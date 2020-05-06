@@ -301,35 +301,19 @@ def install_libs(cluster_id, host, token):
         "ipykernel==%s" % deps["ipykernel"],
         "databrickslabs-jupyterlab==%s" % __version__,
     ]
-    pip_cmd = [
-        "%s/pip" % python_path,
-        "install",
-        "-q",
-        "--no-warn-conflicts",
-        "--disable-pip-version-check",
-    ] + libs
 
-    cmd = (
-        "import subprocess, json; "
-        + ("ret = subprocess.run(%s, stderr=subprocess.PIPE); " % pip_cmd)
-        + "print(json.dumps([ret.returncode, str(ret.stderr)]))"
-    )
+    print("   => Installing ", " ".join(libs))
 
-    print("   => Installing %s" % ", ".join(libs))
-    print("   ", end="")
-    try:
-        command = Command(url=host, cluster_id=cluster_id, token=token)
-        result = command.execute(cmd)
-        command.close()
-        print()
-    except DatabricksApiException as ex:
-        print("REST API error", ex)
-        return False
+    cmd = ["ssh", cluster_id, "sudo", python_path + "/pip", "install"] + libs
+    result = execute(cmd)
 
-    if result[0] == 0:
-        return tuple(json.loads(utf8_decode(result[1])))
-    else:
-        return result
+    if result["returncode"] == 0:
+        if result["stdout"].startswith("Requirement already satisfied"):
+            return (0, "Requirement already satisfied")
+        else:
+            return (0, "Installed")
+
+    return (result["returncode"], result["stdout"] + "\n" + result["stderr"])
 
 
 def get_remote_packages(cluster_id, host, token):
