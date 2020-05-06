@@ -24,6 +24,7 @@ from databrickslabs_jupyterlab.utils import (
     print_warning,
     question,
     utf8_decode,
+    execute,
 )
 from databrickslabs_jupyterlab.local import execute, get_local_libs
 
