@@ -210,7 +210,12 @@ class DbjlMagics(Magics):
             code = line
         else:
             code = cell
-        return spark.sql(code)
+        if "explain" in code.lower():
+            result = spark.sql(code).collect()
+            for plan in result:
+                print(plan.plan)
+        else:
+            return spark.sql(code)
 
 
 class DatabricksBrowser:
