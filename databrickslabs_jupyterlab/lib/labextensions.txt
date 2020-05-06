@@ -1,2 +1,2 @@
-@jupyter-widgets/jupyterlab-manager@2.0.0
+@jupyter-widgets/jupyterlab-manager@2.x
 databrickslabs-jupyterlab-statusbar@v1.0.1

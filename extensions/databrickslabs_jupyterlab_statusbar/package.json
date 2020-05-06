@@ -23,22 +23,22 @@
     "watch": "tsc -w"
   },
   "dependencies": {
-    "@jupyterlab/application": "^2.0.0",
-    "@jupyterlab/apputils": "^2.0.0",
-    "@jupyterlab/docregistry": "^2.0.0",
-    "@jupyterlab/notebook": "^2.0.0",
-    "@jupyterlab/statusbar": "~2.0.0",
-    "@jupyterlab/coreutils": "~4.0.0",
-    "@jupyterlab/services": "~5.0.0",
-    "@lumino/polling": "~1.0.4"
+    "@jupyterlab/application": "^2.0",
+    "@jupyterlab/apputils": "^2.0",
+    "@jupyterlab/docregistry": "^2.0",
+    "@jupyterlab/notebook": "^2.0",
+    "@jupyterlab/statusbar": "^2.0",
+    "@jupyterlab/coreutils": "^4.0",
+    "@jupyterlab/services": "^5.0",
+    "@lumino/polling": "^1.0"
   },
   "devDependencies": {
     "rimraf": "~3.0.0",
-    "typescript": "~3.7.3",
-    "tslint": "^5.20.1",
+    "typescript": "~3.7.5",
+    "tslint": "^6.1.1",
     "prettier": "1.9.0",
     "tslint-config-prettier": "^1.18.0",
-    "tslint-plugin-prettier": "^2.0.1"
+    "tslint-plugin-prettier": "^2.3.0"
   },
   "sideEffects": [
     "style/*.css"
