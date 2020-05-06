@@ -527,7 +527,7 @@ def configure_ssh(profile, cluster_id):
         print_error("   => Cancelled")
 
 
-def download_notebook(url):
+def download_notebook(url, prefix="."):
     """Download Databricks demo notebooks from docs.databricks.com.
     It adds two cells on the top to initialize the Databricks context and MLflow
     
@@ -539,7 +539,7 @@ def download_notebook(url):
         return {
             "cell_type": typ,
             "source": cell,
-            "output": [],
+            "outputs": [],
             "metadata": {},
             "execution_count": 0,
         }
@@ -549,54 +549,88 @@ def download_notebook(url):
     # from databrickslabs_jupyterlab.remote import is_remote
     # dbcontext()"""
 
-    cell2 = """# Setup MLflow (optional)
-import os
-from mlflow
-from mlflow.tracking import MlflowClient
+    #     cell2 = """# Setup MLflow (optional)
+    # import os
+    # from mlflow
+    # from mlflow.tracking import MlflowClient
 
-def remote_mlflow_setup(experiment_name):
-    mlflow.set_experiment(experiment_name)
-    experiment = MlflowClient().get_experiment_by_name(experiment_name)    
-    from IPython.display import HTML, display
-    url = "%s/#mlflow/experiments/%s" % (os.environ["DBJL_HOST"], experiment.experiment_id)
-    display(HTML('View the <a href="%s">MLflow experiment</a>' % url))    
+    # def remote_mlflow_setup(experiment_name):
+    #     mlflow.set_experiment(experiment_name)
+    #     experiment = MlflowClient().get_experiment_by_name(experiment_name)
+    #     from IPython.display import HTML, display
+    #     url = "%s/#mlflow/experiments/%s" % (os.environ["DBJL_HOST"], experiment.experiment_id)
+    #     display(HTML('View the <a href="%s">MLflow experiment</a>' % url))
 
+    # experiment_name = <FILL>
+    # home = "/Users/%s" % <FILL>
+    # experiment_name = "%s/experiments/%s" % (home, experiment_name)
+    # remote_mlflow_setup(experiment_name)"""
 
-experiment_name = <FILL>
-home = "/Users/%s" % <FILL>
-experiment_name = "%s/experiments/%s" % (home, experiment_name)
-remote_mlflow_setup(experiment_name)"""
+    cell = "**Downloaded by Databrickslabs Jupyterlab**"
 
     print("*** experimental ***")
     name = os.path.splitext(os.path.basename(url))[0]
 
-    resp = requests.get(url)
-    if resp.status_code != 200:
-        print("error")
+    if url.startswith("http"):
+        resp = requests.get(url)
+        if resp.status_code != 200:
+            print("error")
+            return
+        code = resp.text
     else:
-        r = re.compile("<script>(.+?)</script>")
-        scripts = r.findall(resp.text)
-        script = [s for s in scripts if "__DATABRICKS_NOTEBOOK_MODEL" in s][0]
-        r = re.compile("'(.+?)'")
-        s = r.findall(script)
-        nb = json.loads(unquote(base64.b64decode(s[0]).decode("utf-8")))
-        cells = [c["command"] for c in nb["commands"]]
-        ipy = {
-            # "cells": [wrap("code", cell1), wrap("code", cell2)],
-            "cells": [wrap("code", cell2)],
-            "nbformat": 4,
-            "nbformat_minor": 4,
-            "metadata": {},
-        }
-        for c in cells:
-            t = "code"
-            if c.startswith("%md"):
-                t = "markdown"
-                c = c[3:]
-            elif c.startswith("%s"):
-                # Jupyter uses a cell magic
-                c = "%" + c
+        with open(url, "r") as fd:
+            code = fd.read()
+
+    r = re.compile("<script>(.+?)</script>")
+    scripts = r.findall(code)
+    script = [s for s in scripts if "__DATABRICKS_NOTEBOOK_MODEL" in s][0]
+    r = re.compile("'(.+?)'")
+    s = r.findall(script)
+    nb = json.loads(unquote(base64.b64decode(s[0]).decode("utf-8")))
+    language = nb["language"]
+    cells = [c["command"] for c in nb["commands"]]
+    ipy = {
+        # "cells": [wrap("code", cell1), wrap("code", cell2)],
+        "cells": [wrap("markdown", cell)],
+        "nbformat": 4,
+        "nbformat_minor": 4,
+        "metadata": {},
+    }
+    use_scala = False
+    for c in cells:
+        t = "code"
+        if c.startswith("%md"):
+            t = "markdown"
+            c = c[3:]
+            r = re.compile(r"(#+)([^#\s])")
+            c = r.sub(r"\1 \2", c)
+        elif c.startswith("%python"):
+            c = c[8:]
+        elif c.startswith("%sql"):
+            c = c.replace("%sql", "%%sql\n")
+        elif c.startswith("%sh"):
+            c = c.replace("%sh", "%%sh\n")
+        elif c.startswith("%scala"):
+            c = c.replace("%scala", "%%scala\n")
+            use_scala = True
+        else:
+            if language != "python":
+                c = "%%" + language + "\n" + c
+
+        # SQL cells can have multiple statements separated by ";" in Databricks.
+        # So split them in sigle cells for Jupyterlab Integration
+        if c.startswith("%%sql"):
+            # remove potential trailing ";" and then split at ";" to get all SQL statements
+            lines = c[5:].strip(";").split(";")
+            for line in lines:
+                ipy["cells"].append(wrap(t, "%%sql\n" + line))
+        else:
             ipy["cells"].append(wrap(t, c))
-        with open("%s.ipynb" % name, "w") as fd:
-            fd.write(json.dumps(ipy))
-        print("Downloaded notebook to %s.ipynb" % name)
+
+    if use_scala or language == "scala":
+        ipy["cells"].insert(1, wrap("code", "%scala add-secrets-scope add-pat-key"))
+
+    with open(os.path.join(prefix, "%s.ipynb" % name), "w") as fd:
+        fd.write(json.dumps(ipy))
+
+    print("Downloaded notebook to %s.ipynb" % name)
