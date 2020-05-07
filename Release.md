@@ -7,21 +7,35 @@
 - On Macos set limits:
 
   ```bash
-  sudo launchctl limit maxfiles 65536 200000
+  $ sudo launchctl limit maxfiles 65536 200000
   ```
+- On Windows one needs `OpenSSH 8` for the tests:
+
+  ```bash
+  C:\>choco install openssh
+
+  set SSH=C:\Program Files\OpenSSH-Win64\ssh.exe
+  
+  C:\> cmd /c ""%SSH%"" -V
+  OpenSSH_for_Windows_8.0p1, LibreSSL 2.6.5
+  ``` 
+
+  Note: This assumes that [https://chocolatey.org](https://chocolatey.org) is installed
 
 - Copy `config-template.yaml` to `config.yaml` and edit it accordingly
 
-- Depending on whether test should be run against AWS or Azure, set
+- Depending on whether test should be run against AWS or Azure, set one of
 
   ```bash
-  export CLOUD=aws
+  $ export CLOUD=aws
+  $ export CLOUD=azure
   ```
 
-  or 
+  or under Windows one of
 
-  ```bash
-  export CLOUD=azure
+  ```cmd
+  C:\>set CLOUD=aws
+  C:\>set CLOUD=azure
   ```
 
 
