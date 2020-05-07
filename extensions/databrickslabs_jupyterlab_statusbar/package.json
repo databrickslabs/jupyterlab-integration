@@ -1,6 +1,6 @@
 {
   "name": "databrickslabs-jupyterlab-statusbar",
-  "version": "1.0.1",
+  "version": "2.0.0",
   "description": "A JupyterLab extension to show starting status of Databricks clusters.",
   "keywords": [
     "jupyter",
