@@ -300,7 +300,8 @@ def install_libs(cluster_id, host, token):
 
     print("   => Installing ", " ".join(libs))
 
-    cmd = ["ssh", cluster_id, "sudo", python_path + "/pip", "install"] + libs
+    ssh = os.environ.get("SSH") or "ssh"
+    cmd = [ssh, cluster_id, "sudo", python_path + "/pip", "install"] + libs
     result = execute(cmd)
 
     if result["returncode"] == 0:
