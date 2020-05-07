@@ -23,7 +23,7 @@ This package allows to connect to a remote Databricks cluster from a locally run
 
     To install Databricks CLI and configure profile(s) for your cluster(s), please refer to [AWS](https://docs.databricks.com/user-guide/dev-tools/databricks-cli.html) / [Azure](https://docs.azuredatabricks.net/user-guide/dev-tools/databricks-cli.html)
 
-    Whenever `$PROFILE` is used in this documentation, it refers to a valid Databricks CLI profile name, stored in a shell environment variable.
+    Note: *Whenever `$PROFILE` is used in this documentation, it refers to a valid Databricks CLI profile name, stored in a shell environment variable.*
 
 5. **SSH access to the Databricks cluster**
 
@@ -52,7 +52,7 @@ This package allows to connect to a remote Databricks cluster from a locally run
     ```bash
     (base)$ conda create -n db-jlab python=3.7
     (base)$ conda activate db-jlab
-    (db-jlab)$ pip install --upgrade databrickslabs-jupyterlab==2.0.0rc0
+    (db-jlab)$ pip install --upgrade databrickslabs-jupyterlab==2.0.0-dev0
     ```
 
     The prefix `(db-jlab)$` for all command examples in this document assumes that the *databrickslabs_jupyterlab* conda enviromnent `db-jlab` is activated.
