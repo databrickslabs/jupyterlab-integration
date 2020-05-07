@@ -86,7 +86,10 @@ def select_cluster(clusters):
         "Which cluster to connect to?",
         [entry(i, cluster) for i, cluster in enumerate(clusters)],
     )
-    return clusters[int(answer["cluster_id"].split(":")[0])]
+    if answer["cluster_id"] is None:
+        return None
+    else:
+        return clusters[int(answer["cluster_id"].split(":")[0])]
 
 
 def get_cluster(profile, cluster_id=None, status=None):
@@ -188,6 +191,8 @@ def get_cluster(profile, cluster_id=None, status=None):
             )
 
         cluster = select_cluster(my_clusters)
+        if cluster is None:
+            return (None, None, None, None)
 
     cluster_id = cluster["cluster_id"]
     cluster_name = cluster["cluster_name"]
