@@ -1,9 +1,17 @@
 import json
 import os
+import platform
 import yaml
 from jupyter_client import kernelspec
 
-EXE = "../databrickslabs-jupyterlab"
+if platform.uname().system == "Windows":
+    EXE = "..\\dj.bat"
+    RUNNING_FILE = "C:\\Windows\\Temp\\{}_running_clusters.json".format(os.environ["CLOUD"])
+else:
+    EXE = "../databrickslabs-jupyterlab"
+    RUNNING_FILE = "/tmp/{}_running_clusters.json".format(os.environ["CLOUD"])
+print(EXE)
+print(RUNNING_FILE)
 
 
 def get_kernel_path(cluster_id, with_spark):
@@ -63,15 +71,16 @@ def get_spark_versions():
 
 
 def get_running_clusters():
-    with open("/tmp/{}_running_clusters.json".format(os.environ["CLOUD"]), "r") as fd:
+    with open(RUNNING_FILE, "r") as fd:
         clusters = json.load(fd)
     return clusters
 
 
 def save_running_clusters(cluster_ids):
-    with open("/tmp/{}_running_clusters.json".format(os.environ["CLOUD"]), "w") as fd:
+    print("saving to", RUNNING_FILE)
+    with open(RUNNING_FILE, "w") as fd:
         fd.write(json.dumps(cluster_ids))
 
 
 def remove_running_clusters():
-    os.unlink("/tmp/{}_running_clusters.json".format(os.environ["CLOUD"]))
+    os.unlink(RUNNING_FILE)

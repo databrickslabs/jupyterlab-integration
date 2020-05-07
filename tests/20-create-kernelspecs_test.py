@@ -27,9 +27,15 @@ from databrickslabs_jupyterlab.local import (
     #    write_config,
 )
 
-from helpers import get_kernel_path, get_running_clusters, get_profile, get_orgid, is_azure, is_aws
-
-EXE = "../databrickslabs-jupyterlab"
+from helpers import (
+    get_kernel_path,
+    get_running_clusters,
+    get_profile,
+    get_orgid,
+    is_azure,
+    is_aws,
+    EXE,
+)
 
 
 def pytest_generate_tests(metafunc):
