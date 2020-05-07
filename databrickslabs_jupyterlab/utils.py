@@ -6,11 +6,6 @@ import tempfile
 from html import escape
 
 import ssh_config
-import questionary
-from prompt_toolkit.styles import Style
-
-from prompt_toolkit import print_formatted_text, HTML
-
 
 is_windows = platform.platform(1, 1).split("-")[0] == "Windows"
 
@@ -27,11 +22,21 @@ def bye(status=0):
 
 
 def _print(color, *args):
-    style = Style.from_dict({"error": "#ff0000", "ok": "#00ff00", "warning": "#ff00ff"})
-    print_formatted_text(
-        HTML("<{color}>{message}</{color}>".format(color=color, message=escape(" ".join(args)))),
-        style=style,
-    )
+    # Under Windows prompt_toolkit does not work with pytest
+    # So add an environment variable check to switch to simple output
+    if is_windows and (os.environ.get("PYTEST_CURRENT_TEST") is not None):
+        print(*args)
+    else:
+        from prompt_toolkit import print_formatted_text, HTML
+        from prompt_toolkit.styles import Style
+
+        style = Style.from_dict({"error": "#ff0000", "ok": "#00ff00", "warning": "#ff00ff"})
+        print_formatted_text(
+            HTML(
+                "<{color}>{message}</{color}>".format(color=color, message=escape(" ".join(args)))
+            ),
+            style=style,
+        )
 
 
 def print_ok(*args):
@@ -47,6 +52,11 @@ def print_warning(*args):
 
 
 def question(tag, message, choices):
+    # Under Windows prompt_toolkit does not work with pytest
+    # So only load questionary when this function is called - which is not used by automated tests
+    import questionary
+    from prompt_toolkit.styles import Style
+
     custom_style_fancy = Style(
         [
             ("answer", "fg:#f44336 bold"),  # submitted answer text behind the question
