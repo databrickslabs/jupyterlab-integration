@@ -6,12 +6,14 @@ from jupyter_client import kernelspec
 
 if platform.uname().system == "Windows":
     EXE = "..\\dj.bat"
+    SSH = os.environ.get("SSH") or "ssh"
+    TEMP = "C:\\Windows\\Temp\\"
     RUNNING_FILE = "C:\\Windows\\Temp\\{}_running_clusters.json".format(os.environ["CLOUD"])
 else:
     EXE = "../databrickslabs-jupyterlab"
+    SSH = "ssh"
     RUNNING_FILE = "/tmp/{}_running_clusters.json".format(os.environ["CLOUD"])
-print(EXE)
-print(RUNNING_FILE)
+    TEMP = "/tmp/"
 
 
 def get_kernel_path(cluster_id, with_spark):

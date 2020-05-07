@@ -8,7 +8,7 @@ import pytest
 
 from jupyter_client.manager import start_new_kernel
 
-from helpers import get_kernel_path, get_running_clusters
+from helpers import get_kernel_path, get_running_clusters, SSH, TEMP
 
 
 def pytest_generate_tests(metafunc):
@@ -35,8 +35,8 @@ class TestRunKernel:
         if TestRunKernel.CLIENTS.get(kernel_name) is None:
             km, kc = start_new_kernel(
                 kernel_name=kernel_name,
-                stderr=open("/tmp/{}_std_err.log".format(kernel_name), "w"),
-                stdout=open("/tmp/{}_std_out.log".format(kernel_name), "w"),
+                stderr=open("{}{}_std_err.log".format(TEMP, kernel_name), "w"),
+                stdout=open("{}{}_std_out.log".format(TEMP, kernel_name), "w"),
             )
             TestRunKernel.CLIENTS[kernel_name] = (km, kc)
         return TestRunKernel.CLIENTS[kernel_name]
@@ -56,7 +56,7 @@ class TestRunKernel:
 
     def test_ipykernel_before_start(self, name, cluster_id, spark):
         with pytest.raises(subprocess.CalledProcessError):
-            subprocess.check_output(["ssh", cluster_id, "pgrep -fal ipykernel"])
+            subprocess.check_output([SSH, cluster_id, "pgrep -fal ipykernel"])
 
     def test_start_kernel(self, name, cluster_id, spark):
         self.log.info("Paramters: %s %s %s", name, cluster_id, spark)
@@ -78,10 +78,10 @@ class TestRunKernel:
             except queue.Empty:
                 ready = True
 
-        with open("/tmp/{}_std_err.log".format(kernel_name), "r") as fd:
+        with open("{}{}_std_err.log".format(TEMP, kernel_name), "r") as fd:
             stderr = fd.read()
         self.log.info("stderr:\n%s", stderr)
-        with open("/tmp/{}_std_out.log".format(kernel_name), "r") as fd:
+        with open("{}{}_std_out.log".format(TEMP, kernel_name), "r") as fd:
             stdout = fd.read()
         self.log.info("stdout:\n%s", stdout)
 
@@ -150,7 +150,7 @@ class TestRunKernel:
             )
 
     def test_ipykernel(self, name, cluster_id, spark):
-        result = subprocess.check_output(["ssh", cluster_id, "pgrep -fal ipykernel"])
+        result = subprocess.check_output([SSH, cluster_id, "pgrep -fal ipykernel"])
         self.log.info("ipykernel: %s", result)
 
     def test_stop_kernel(self, name, cluster_id, spark):
@@ -158,4 +158,4 @@ class TestRunKernel:
 
     def test_ipykernel_after_shutdown(self, name, cluster_id, spark):
         with pytest.raises(subprocess.CalledProcessError):
-            subprocess.check_output(["ssh", cluster_id, "pgrep -fal ipykernel"])
+            subprocess.check_output([SSH, cluster_id, "pgrep -fal ipykernel"])

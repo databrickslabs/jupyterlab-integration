@@ -35,6 +35,7 @@ from helpers import (
     is_azure,
     is_aws,
     EXE,
+    SSH,
 )
 
 
@@ -76,8 +77,7 @@ class TestKernelSpec:
 
         assert is_reachable(public_dns=public_ip)
 
-    def test_ssh(self, name, cluster_id):
-        subprocess.check_output(["ssh", cluster_id, "hostname"])
+        subprocess.check_output([SSH, cluster_id, "hostname"])
 
     def test_install_libs(self, name, cluster_id):
         result = install_libs(cluster_id, self.host, self.token)
@@ -154,5 +154,4 @@ class TestKernelSpec:
         assert result is not None
         self.log.info("result %s", result)
 
-    def test_ssh_2(self, name, cluster_id):
-        subprocess.check_output(["ssh", cluster_id, "hostname"])
+        subprocess.check_output([SSH, cluster_id, "hostname"])
