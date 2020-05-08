@@ -220,7 +220,7 @@ class Command(Rest):
         self.context = Context(url, cluster_id, token, language=language)
         self.context.create()
 
-    def execute(self, command):
+    def execute(self, command, full_result=False):
         """Execute a python command under the given Execution Context
         
         Args:
@@ -253,9 +253,15 @@ class Command(Rest):
         print("\r", " " * (count + 1))
 
         if result["results"]["resultType"] == "error":
-            return (-1, result["results"]["cause"])
+            if full_result:
+                return (-1, result)
+            else:
+                return (-1, result["results"]["cause"])
         else:
-            return (0, result["results"]["data"])
+            if full_result:
+                return (0, result)
+            else:
+                return (0, result["results"]["data"])
 
     def status(self, command_id):
         """Check the status of the command execution

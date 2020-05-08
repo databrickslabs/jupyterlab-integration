@@ -1,3 +1,4 @@
+import atexit
 import datetime
 import glob
 import io
@@ -139,59 +140,31 @@ class DbjlMagics(Magics):
 
     @line_cell_magic
     def scala(self, line, cell=None):
-        "Magic that allows to create scala context and execute scala in a notebook"
+        "Magic that allows to execute scala in a notebook"
         if cell is None:
-            sline = line.strip(" ")
-
-            if sline in ["-s", "--stop"] and self.command:
-                self.command.close()
-                print("Scala execution context closed")
-                return
-
-            if sline == "":
-                args = []
-            else:
-                args = sline.split(" ")
-
-            if len(args) == 0:
-                scope = "dbjl_creds"
-                key = os.environ["DBJL_PROFILE"]
-            elif len(args) == 2:
-                scope, key = args
-            else:
-                print("Error: Either no parameter or two (scope, key)")
-
-            try:
-                self.scope = scope
-                self.key = key
-                dbutils = get_ipython().user_ns["dbutils"]
-                pat = dbutils.secrets.get(scope, key)
-            except Exception as ex:  # pylint: disable=broad-except
-                self.scope = None
-                self.key = None
-                print("Error: Couldn't retrieve secret\n", str(ex))
-                return
-
-            try:
-                self.command = Command(
-                    url=self.url, cluster_id=self.cluster, token=pat, language="scala"
-                )
-                print("Scala execution context created")
-                del pat
-            except Exception as ex:  # pylint: disable=broad-except
-                self.command = None
-                print("Error: Couldn't create Scala execution context\n", str(ex))
-                return
+            print("Use %%scala as a cell magic")
         else:
             try:
-                result = self.command.execute(cell)
+                command = get_ipython().user_ns["__scalaCommand"]
+                result = command.execute(cell, full_result=True)
             except Exception as ex:  # pylint: disable=broad-except
-                result = (-1, str(ex))
+                result = (-1, "%s: %s" % (type(ex), ex))
 
             if result[0] == 0:
-                print(result[1])
+                typ = result[1]["results"]["resultType"]
+                data = result[1]["results"]["data"]
+                if typ == "text":
+                    print(data)
+                elif typ == "table":
+                    import pandas as pd
+
+                    df = pd.DataFrame(data)
+                    df.columns = [c["name"] for c in result[1]["results"]["schema"]]
+                    display(df)
+                    if result[1]["results"]["truncated"]:
+                        print("Data truncated, more than 1000 rows")
             else:
-                print("Error: " + result[1])
+                print("Error: " + result[1]["results"]["cause"])
 
     @line_cell_magic
     def sql(self, line, cell=None):
@@ -418,6 +391,24 @@ def dbcontext(progressbar=True, gw_port=None, gw_token=None, token=None):
     #
     # ip.register_magic_function(sql, magic_kind="line_cell")
     ip.register_magics(DbjlMagics)
+    ip.register_magics
+
+    # Setup scala context
+    def closeScalaCommand(scalaCommand):
+        print("closeScalaCommand", scalaCommand)
+        try:
+            scalaCommand.close()
+            print("SUCCESS: Scala context closed!")
+        except:  # pylint: disable=bare-except
+            print("ERROR: Scala context closing failed!")
+
+    try:
+        scalaCommand = Command(url=host, cluster_id=clusterId, token=token, language="scala")
+        ip.user_ns["__scalaCommand"] = scalaCommand
+        atexit.register(closeScalaCommand, scalaCommand)
+    except:  # pylint: disable=bare-except
+        print("Cannot create scala command, so %%scala will not work")
+        scalaCommand = None
 
     # Forward spark variables to the user namespace
     #

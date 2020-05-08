@@ -603,7 +603,7 @@ def download_notebook(url, prefix="."):
         "nbformat_minor": 4,
         "metadata": {},
     }
-    use_scala = False
+
     for c in cells:
         t = "code"
         if c.startswith("%md"):
@@ -619,7 +619,6 @@ def download_notebook(url, prefix="."):
             c = c.replace("%sh", "%%sh\n")
         elif c.startswith("%scala"):
             c = c.replace("%scala", "%%scala\n")
-            use_scala = True
         else:
             if language != "python":
                 c = "%%" + language + "\n" + c
@@ -633,9 +632,6 @@ def download_notebook(url, prefix="."):
                 ipy["cells"].append(wrap(t, "%%sql\n" + line))
         else:
             ipy["cells"].append(wrap(t, c))
-
-    if use_scala or language == "scala":
-        ipy["cells"].insert(1, wrap("code", "%scala add-secrets-scope add-pat-key"))
 
     with open(os.path.join(prefix, "%s.ipynb" % name), "w") as fd:
         fd.write(json.dumps(ipy))
