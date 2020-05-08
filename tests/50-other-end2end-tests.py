@@ -87,24 +87,21 @@ class TestEnd2End:
         assert js["cells"][0]["source"] == "**Downloaded by Databrickslabs Jupyterlab**"
 
         assert js["cells"][1]["cell_type"] == "code"
-        assert js["cells"][1]["source"] == "%scala add-secrets-scope add-pat-key"
+        assert js["cells"][1]["source"] == "a = 42"
 
         assert js["cells"][2]["cell_type"] == "code"
-        assert js["cells"][2]["source"] == "a = 42"
+        assert js["cells"][2]["source"] == "%%sql\n\nuse default"
 
         assert js["cells"][3]["cell_type"] == "code"
-        assert js["cells"][3]["source"] == "%%sql\n\nuse default"
+        assert js["cells"][3]["source"] == "%%sql\n\nselect * \nfrom iris\nwhere speal_width > 0.8"
 
         assert js["cells"][4]["cell_type"] == "code"
-        assert js["cells"][4]["source"] == "%%sql\n\nselect * \nfrom iris\nwhere speal_width > 0.8"
+        assert js["cells"][4]["source"] == "%%sql\n\n\nuse default"
 
         assert js["cells"][5]["cell_type"] == "code"
-        assert js["cells"][5]["source"] == "%%sql\n\n\nuse default"
+        assert js["cells"][5]["source"] == "%%sql\n\nselect * \nfrom iris\nwhere speal_width < 0.8"
 
         assert js["cells"][6]["cell_type"] == "code"
-        assert js["cells"][6]["source"] == "%%sql\n\nselect * \nfrom iris\nwhere speal_width < 0.8"
+        assert js["cells"][6]["source"] == "%%scala\n\nval result = sc.range(0,10).collect()"
 
-        assert js["cells"][7]["cell_type"] == "code"
-        assert js["cells"][7]["source"] == "%%scala\n\nval result = sc.range(0,10).collect()"
-
-        # os.unlink("test-db-jlab.ipynb")
+        os.unlink("test-db-jlab.ipynb")
