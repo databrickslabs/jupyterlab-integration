@@ -3,6 +3,7 @@ import subprocess
 import os
 
 from helpers import get_running_clusters
+import pytest
 
 
 def pytest_generate_tests(metafunc):
@@ -21,7 +22,7 @@ def pytest_generate_tests(metafunc):
 
 
 class TestRunKernel:
-    # @pytest.mark.skip(reason="Do not install local wheel")
+    @pytest.mark.skip(reason="Do not install local wheel")
     def test_install_wheel(self, name, cluster_id):
         os.environ["CLUSTER"] = cluster_id
         subprocess.check_output(["make", "install_wheel"], cwd=os.path.dirname(os.getcwd()))
