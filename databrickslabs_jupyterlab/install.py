@@ -371,20 +371,16 @@ databrickslabs-jupyterlab:
     
     databrickslabs-jupyterlab <profile> -v all|same|diff
 
-4) Copy Personal Access token for databricks cluster to cipboard (same on AWS and Azure)
-
-    databrickslabs-jupyterlab <profile> -c
-
-5) Start jupyter lab to use the kernel(s) created in 2)
+4) Start jupyter lab to use the kernel(s) created in 2)
 
     databrickslabs-jupyterlab <profile> -l [-i cluster-id]
 
 
-6) Check currently available profiles 
+5) Check currently available profiles 
 
     databrickslabs-jupyterlab -p
 
-7) Download a demo notebook from docs.databricks.com (experimental)
+6) Download a demo notebook from docs.databricks.com (experimental)
 
     databrickslabs-jupyterlab -n https://docs.databricks.com/_static/notebooks/delta/xyz.html
 
