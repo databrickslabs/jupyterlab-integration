@@ -7,7 +7,7 @@ ERROR_COLOR = \x1b[31;01m
 PYCACHE := $(shell find . -name '__pycache__')
 EGGS := $(wildcard '*.egg-info')
 CURRENT_VERSION := $(shell awk '/current_version/ {print $$3}' .bumpversion.cfg)
-NORMALIZED_VERSION := $(subst -,.,$(CURRENT_VERSION))
+NORMALIZED_VERSION := $(subst -,,$(CURRENT_VERSION))
 
 clean:
 	@echo "$(OK_COLOR)=> Cleaning$(NO_COLOR)"
