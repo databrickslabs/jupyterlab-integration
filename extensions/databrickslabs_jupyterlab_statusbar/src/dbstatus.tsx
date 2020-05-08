@@ -82,8 +82,10 @@ export class DbStatus extends VDomRenderer<DbStatus.Model> {
     let text: string = this.model.currentStatus;
     if (text === "UNREACHABLE") {
       text = "[ " + text + " ] (click here to restart)";
-    } else if (text === "CONNECT FAILED") {
-      text = "[ " + text + " ] (retrying)";
+      // } else if (text === "CONNECT FAILED") {
+      //   text = "[ " + text + " ] (retrying)";
+    } else if (text === "STARTING") {
+      text = "[ " + text + " ] (click here to reconfigure)";
     } else {
       text = "[ " + text + " ]";
     }
@@ -219,6 +221,10 @@ export namespace DbStatus {
           title = "Cluster not reachable";
           body = "Cluster cannot be reached. Check cluster or your network (e.g. VPN) and then press 'Restart' to restart the kernel or cluster";
           label = "Restart";
+        } else {
+          title = "Reconfigure cluster";
+          body = "Reconfigure the cluster, i.e. fix ssh config, install libs, and create Spark Context";
+          label = "Reconfigure";
         }
         showDialog({
           title: title,
@@ -276,9 +282,7 @@ export namespace DbStatus {
      * Click handler
      */
     handleClick() {
-      if (this._currentStatus == "UNREACHABLE") {
-        this._restart_dialog(this.currentStatus)
-      }
+      this._restart_dialog(this.currentStatus)
     }
 
     get restarting_count(): number {
