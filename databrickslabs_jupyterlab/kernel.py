@@ -88,7 +88,7 @@ class DatabricksKernel(SshKernel):
             cmd = "import sys; print(sys.executable.split('/bin/')[0])"
             result = self.command.execute(cmd)
         except Exception as ex:  # pylint: disable=broad-except
-            self._logger.error("error %s: %s", *result)
+            self._logger.error("ERROR %s: %s", type(ex), ex)
             raise SshKernelException("Cannot retrieve python executable from remote cluster")
 
         return result[1]
@@ -109,7 +109,7 @@ class DatabricksKernel(SshKernel):
             )
             result = self.command.execute(cmd)
         except Exception as ex:  # pylint: disable=broad-except
-            self._logger.error("error %s: %s", *result)
+            self._logger.error("ERROR %s: %s", type(ex), ex)
             raise SshKernelException("Cannot retrieve py4j gateway from remote cluster")
 
         gw_token, gw_port = result[1].split("|")
@@ -135,7 +135,7 @@ class DatabricksKernel(SshKernel):
                 raise SshKernelException("Cannot create SparkSession on remote cluster")
 
         except Exception as ex:  # pylint: disable=broad-except
-            self._logger.error("Error: %s", str(ex))
+            self._logger.error("ERROR %s: %s", type(ex), ex)
             self.kernel_status.set_connect_failed()
             raise SshKernelException("Cannot access kernel on remote cluster")
 
