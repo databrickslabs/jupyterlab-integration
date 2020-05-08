@@ -102,8 +102,7 @@ def execute(cmd):
         # print(result["stderr"])
         return result
     except Exception as ex:  # pylint: disable=broad-except
-        print(ex.args)
-        print(ex.with_traceback)
+        print("%s; %s" % (type(ex), ex))
         return {"args": cmd, "returncode": -1, "stdout": "", "stderr": str(ex)}
 
 
@@ -120,6 +119,7 @@ def execute_script(script, success_message, error_message):
         result = execute(cmd)
         if result["returncode"] != 0:
             print_error(error_message)
+            print_error(result)
             sys.exit(1)
         else:
             print_ok(success_message)

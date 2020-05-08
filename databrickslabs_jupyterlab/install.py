@@ -194,7 +194,7 @@ def _set_conda_env(env_name):
     if env_name is None:
         return ""
     else:
-        return "source $(conda info | awk '/base env/ {print $4}')/bin/activate '%s'" % env_name
+        return "source $(conda info | awk '/base env/ {print $4}')/bin/activate '%s'\n" % env_name
 
 
 def validate(env_name=None, labext=False):
