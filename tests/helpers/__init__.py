@@ -1,16 +1,23 @@
 import json
 import os
 import platform
+import subprocess
 import yaml
 from jupyter_client import kernelspec
 
 if platform.uname().system == "Windows":
-    EXE = "..\\dj.bat"
+    EXE = "dj.bat"
+    # EXE = "..\\dj.bat"
     SSH = os.environ.get("SSH") or "ssh"
     TEMP = "C:\\Windows\\Temp\\"
     RUNNING_FILE = "C:\\Windows\\Temp\\{}_running_clusters.json".format(os.environ["CLOUD"])
 else:
-    EXE = "../databrickslabs-jupyterlab"
+    EXE = (
+        subprocess.check_output(["command", "-v", "databrickslabs-jupyterlab"])
+        .decode("utf-8")
+        .strip()
+    )
+    # EXE = "../databrickslabs-jupyterlab"
     SSH = "ssh"
     RUNNING_FILE = "/tmp/{}_running_clusters.json".format(os.environ["CLOUD"])
     TEMP = "/tmp/"

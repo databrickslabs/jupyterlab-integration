@@ -60,6 +60,7 @@ class TestKernelSpec:
         self.host, self.token = get_db_config(self.profile)
         self.org = get_orgid()
         self.log = logging.getLogger("TestKernelSpec")
+        self.log.info("Using %s on %s", EXE, ("AWS" if is_aws() else "Azure"))
 
     def test_configure_ssh(self, name, cluster_id):
         cluster_id2, public_ip, cluster_name, _ = get_cluster(self.profile, cluster_id)

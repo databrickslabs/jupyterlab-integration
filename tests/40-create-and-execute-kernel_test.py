@@ -8,7 +8,7 @@ import pytest
 
 from jupyter_client.manager import start_new_kernel
 
-from helpers import get_kernel_path, get_running_clusters, SSH, TEMP
+from helpers import get_kernel_path, get_running_clusters, EXE, SSH, TEMP, is_aws
 
 
 def pytest_generate_tests(metafunc):
@@ -53,6 +53,7 @@ class TestRunKernel:
 
     def setup_method(self):
         self.log = logging.getLogger("TestRunKernel")
+        self.log.info("Using %s on %s", EXE, ("AWS" if is_aws() else "Azure"))
 
     def test_ipykernel_before_start(self, name, cluster_id, spark):
         with pytest.raises(subprocess.CalledProcessError):

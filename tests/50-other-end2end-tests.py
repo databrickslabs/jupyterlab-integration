@@ -8,7 +8,7 @@ import requests
 
 from pytest_httpserver import HTTPServer
 
-from helpers import get_profile, EXE
+from helpers import get_profile, EXE, is_aws
 
 from databrickslabs_jupyterlab.local import get_db_config
 from databrickslabs_jupyterlab import __version__
@@ -19,6 +19,7 @@ class TestEnd2End:
         self.profile = get_profile()
         self.host, self.token = get_db_config(self.profile)
         self.log = logging.getLogger("TestEnd2End")
+        self.log.info("Using %s on %s", EXE, ("AWS" if is_aws() else "Azure"))
 
     def test_dj_p(self):
         result = subprocess.check_output([EXE, self.profile, "-p"])
