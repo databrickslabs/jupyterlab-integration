@@ -4,9 +4,9 @@
 
   ```text
                        M W
-  Installation         _ _
-  Bootstrap  (dj -b)   _ _
-  SSH config (dj -s)   _ _
+  Installation         Y _
+  Bootstrap  (dj -b)   Y _
+  SSH config (dj -s)   Y _
   ```
 
 - **Infos**
@@ -33,10 +33,10 @@
   - **Create Kernel Specification**
 
     ```text
-    dj profile -k                      Y _   Y _   Y _    Y _   Y _   Y _   Y _   Y _
-    dj profile -k -D                   Y _   Y _   Y _    Y _   Y _   Y _   Y _   Y _
-    dj profile -k -N                   Y _   Y _   Y _    Y _   Y _   Y _   Y _   Y _
-    dj profile -k -i CLUSTER_ID        Y _   Y _   Y _    Y _   Y _   Y _   Y _   Y _
+    dj profile -k                      Y _   Y _   Y _    Y _  Y _   Y _   Y _   Y _
+    dj profile -k -D                   Y _   Y _   Y _    Y _  Y _   Y _   Y _   Y _
+    dj profile -k -N                   Y _   Y _   Y _    Y _  Y _   Y _   Y _   Y _
+    dj profile -k -i CLUSTER_ID        Y _   Y _   Y _    Y _  Y _   Y _   Y _   Y _
     ```
 
   - **Mirror environment**
@@ -48,7 +48,7 @@
   - **Reconfigure Kernel**
 
     ```text
-    dj profile -r -i CLUSTER_ID        ___   ___   ___   ___   ___   ___   ___   ___
+    dj profile -r -i CLUSTER_ID        Y _   Y _   Y _   Y _   Y _   Y _   Y _   Y _
     ```
 
 - **Kernel Specification Azure**
@@ -73,7 +73,7 @@
   - **Reconfigure Kernel**
 
     ```text
-    dj profile -r -i CLUSTER_ID        ___   ___   ___   ___   ___   ___   ___   ___
+    dj profile -r -i CLUSTER_ID        Y _   Y _   Y _   Y _   Y _   Y _   Y _   Y _
     ```
 
 - **Delete Kernel Specification**
