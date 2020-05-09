@@ -139,7 +139,6 @@ class DatabricksKernel(SshKernel):
                 gw_port, gw_token, self.token, self.scala_context_id
             )
         )
-        self._logger.debug("cmd: %s", cmd)
         try:
             result = self.kc.execute_interactive(
                 cmd, silent=True, store_history=False, user_expressions={"spark": "spark.version"}
