@@ -52,7 +52,7 @@ This package allows to connect to a remote Databricks cluster from a locally run
     ```bash
     (base)$ conda create -n db-jlab python=3.7
     (base)$ conda activate db-jlab
-    (db-jlab)$ pip install --upgrade databrickslabs-jupyterlab==2.0.0-rc1
+    (db-jlab)$ pip install --upgrade databrickslabs-jupyterlab==2.0.0-rc2
     ```
 
     The prefix `(db-jlab)$` for all command examples in this document assumes that the *databrickslabs_jupyterlab* conda enviromnent `db-jlab` is activated.
