@@ -212,13 +212,17 @@ class Command(Rest):
         context (Context): The Execution Context for the commands
     """
 
-    def __init__(self, url, cluster_id, token, language="python"):
+    def __init__(self, url, cluster_id, token, language="python", scala_context_id=None):
         self.token = token
         self.url = url
         self.cluster_id = cluster_id
         self.language = language
-        self.context = Context(url, cluster_id, token, language=language)
-        self.context.create()
+
+        self.context = Context(url, cluster_id, token, language)
+        if scala_context_id is None:
+            self.context.create()
+        else:
+            self.context.id = scala_context_id
 
     def execute(self, command, full_result=False):
         """Execute a python command under the given Execution Context

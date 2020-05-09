@@ -217,7 +217,7 @@ class DatabricksBrowser:
         return MLflowBrowser(experiment_name)
 
 
-def dbcontext(progressbar=True, gw_port=None, gw_token=None, token=None):
+def dbcontext(progressbar=True, gw_port=None, gw_token=None, token=None, scala_context_id=None):
     """Create a databricks context
     The following objects will be created
     - Spark Session
@@ -349,7 +349,7 @@ def dbcontext(progressbar=True, gw_port=None, gw_token=None, token=None):
     # Only necessary when mlflow is installed
     #
 
-    print("Configuring mlflow")
+    print("Remote init: Configuring mlflow")
     try:
         from databricks_cli.configure.provider import (  # pylint: disable=import-outside-toplevel
             ProfileConfigProvider,
@@ -394,21 +394,23 @@ def dbcontext(progressbar=True, gw_port=None, gw_token=None, token=None):
     ip.register_magics
 
     # Setup scala context
-    def closeScalaCommand(scalaCommand):
-        print("closeScalaCommand", scalaCommand)
-        try:
-            scalaCommand.close()
-            print("SUCCESS: Scala context closed!")
-        except:  # pylint: disable=bare-except
-            print("ERROR: Scala context closing failed!")
 
-    try:
-        scalaCommand = Command(url=host, cluster_id=clusterId, token=token, language="scala")
-        ip.user_ns["__scalaCommand"] = scalaCommand
-        atexit.register(closeScalaCommand, scalaCommand)
-    except:  # pylint: disable=bare-except
-        print("Cannot create scala command, so %%scala will not work")
-        scalaCommand = None
+    if scala_context_id is not None:
+        print("Remote init: Configuring scala Command")
+        try:
+            scalaCommand = Command(
+                url=host,
+                cluster_id=clusterId,
+                token=token,
+                language="scala",
+                scala_context_id=scala_context_id,
+            )
+            ip.user_ns["__scalaCommand"] = scalaCommand
+        except:  # pylint: disable=bare-except
+            print("Cannot create scala command, so %%scala will not work")
+            scalaCommand = None
+    else:
+        print("Remote Init: %%scala will not work")
 
     # Forward spark variables to the user namespace
     #

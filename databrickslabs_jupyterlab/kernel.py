@@ -41,7 +41,8 @@ class DatabricksKernel(SshKernel):
 
         self.cluster_id = self.dbjl_env.get("DBJL_CLUSTER", None)
 
-        self.command = None
+        self.python_command = None
+        self.scala_context_id = None
         if not no_spark:
             # create remote executions context and retrieve its python path
             python_path = self.create_execution_context()
@@ -76,17 +77,32 @@ class DatabricksKernel(SshKernel):
             "profile=%s, host=%s, cluster_id=%s", self.profile, self.host, self.cluster_id
         )
 
+        # Create remote Python Context
         try:
-            self.command = Command(url=self.host, cluster_id=self.cluster_id, token=self.token)
+            self.python_command = Command(
+                url=self.host, cluster_id=self.cluster_id, token=self.token
+            )
+            self._logger.debug("Created remote Python context %s", self.python_command.context.id)
         except DatabricksApiException as ex:
             self._logger.error(str(ex))
-            raise SshKernelException("Cannot create execution context on remote cluster")
+            raise SshKernelException("Cannot create python execution context on remote cluster")
+
+        # Create remote Scala Context
+        try:
+            self.scala_command = Command(
+                url=self.host, cluster_id=self.cluster_id, token=self.token, language="scala"
+            )
+            self.scala_context_id = self.scala_command.context.id
+            self._logger.debug("Created remote Scala context %s", self.scala_context_id)
+        except DatabricksApiException as ex:
+            self._logger.error(str(ex))
+            self._logger.error("Cannot create Scala context, %%scala will not be possible")
 
         self._logger.info("Gateway created for cluster '%s'", self.cluster_id)
 
         try:
             cmd = "import sys; print(sys.executable.split('/bin/')[0])"
-            result = self.command.execute(cmd)
+            result = self.python_command.execute(cmd)
         except Exception as ex:  # pylint: disable=broad-except
             self._logger.error("ERROR %s: %s", type(ex), ex)
             raise SshKernelException("Cannot retrieve python executable from remote cluster")
@@ -107,7 +123,7 @@ class DatabricksKernel(SshKernel):
                 "c=sc._gateway.client.gateway_client; "
                 + 'print(c.gateway_parameters.auth_token + "|" + str(c.port))'
             )
-            result = self.command.execute(cmd)
+            result = self.python_command.execute(cmd)
         except Exception as ex:  # pylint: disable=broad-except
             self._logger.error("ERROR %s: %s", type(ex), ex)
             raise SshKernelException("Cannot retrieve py4j gateway from remote cluster")
@@ -119,10 +135,11 @@ class DatabricksKernel(SshKernel):
         cmd = (
             "from databrickslabs_jupyterlab.connect import dbcontext; "
             + "dbcontext(progressbar=True"
-            + ", gw_port={gw_port}, gw_token='{gw_token}', token='{token}')".format(
-                gw_port=gw_port, gw_token=gw_token, token=self.token
+            + ", gw_port={}, gw_token='{}', token='{}', scala_context_id='{}')".format(
+                gw_port, gw_token, self.token, self.scala_context_id
             )
         )
+        self._logger.debug("cmd: %s", cmd)
         try:
             result = self.kc.execute_interactive(
                 cmd, silent=True, store_history=False, user_expressions={"spark": "spark.version"}
@@ -142,9 +159,14 @@ class DatabricksKernel(SshKernel):
     def close(self):
         if not self.no_spark:
             try:
-                self.command.close()
+                self.python_command.close()
                 self._logger.info("Remote Python context closed")
-            except:  # pylint: disable=bare-except
-                pass
+            except Exception as ex:  # pylint: disable=broad-except
+                self._logger.error("%s: Failed closing Remote Python context: %s", type(ex), ex)
+            try:
+                self.scala_command.close()
+                self._logger.info("Remote Scala context closed")
+            except Exception as ex:  # pylint: disable=broad-except
+                self._logger.error("%s: Failed closing Remote Scala context: %s", type(ex), ex)
 
         super().close()
