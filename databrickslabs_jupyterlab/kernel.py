@@ -143,7 +143,8 @@ class DatabricksKernel(SshKernel):
         if not self.no_spark:
             try:
                 self.command.close()
+                self._logger.info("Remote Python context closed")
             except:  # pylint: disable=bare-except
                 pass
-        print(self._connection)
+
         super().close()
