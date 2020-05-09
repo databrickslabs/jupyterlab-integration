@@ -18,11 +18,11 @@ def main(host, conn_info, python_path, sudo, timeout, env, no_spark=False):
     """
     kernel = DatabricksKernel(host, conn_info, python_path, sudo, timeout, env, no_spark)
 
-    kernel.create_remote_connection_info()
-    kernel.start_kernel_and_tunnels()
-
-    # kernel._logger.info("Kernel stopped")
-    kernel.close()
+    try:
+        kernel.create_remote_connection_info()
+        kernel.start_kernel_and_tunnels()
+    except:
+        kernel._logger.error("Kernel could not be started")
 
 
 if __name__ == "__main__":
