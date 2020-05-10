@@ -334,7 +334,6 @@ if args.lab:
     import jupyterlab.labapp
 
     sys.argv = sys.argv[:1]
-    print(sys.argv)
     jupyterlab.labapp.main()
 
 #
