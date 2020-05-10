@@ -119,7 +119,7 @@ def execute_script(script, success_message, error_message):
         result = execute(cmd)
         if result["returncode"] != 0:
             print_error(error_message)
-            print_error(result)
+            print_error(str(result))
             sys.exit(1)
         else:
             print_ok(success_message)
