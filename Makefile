@@ -1,4 +1,4 @@
-.PHONY: clean wheel install tests check_version dist check_dist upload_test upload dev_tools bump bump_ext release
+.PHONY: clean wheel install tests check_version dist check_dist upload_test upload dev_tools bump bump_ext release docker
 
 NO_COLOR = \x1b[0m
 OK_COLOR = \x1b[32;01m
@@ -106,3 +106,5 @@ check_version:
 dev_tools:
 	pip install twine bumpversion yapf pylint pyYaml
 
+docker:
+	@cd docker/image && docker build -t databrickslabs-jupyterlab:$(CURRENT_VERSION) .

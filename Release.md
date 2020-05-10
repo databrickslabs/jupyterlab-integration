@@ -167,7 +167,21 @@ In case the jupyter labextions and/or the python code has been changed:
     make upload
     ```
 
-### 4 Push changes
+### 4 Docker image
+
+1. Create docker image
+
+    ```bash
+    make docker
+    ```
+
+2. Publish image
+
+    ```bash
+    TODO
+    ```
+
+### 5 Push changes
 
 1. Push repo and tag
 

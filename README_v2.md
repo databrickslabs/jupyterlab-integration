@@ -29,7 +29,7 @@ This package allows to connect to a remote Databricks cluster from a locally run
 
     Configure your Databricks clusters to allow ssh access, see [Configure SSH access](docs/ssh-configurations.md)
 
-    Note: *Only clusters with valid ssh configuration are visible to *databrickslabs_jupyterlab*.*
+    Note: *Only clusters with valid ssh configuration are visible to databrickslabs_jupyterlab.*
 
 6. **Databricks Runtime**
 
@@ -41,12 +41,49 @@ This package allows to connect to a remote Databricks cluster from a locally run
     - 6.5 / 6.5 ML
     - 7.0 BETA, 7.0 ML BETA 
 
-    *\* not supported with Windows client dues to conflicts with Python 3.5*
+    \* *not supported with Windows client due to conflicts with Python 3.5*
 
+## 2 Running with docker
 
-## 2 Installation
+A docker image ready for working with *Jupyterlab Integration* is available from Dockerhub. There are two scripts in the folder `docker`:
+
+- **databrickslabs-jupyterlab for docker** (`dk-dj`):
+    This is the *Jupyterlab Integration* configuration utility:
+
+    ```bash
+    docker run -it --rm \
+        -p 8888:8888 \
+        -v $(pwd)/kernels:/home/dbuser/.local/share/jupyter/kernels/ \
+        -v $HOME/.ssh/:/home/dbuser/.ssh  \
+        -v $HOME/.databrickscfg:/home/dbuser/.databrickscfg \
+        -v $(pwd):/home/dbuser/notebooks \
+        databrickslabs-jupyterlab:2.0.0-rc2 \
+        /opt/conda/bin/databrickslabs-jupyterlab $@
+    ```
+
+- **jupyter for docker** (`dk-jupyter`):
+
+    This is the command to run *Jupyter Lab* from the docker container:
+
+    ```bash
+    docker run -it --rm \
+        -p 8888:8888 \
+        -v $(pwd)/kernels:/home/dbuser/.local/share/jupyter/kernels/ \
+        -v $HOME/.ssh/:/home/dbuser/.ssh  \
+        -v $HOME/.databrickscfg:/home/dbuser/.databrickscfg \
+        -v $(pwd):/home/dbuser/notebooks \
+        databrickslabs-jupyterlab:2.0.0-rc2 \
+        /opt/conda/bin/jupyter $@
+    ```
+
+The two scripts assume that notebooks will be in the current folder and kernels will be in the `kernels` subfolder of the current folder. 
+The scripts can be easily downloaded, edited, used via alias or ported to Windows.
+If you keep the defaults, create folder `./kernels` before running.
+
+## 3 Local installation
 
 1. **Install databrickslabs_jupyterlab**
+
     Create a new conda environment and install *databrickslabs_jupyterlab* with the following commands:
 
     ```bash
@@ -57,7 +94,8 @@ This package allows to connect to a remote Databricks cluster from a locally run
 
     The prefix `(db-jlab)$` for all command examples in this document assumes that the *databrickslabs_jupyterlab* conda enviromnent `db-jlab` is activated.
 
-2. **The tool databrickslabs_jupyterlab** 
+2. **The tool databrickslabs_jupyterlab**
+
     It comes with a batch file `dj.bat` for Windows. On MacOS or Linux, an alias is recommended
 
     ```bash
@@ -67,17 +105,19 @@ This package allows to connect to a remote Databricks cluster from a locally run
     The following description will assume, this alias is set so that Windows and MacOS / Linux share the same commands.
 
 3. **Bootstrap databrickslabs_jupyterlab**
+
     Bootstrap the environment for *databrickslabs_jupyterlab* with the following command, which will finish with showing the usage:
 
     ```bash
     (db-jlab)$ dj -b
     ```
 
-## 3 Getting started
+## 4 Getting started with local installation or docker
 
 Ensure, ssh access is correctly configured, see [Configure SSH access](docs/ssh-configurations.md)
+If you work with the docker variant, prefix `dk-` to the `dj`, `jupyter` or `jupyter-lab` commands
 
-### 3.1 Starting Jupyter Lab
+### 4.1 Starting Jupyter Lab
 
 1. **Create a kernel specification**
     In the terminal, create a jupyter kernel specification for a *Databricks CLI* profile `$PROFILE` and start Jupyter Lab with the following command:
@@ -93,25 +133,25 @@ Ensure, ssh access is correctly configured, see [Configure SSH access](docs/ssh-
     (db-jlab)$ dj $PROFILE -l
     ```
 
-    The command with `-l` is a save version for the standard command to start Jupyter Lab (`jupyter lab`) that ensures that the kernel specificiation is updated.
+    The command with `-l` is a safe version for the standard command to start Jupyter Lab (`jupyter lab`) that ensures that the kernel specificiation is updated.
 
     A new kernel is available in the kernel change menu (see [here](docs/kernel-name.md) for an explanation of the kernel name structure)
 
-### 3.2 Using Spark in the Notebook
+### 4.2 Using Spark in the Notebook
 
 1. **Check whether the notebook is properly connected**
 
-    When the notebook successfully connected to the cluster, the status bar at the bottom of Jupyter lab should show `...|Idle  [Connected]`:
+    When the notebook successfully connected to the cluster, the status bar at the bottom of Jupyter lab should show `...|Idle  [Running(Spark)]` if you use a kernel with *Spark*, 
+    
+    ![kernel ready](docs/connected.png)
+
+    else just `...|Idle  [Running]`:
 
     ![kernel ready](docs/connected.png)
 
     If this is not the case, see [Troubleshooting](docs/troubleshooting.md)
 
-2. **Get a remote Spark Session in the notebook**
-
-    If a Spark kernel is selected, the kernel manager of Jupyter will create the kernel and automatically create the Spark Session.
-
-3. **Test the Spark access**
+2. **Test the Spark access**
 
     To check the remote Spark connection, enter the following lines into a notebook cell:
 
@@ -125,11 +165,11 @@ Ensure, ssh access is correctly configured, see [Configure SSH access](docs/ssh-
 
     It will show that the kernel is actually running remotely and the hostname of the driver. The second part quickly smoke tests a Spark job.
 
-    ![Get Token](docs/spark_test.png)
+    ![Spark test](docs/spark_test.png)
 
 **Success:** Your local Jupyter Lab is successfully contected to the remote Databricks cluster
 
-## 4 Advanced topics
+## 5 Advanced topics
 
 - [Switching kernels and restart after cluster auto-termination](docs/kernel_lifecycle.md)
 - [Creating a mirror of a remote Databricks cluster](docs/mirrored-environment.md)
