@@ -41,7 +41,7 @@ setup(
     license="Databricks License",
     keywords="databricks jupyter jupyterlab spark",
     packages=find_packages(),
-    scripts=["databrickslabs-jupyterlab"],
+    scripts=["databrickslabs-jupyterlab", "dj.bat"],
     install_requires=INSTALL_REQUIRES,
     extras_require=EXTRAS_REQUIRE,
     data_files=[
