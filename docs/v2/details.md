@@ -1,4 +1,4 @@
-## 5 Details
+## 5.3 Details
 
 Details to some of the flags of `dj` / `databrickslabs_jupyterlab`
 
@@ -13,7 +13,7 @@ Details to some of the flags of `dj` / `databrickslabs_jupyterlab`
                                     [-B] [-N]
                                     [profile]
 
-    Configure remote Databricks access with Jupyter Lab
+    Configure remote Databricks access with JupyterLab
 
     positional arguments:
     profile               A databricks-cli profile
@@ -28,7 +28,7 @@ Details to some of the flags of `dj` / `databrickslabs_jupyterlab`
     -i CLUSTER_ID, --id CLUSTER_ID
                             The cluster_id to avoid manual selection
     -k, --kernelspec      Create a kernel specification
-    -l, --lab             Safely start Jupyter Lab
+    -l, --lab             Safely start JupyterLab
     -n NOTEBOOK_URL, --notebook_url NOTEBOOK_URL
                             Download demo notebook
     -o ORGANISATION, --organisation ORGANISATION
@@ -56,7 +56,7 @@ Details to some of the flags of `dj` / `databrickslabs_jupyterlab`
 
     This will load all necessary packaes and labextensions after installaion of *databrickslabs_jupyterlab* via `pip`
 
-- **-d/--delete:** Delete selectively JupyterLab Integration kernel specifications
+- **-d/--delete:** Delete selectively *JupyterLab Integration* kernel specifications
 
     ```bash
     (db-jlab2)$ dj -d
@@ -87,9 +87,9 @@ Details to some of the flags of `dj` / `databrickslabs_jupyterlab`
     - Installs `databrickslabs_jupyterlab`, `ipykernel` and `ipywidgets` on the remote driver
     - Creates the remote kernel specification
 
-- **-l/--lab:** Safely start Jupyter Lab
+- **-l/--lab:** Safely start JupyterLab
 
-    while you can start Jupyter Lab via `jupyter lab`, it is recommended to use the wrapper
+    while you can start JupyterLab via `jupyter lab`, it is recommended to use the wrapper
 
     ```bash
     (db-jlab2)$ dj $PROFILE -l [-i <cluster name>]

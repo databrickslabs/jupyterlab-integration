@@ -41,7 +41,7 @@ class VCheck(Enum):
         return self.value
 
 
-parser = argparse.ArgumentParser(description="Configure remote Databricks access with Jupyter Lab")
+parser = argparse.ArgumentParser(description="Configure remote Databricks access with JupyterLab")
 
 parser.add_argument("profile", nargs="?", type=str, default="", help="A databricks-cli profile")
 parser.add_argument(
@@ -81,7 +81,7 @@ parser.add_argument(
     action="store_true",
     help="Create a kernel specification",
 )
-parser.add_argument("-l", "--lab", dest="lab", action="store_true", help="Safely start Jupyter Lab")
+parser.add_argument("-l", "--lab", dest="lab", action="store_true", help="Safely start JupyterLab")
 parser.add_argument("-n", "--notebook_url", dest="notebook_url", help="Download demo notebook")
 parser.add_argument(
     "-o", "--organisation", dest="organisation", help="The organisation for Azure Databricks"

@@ -36,7 +36,7 @@ setup(
     author="Bernhard Walter",
     author_email="bernhard.walter@databricks.com",
     url="https://github.com/databrickslabs/Jupyterlab-Integration",
-    description=("Remote Jupyter Lab kernel for Databricks"),
+    description=("Remote JupyterLab kernel for Databricks"),
     long_description_content_type="text/markdown",
     license="Databricks License",
     keywords="databricks jupyter jupyterlab spark",

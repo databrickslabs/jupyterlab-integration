@@ -1,4 +1,4 @@
-## Troubleshooting
+## 5.5 Troubleshooting
 
 - **The status bar at the bottom of Jupyter lab does not show** `...|Idle  [Running]` or `...|Idle  [Running(Spark)]`
 

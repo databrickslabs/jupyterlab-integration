@@ -245,18 +245,23 @@ If you work with the docker variant, use `dk-dj` instead of `dj` and `dk-jupyter
 
 ## 5 Advanced topics
 
-- [Switching kernels and restart after cluster auto-termination](docs/v2/kernel_lifecycle.md)
-- [Creating a mirror of a remote Databricks cluster](docs/v2/mirrored-environment.md)
-- [Detailed databrickslabs_jupyterlab command overview](docs/v2/details.md)
-- [How it works](docs/v2/how-it-works.md)
-- [Troubleshooting](docs/v2/troubleshooting.md)
+[5.1 Switching kernels and restart after cluster auto-termination](docs/v2/kernel_lifecycle.md)
 
-## 5 Project Support
+[5.2 Creating a mirror of a remote Databricks cluster](docs/v2/mirrored-environment.md)
+
+[5.3 Detailed databrickslabs_jupyterlab command overview](docs/v2/details.md)
+
+[5.4 How it works](docs/v2/how-it-works.md)
+
+[5.5 Troubleshooting](docs/v2/troubleshooting.md)
+
+
+## 6 Project Support
 Please note that all projects in the /databrickslabs github account are provided for your exploration only, and are not formally supported by Databricks with Service Level Agreements (SLAs). They are provided AS-IS and we do not make any guarantees of any kind. Please do not submit a support ticket relating to any issues arising from the use of these projects.
 
 Any issues discovered through the use of this project should be filed as GitHub Issues on the Repo. They will be reviewed as time permits, but there are no formal SLAs for support.
 
-## 6 Test notebooks
+## 7 Test notebooks
 
 To work with the test notebooks in `./examples` the remote cluster needs to have the following libraries installed:
 

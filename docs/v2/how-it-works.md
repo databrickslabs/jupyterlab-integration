@@ -1,4 +1,4 @@
-## How it works
+## 5.4 How it works
 
 To understand how databrickslabs_jupyterlab works, let's fist look at how Standard Jupyter kernels get started
 
