@@ -93,7 +93,7 @@ A docker image ready for working with *Jupyterlab Integration* is available from
         -v $HOME/.ssh/:/home/dbuser/.ssh  \
         -v $HOME/.databrickscfg:/home/dbuser/.databrickscfg \
         -v $(pwd):/home/dbuser/notebooks \
-        databrickslabs-jupyterlab:2.0.0-rc2 \
+        bwalter42/databrickslabs_jupyterlab:2.0.0-rc2 \
         /opt/conda/bin/databrickslabs-jupyterlab $@
     ```
 
@@ -108,7 +108,7 @@ A docker image ready for working with *Jupyterlab Integration* is available from
         -v $HOME/.ssh/:/home/dbuser/.ssh  \
         -v $HOME/.databrickscfg:/home/dbuser/.databrickscfg \
         -v $(pwd):/home/dbuser/notebooks \
-        databrickslabs-jupyterlab:2.0.0-rc2 \
+        bwalter42/databrickslabs_jupyterlab:2.0.0-rc2 \
         /opt/conda/bin/jupyter $@
     ```
 
