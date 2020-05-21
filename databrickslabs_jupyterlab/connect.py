@@ -371,7 +371,8 @@ def dbcontext(progressbar=True, gw_port=None, gw_token=None, token=None, scala_c
     shell = get_ipython()
     shell.sc = sc
     shell.sqlContext = sqlContext
-    shell.displayHTML = lambda html: display(HTML(html))
+    # shell.displayHTML = lambda html: display(HTML(html))
+    shell.user_ns["displayHTML"] = lambda html: display(HTML(html))
 
     # Retrieve the py4j gateway entrypoint
     #
