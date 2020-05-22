@@ -190,6 +190,90 @@ class DbjlMagics(Magics):
         else:
             return spark.sql(code)
 
+    @line_cell_magic
+    def fs(self, line, cell=None):
+        """Cell magic to browse DBFS
+
+        Args:
+            line (str): line behind %fs
+            cell (str, optional): cell below %%fs. Defaults to None.
+        
+        Returns:
+            None
+        """
+
+        def confirm(prompt):
+            answer = ""
+            while answer not in ["y", "n"]:
+                answer = input(prompt + " (y/n) ").lower()
+            return answer == "y"
+
+        ip = get_ipython()
+        dbutils = ip.user_ns["dbutils"]
+
+        if cell is None:
+            cmd = line.strip().split()
+        else:
+            cmd = cell.strip().split()
+
+        if cmd[0] == "cp":
+            if cmd[1] in ("--recurse", "-r"):
+                if confirm("Recursively copy '{}' to '{}'".format(cmd[2], cmd[3])):
+                    dbutils.fs.cp(cmd[2], cmd[3], recurse=True)
+                    print("done")
+            else:
+                if confirm("Copy '{}' to '{}'".format(cmd[1], cmd[2])):
+                    dbutils.fs.cp(cmd[1], cmd[2], recurse=False)
+                    print("done")
+
+        elif cmd[0] == "head":
+            if cmd[1] in ("--maxBytes", "-m"):
+                print("Showing head of file '{}' with max. {} bytes:\n".format(cmd[3], cmd[2]))
+                print(dbutils.fs.head(cmd[3], max_bytes=int(cmd[2])))
+            else:
+                print("Show head of file '{}':\n".format(cmd[1]))
+                print(dbutils.fs.head(cmd[1]))
+
+        elif cmd[0] == "ls":
+            print("List directory '{}':\n".format(cmd[1]))
+            for f in dbutils.fs.ls(cmd[1]):
+                print(f)
+
+        elif cmd[0] == "mkdirs":
+            if confirm("Make dirs '{}'".format(cmd[1])):
+                dbutils.fs.mkdirs(cmd[1])
+                print("done")
+
+        elif cmd[0] == "mv":
+            if cmd[1] in ("--recurse", "-r"):
+                if confirm("Recursively moving '{}' to '{}'".format(cmd[2], cmd[3])):
+                    dbutils.fs.mv(cmd[2], cmd[3], recurse=True)
+                    print("done")
+            else:
+                if confirm("Moving '{}' to '{}'".format(cmd[1], cmd[2])):
+                    dbutils.fs.mv(cmd[1], cmd[2], recurse=False)
+                    print("done")
+
+        elif cmd[0] == "put":
+            if cmd[1] in ("--overwrite", "-o"):
+                if confirm("Overwriting file '{}' with '{}'".format(cmd[2], " ".join(cmd[3:]))):
+                    dbutils.fs.put(cmd[2], " ".join(cmd[3:]), overwrite=True)
+                    print("done")
+            else:
+                if confirm("Writing '{}' to file '{}'".format(" ".join(cmd[2:]), cmd[1])):
+                    dbutils.fs.put(cmd[1], " ".join(cmd[2:]), overwrite=False)
+                    print("done")
+
+        elif cmd[0] == "rm":
+            if cmd[1] in ("--recurse", "-r"):
+                if confirm("Recursively deleting '{}'".format(cmd[2])):
+                    dbutils.fs.rm(cmd[2], recurse=True)
+                    print("done")
+            else:
+                if confirm("Deleting '{}'".format(cmd[1])):
+                    dbutils.fs.rm(cmd[1], recurse=False)
+                    print("done")
+
 
 class DatabricksBrowser:
     """[summary]
@@ -392,7 +476,6 @@ def dbcontext(progressbar=True, gw_port=None, gw_token=None, token=None, scala_c
     #
     # ip.register_magic_function(sql, magic_kind="line_cell")
     ip.register_magics(DbjlMagics)
-    ip.register_magics
 
     # Setup scala context
 
