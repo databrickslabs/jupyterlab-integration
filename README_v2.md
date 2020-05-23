@@ -12,46 +12,59 @@ This package allows to connect to a remote Databricks cluster from a locally run
 **New features:**
 
 - **Input of Personal Access Token (PAT) in Jupyter is not necessary any more**
+    
     While starting the kernel, the kernel manager will use an own kernel client and create the Spark Session and other artifacts via REST API and the secure SSH tunnels *[(DEMO)](docs/v2/news/start-kernelspec.md)*.
 
 - **Native Windows support**
+    
     Anaconda and Jupyter on Windows 10 (with OpenSSH) can be used with *JupyterLab Integration*
 
 - **Docker support**
+    
     No need for local Anaconda and *JupyterLab Integration* installation - the quickest way to test *JupyterLab Integration*.
 
 - **DBFS browser with file preview**
+    
     The DBFS browser does not use sidecar any more and allows to preview many text files like csv, sh, py, ... *[(DEMO)](docs/v2/news/dbfs-browser.md)*
 
 - **Database browser with schema and data preview**
+    
     The Database browser does not use sidecar any more and allows to preview the table schema and shows sample rows of the data *[(DEMO)](docs/v2/news/database-browser.md)*
 
 - **Support for `dbutils.secrets`**
+    
     `dbutils.secrets` allow to hide credentials from your code *[(DEMO)](docs/v2/news/dbutils.secrets.md)*
 
 - **Support for `dbutils.notebook`**
+    
     Higher compatibility with Databricks notebooks: 
     - `dbutils.notebook.exit` stops "Running all cells" *[(DEMO)](docs/v2/news/dbutils.notebook.exit.md)* 
     - `dbutils.notebook.run` allows to run `.py`and `.ipynb` files from notebooks in JupyterLab Integration *[(DEMO)](docs/v2/news/dbutils.notebook.run.md)*
 
 - **Support for kernels without Spark**
+    
     For Deep Learning no Spark Session on the remote cluster is required *[(DEMO)](docs/v2/news/with-and-without-spark.md)*
 
 - **Support of Databricks Runtimes 6.4 and higher (incl 7.0)**
+    
     The changed initialisation from DBR 6.4 and above is now supported
 
 - **JupyterLab 2.1 is now default**
+    
     Bumped JupyterLab to the latest version
 
 **New experimental features**
 
 - **Scala support (*experimental*)**
+    
     The `%%scala` magic will send Scala code to the same Spark Context *[(DEMO)](docs/v2/news/scala-magic.md)*
 
 - **%fs support (*experimental*)**
+    
     The `%fs` of `%%fs` magic is supported as a shortcut for `dbutils.fs.xxx` *[(DEMO)](docs/v2/news/fs-magic.md)*
 
 - **Improved Databricks example notebook download from the Databricks documentation (*experimental*)**
+    
     Supports downloading *.html* notebooks from the Databricks documentation web pages. Databricks magics like `%sh`, `%scala`, `%sql`, ... will be properly translated to Jupyter magics `%%sh`, `%%scala`, `%%sql`, ...
 
 
