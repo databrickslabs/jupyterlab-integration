@@ -82,7 +82,7 @@ This package allows to connect to a remote Databricks cluster from a locally run
 
 3. **Python**
 
-    - Python 3.6 and Python 3.7 both on the remote cluster or locally (only for *DBR 5.5 LTS* Python 3.5 should be used locally).
+    - Python 3.6 and Python 3.7 both on the remote cluster and locally (only for *DBR 5.5 LTS* Python 3.5 should be used locally).
     - Python 2.7 is not supported, neither on the remote cluster nor locally
 
 
@@ -90,13 +90,18 @@ This package allows to connect to a remote Databricks cluster from a locally run
 
     To install Databricks CLI and configure profile(s) for your cluster(s), please refer to [AWS](https://docs.databricks.com/user-guide/dev-tools/databricks-cli.html) / [Azure](https://docs.azuredatabricks.net/user-guide/dev-tools/databricks-cli.html)
 
-    Note: Whenever `$PROFILE` is used in this documentation, it refers to a valid Databricks CLI profile name, stored in a shell environment variable.
+    Note: 
+    
+    - JupyterLab Integration does not support Databricks CLI profile with username password. Only [Personal Access Tokens](https://docs.databricks.com/dev-tools/api/latest/authentication.html) are supported.
+    - Whenever `$PROFILE` is used in this documentation, it refers to a valid Databricks CLI profile name, stored in a shell environment variable.
 
 5. **SSH access to the Databricks cluster**
 
     Configure your Databricks clusters to allow ssh access, see [Configure SSH access](docs/ssh-configurations.md)
 
-    Note: *Only clusters with valid ssh configuration are visible to* `databrickslabs_jupyterlab`.
+    Note: 
+
+    - *Only clusters with valid ssh configuration are visible to* `databrickslabs_jupyterlab`.
 
 6. **Databricks Runtime**
 
