@@ -18,6 +18,6 @@ RUN useradd -ms /bin/bash dbuser && \
     chown -R dbuser:dbuser /home/dbuser/.jupyter && \
     chown -R dbuser:dbuser /home/dbuser/.local/
 
-USER dbuser
+ADD --chown=dbuser:dbuser jupyter_notebook_config.py /home/dbuser/.jupyter/
 
-ADD jupyter_notebook_config.py /home/dbuser/.jupyter/
+USER dbuser
