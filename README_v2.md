@@ -2,7 +2,6 @@
 
 This package allows to connect to a remote Databricks cluster from a locally running JupyterLab.
 
-
                                     ______________________________________
                               _____|                                      |_____
                               \    |    NEW MAJOR RELEASE V2 (May 2020)   |    /
@@ -23,23 +22,31 @@ This package allows to connect to a remote Databricks cluster from a locally run
 
     No need for local Anaconda and *JupyterLab Integration* installation - the quickest way to test *JupyterLab Integration*.
 
-- **DBFS browser with file preview**
+- **Browsers**
 
-    The DBFS browser does not use sidecar any more and allows to preview many text files like csv, sh, py, ... *[(DEMO)](docs/v2/news/dbfs-browser.md)*
+    - **DBFS browser with file preview**
 
-- **Database browser with schema and data preview**
+        The DBFS browser does not use sidecar any more and allows to preview many text files like csv, sh, py, ... *[(DEMO)](docs/v2/news/dbfs-browser.md)*
 
-    The Database browser does not use sidecar any more and allows to preview the table schema and shows sample rows of the data *[(DEMO)](docs/v2/news/database-browser.md)*
+    - **Database browser with schema and data preview**
 
-- **Support for `dbutils.secrets`**
+        The Database browser does not use sidecar any more and allows to preview the table schema and shows sample rows of the data *[(DEMO)](docs/v2/news/database-browser.md)*
 
-    `dbutils.secrets` allow to hide credentials from your code *[(DEMO)](docs/v2/news/dbutils.secrets.md)*
+    - **MLflow browser**
 
-- **Support for `dbutils.notebook`**
+        A mlflow experiements browser that converts all runs of an experiment into a Pandas Dataframe to query and compare best runs in pandas.
 
-    Higher compatibility with Databricks notebooks: 
-    - `dbutils.notebook.exit` stops "Running all cells" *[(DEMO)](docs/v2/news/dbutils.notebook.exit.md)* 
-    - `dbutils.notebook.run` allows to run `.py`and `.ipynb` files from notebooks in JupyterLab Integration *[(DEMO)](docs/v2/news/dbutils.notebook.run.md)*
+- **dbutils**
+
+    - **Support for `dbutils.secrets`**
+
+        `dbutils.secrets` allow to hide credentials from your code *[(DEMO)](docs/v2/news/dbutils.secrets.md)*
+
+    - **Support for `dbutils.notebook`**
+
+        Higher compatibility with Databricks notebooks: 
+        - `dbutils.notebook.exit` stops "Running all cells" *[(DEMO)](docs/v2/news/dbutils.notebook.exit.md)* 
+        - `dbutils.notebook.run` allows to run `.py`and `.ipynb` files from notebooks in JupyterLab Integration *[(DEMO)](docs/v2/news/dbutils.notebook.run.md)*
 
 - **Support for kernels without Spark**
 
@@ -121,36 +128,40 @@ This package allows to connect to a remote Databricks cluster from a locally run
 
 ## 2 Running with docker
 
-A docker image ready for working with *Jupyterlab Integration* is available from Dockerhub. There are two scripts in the folder `docker`:
+A docker image ready for working with *Jupyterlab Integration* is available from Dockerhub. There are two scripts in the folder `docker`. Alternatively, under macOS and Linux use the following bash functions:
 
-- *databrickslabs-jupyterlab* for docker (`docker/dk-dj`):
+- *databrickslabs-jupyterlab* for docker (see also `docker/dk-dj`):
 
     This is the *Jupyterlab Integration* configuration utility using the docker image:
 
     ```bash
-    docker run -it --rm \
-        -p 8888:8888 \
-        -v $(pwd)/kernels:/home/dbuser/.local/share/jupyter/kernels/ \
-        -v $HOME/.ssh/:/home/dbuser/.ssh  \
-        -v $HOME/.databrickscfg:/home/dbuser/.databrickscfg \
-        -v $(pwd):/home/dbuser/notebooks \
-        bwalter42/databrickslabs_jupyterlab:2.0.0-rc2 \
-        /opt/conda/bin/databrickslabs-jupyterlab $@
+    function dk-dj {
+        docker run -it --rm \
+            -p 8888:8888 \
+            -v $(pwd)/kernels:/home/dbuser/.local/share/jupyter/kernels/ \
+            -v $HOME/.ssh/:/home/dbuser/.ssh  \
+            -v $HOME/.databrickscfg:/home/dbuser/.databrickscfg \
+            -v $(pwd):/home/dbuser/notebooks \
+            bwalter42/databrickslabs_jupyterlab:2.0.0-rc2 \
+            /opt/conda/bin/databrickslabs-jupyterlab $@
+    }
     ```
 
-- *jupyter* for docker (`docker/dk-jupyter`):
+- *jupyter* for docker (see also `docker/dk-jupyter`):
 
     Allows to run *jupyter* commands using the docker image:
 
     ```bash
-    docker run -it --rm \
-        -p 8888:8888 \
-        -v $(pwd)/kernels:/home/dbuser/.local/share/jupyter/kernels/ \
-        -v $HOME/.ssh/:/home/dbuser/.ssh  \
-        -v $HOME/.databrickscfg:/home/dbuser/.databrickscfg \
-        -v $(pwd):/home/dbuser/notebooks \
-        bwalter42/databrickslabs_jupyterlab:2.0.0-rc2 \
-        /opt/conda/bin/jupyter $@
+    function dk-jupyter {
+        docker run -it --rm \
+            -p 8888:8888 \
+            -v $(pwd)/kernels:/home/dbuser/.local/share/jupyter/kernels/ \
+            -v $HOME/.ssh/:/home/dbuser/.ssh  \
+            -v $HOME/.databrickscfg:/home/dbuser/.databrickscfg \
+            -v $(pwd):/home/dbuser/notebooks \
+            bwalter42/databrickslabs_jupyterlab:2.0.0-rc2 \
+            /opt/conda/bin/jupyter $@
+    }
     ```
 
 The two scripts assume that notebooks will be in the current folder and kernels will be in the `kernels` subfolder of the current folder:
