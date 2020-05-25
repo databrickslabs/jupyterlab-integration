@@ -2,13 +2,15 @@
 
 This package allows to connect to a remote Databricks cluster from a locally running JupyterLab.
 
+```text
                                     ______________________________________
                               _____|                                      |_____
                               \    |    NEW MAJOR RELEASE V2 (May 2020)   |    /
                                )   |______________________________________|   (
                               /______)                                  (______\
+```
 
-**New features:**
+## New features
 
 - **Input of Personal Access Token (PAT) in Jupyter is not necessary any more**
 
@@ -60,19 +62,19 @@ This package allows to connect to a remote Databricks cluster from a locally run
 
     Bumped JupyterLab to the latest version
 
-**New experimental features**
+- **Experimental features**
 
-- **Scala support (*experimental*)**
+    - **Scala support (*experimental*)**
 
-    The `%%scala` magic will send Scala code to the same Spark Context *[(DEMO)](docs/v2/news/scala-magic.md)*
+        The `%%scala` magic will send Scala code to the same Spark Context *[(DEMO)](docs/v2/news/scala-magic.md)*
 
-- **%fs support (*experimental*)**
+    - **%fs support (*experimental*)**
 
-    The `%fs` of `%%fs` magic is supported as a shortcut for `dbutils.fs.xxx` *[(DEMO)](docs/v2/news/fs-magic.md)*
+        The `%fs` of `%%fs` magic is supported as a shortcut for `dbutils.fs.xxx` *[(DEMO)](docs/v2/news/fs-magic.md)*
 
-- **Improved Databricks example notebook download from the Databricks documentation (*experimental*)**
+    - **Improved Databricks example notebook download from the Databricks documentation (*experimental*)**
 
-    Supports downloading *.html* notebooks from the Databricks documentation web pages. Databricks magics like `%sh`, `%scala`, `%sql`, ... will be properly translated to Jupyter magics `%%sh`, `%%scala`, `%%sql`, ...
+        Supports downloading *.html* notebooks from the Databricks documentation web pages. Databricks magics like `%sh`, `%scala`, `%sql`, ... will be properly translated to Jupyter magics `%%sh`, `%%scala`, `%%sql`, ...
 
 ## 1 Prerequisites
 
@@ -239,7 +241,7 @@ Ensure, ssh access is correctly configured, see [Configure SSH access](docs/ssh-
     In the terminal, create a jupyter kernel specification for a *Databricks CLI* profile `$PROFILE` with the following command:
 
     - Local installation
-    
+
         ```bash
         (db-jlab)$ dj $PROFILE -k
         ```
@@ -253,7 +255,7 @@ Ensure, ssh access is correctly configured, see [Configure SSH access](docs/ssh-
     A new kernel is available in the kernel change menu (see [here](docs/v2/kernel-name.md) for an explanation of the kernel name structure)
 
 2. **Start JupyterLab**
-    
+
     - Local installation
 
         ```bash
@@ -268,14 +270,12 @@ Ensure, ssh access is correctly configured, see [Configure SSH access](docs/ssh-
 
     The command with `-l` is a safe version for the standard command to start JupyterLab (`jupyter lab`) that ensures that the kernel specificiation is updated.
 
-    
-
 ### 4.2 Using Spark in the Notebook
 
 1. **Check whether the notebook is properly connected**
 
     When the notebook connected successfully to the cluster, the status bar at the bottom of JupyterLab should show 
-    
+
     <img src="docs/v2/connect_running_spark.png" width="680px">
 
     if you use a kernel with *Spark*, else just
@@ -290,9 +290,9 @@ Ensure, ssh access is correctly configured, see [Configure SSH access](docs/ssh-
 
     ```python
     import socket
-    
+
     from databrickslabs_jupyterlab import is_remote
-    
+
     result = sc.range(10000).repartition(100).map(lambda x: x).sum()
     print(socket.gethostname(), is_remote())
     print(result)
@@ -331,26 +331,4 @@ To work with the test notebooks in `./examples` the remote cluster needs to have
 
 ## 8 Feature History
 
-### V1.0.x
-
-- **Use *Databricks CLI* profiles and contain URLs and tokens**
-
-    *Jupyterlab Integration* used officially supported *Databroicks CLI* configurations to retrieve the Personal Access Tokens and URLs for remote cluster access. Personal Access Tokens will not be copied to the remote cluster
-
-- **Create and manage Jupyter kernel specifications for remote Databricks clusters**
-
-    *Jupyterlab Integration* allows to create Jupyter kernel specifications for remote Databricks clusters via SSH. Kernel specifications can also be reconfigured or deleted
-
-- **Configure SSH locally and remotely**
-
-    *Jupyterlab Integration* allows to create a local ssh key pair and configure the cluster with the public key for SSH access. INjecting the public key will restart the remote cluster
-
-- **Create a Spark session and attach notebooks to it**
-
-    With *Jupyterlab Integration*, one needs to provide the Personal Access Token in th browser to authenticate the createion of a Spark Session. The current notebook will then be connected with this Spark session.
-
-- **Mirror a a remote Databricks environment**
-
-    *Jupyterlab Integration* can mirror the versions of Data Science related libraries to a local conda environment. A blacklist and a whitelist allow to control which libraries are actually mirrored
-
-
+see [HISTORY.md](HISTORY.md)
