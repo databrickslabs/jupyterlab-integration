@@ -107,4 +107,4 @@ dev_tools:
 	pip install twine bumpversion yapf pylint pyYaml
 
 docker:
-	@cd docker/image && docker build -t databrickslabs-jupyterlab:$(CURRENT_VERSION) .
+	@cd docker/image && docker build -t bwalter42/databrickslabs_jupyterlab:$(CURRENT_VERSION) .

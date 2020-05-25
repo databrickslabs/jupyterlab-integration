@@ -48,7 +48,10 @@ def connect(profile):
         api_client.default_headers["user-agent"] = "databrickslabs-jupyterlab-%s" % __version__
         return api_client
     else:
-        print_error("Token for profile '%s' is invalid" % profile)
+        print_error(
+            "No token found for profile '%s'.\nUsername/password in .databrickscfg is not supported by databrickslabs-jupyterlab"
+            % profile
+        )
         bye(1)
 
 

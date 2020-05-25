@@ -72,7 +72,7 @@ Ensure, ssh access is correctly configured, see [Configure SSH access](docs/ssh-
 
     The command with `-l` is a save version for the standard command to start Jupyter Lab (`jupyter lab`) that ensures that the kernel specificiation is updated. If `-c` is provided it also copies the PAT to the clipboard for the next step in the notebook.
 
-    A new kernel is available in the kernel change menu (see [here](docs/kernel-name.md) for an explanation of the kernel name structure)
+    A new kernel is available in the kernel change menu (see [here](docs/v1/kernel-name.md) for an explanation of the kernel name structure)
 
 ### 3.2 Using Spark in the Notebook
 
@@ -80,9 +80,9 @@ Ensure, ssh access is correctly configured, see [Configure SSH access](docs/ssh-
 
     When the notebook successfully connected to the cluster, the status bar at the bottom of Jupyter lab should show `...|Idle  [Connected]`:
 
-    ![kernel ready](docs/connected.png)
+    ![kernel ready](docs/v1/connected.png)
 
-    If this is not the case, see [Troubleshooting](docs/troubleshooting.md)
+    If this is not the case, see [Troubleshooting](docs/v1/troubleshooting.md)
 
 2. **Get a remote Spark Session in the notebook**
 
@@ -95,11 +95,11 @@ Ensure, ssh access is correctly configured, see [Configure SSH access](docs/ssh-
 
     This will request you to add the token copied to clipboard above:
 
-    ![Get Token](docs/get_token_in_notebook.png)
+    ![Get Token](docs/v1/get_token_in_notebook.png)
 
     After pressing *Enter*, you will see
 
-    ![Spark Success](docs/spark_success.png)
+    ![Spark Success](docs/v1/spark_success.png)
 
     Note: `databrickslabs-jupyterlab $PROFILE -c` let's you quickly copy the token again to the clipboard so that you can simply paste the token to the input box.
 
@@ -117,17 +117,17 @@ Ensure, ssh access is correctly configured, see [Configure SSH access](docs/ssh-
 
     It will show that the kernel is actually running remotely and the hostname of the driver. The second part quickly smoke tests a Spark job.
 
-    ![Get Token](docs/spark_test.png)
+    ![Get Token](docs/v1/spark_test.png)
 
 **Success:** Your local Jupyter Lab is successfully contected to the remote Databricks cluster
 
 ## 4 Advanced topics
 
-- [Switching kernels and restart after cluster auto-termination](docs/kernel_lifecycle.md)
-- [Creating a mirror of a remote Databricks cluster](docs/mirrored-environment.md)
-- [Detailed databrickslabs_jupyterlab command overview](docs/details.md)
-- [How it works](docs/how-it-works.md)
-- [Troubleshooting](docs/troubleshooting.md)
+- [Switching kernels and restart after cluster auto-termination](docs/v1/kernel_lifecycle.md)
+- [Creating a mirror of a remote Databricks cluster](docs/v1/mirrored-environment.md)
+- [Detailed databrickslabs_jupyterlab command overview](docs/v1/details.md)
+- [How it works](docs/v1/how-it-works.md)
+- [Troubleshooting](docs/v1/troubleshooting.md)
 
 ## 5 Project Support
 Please note that all projects in the /databrickslabs github account are provided for your exploration only, and are not formally supported by Databricks with Service Level Agreements (SLAs). They are provided AS-IS and we do not make any guarantees of any kind. Please do not submit a support ticket relating to any issues arising from the use of these projects.
