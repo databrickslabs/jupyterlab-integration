@@ -12,7 +12,7 @@ NORMALIZED_VERSION := $(subst -,,$(CURRENT_VERSION))
 clean:
 	@echo "$(OK_COLOR)=> Cleaning$(NO_COLOR)"
 	@rm -fr build dist $(EGGS) $(PYCACHE) databrickslabs_jupyterlab/lib/* databrickslabs_jupyterlab/env_files/*
-	@rm dj
+	@rm -f dj
 
 prepare: clean
 	git add .
