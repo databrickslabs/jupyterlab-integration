@@ -204,7 +204,7 @@ If you you do not want this to happen, you can for example extend the folder str
 
 ## 3 Local installation
 
-1. **Install databrickslabs_jupyterlab**
+1. **Install *Jupyterlab Integration***
 
     Create a new conda environment and install *databrickslabs_jupyterlab* with the following commands:
 
@@ -216,11 +216,11 @@ If you you do not want this to happen, you can for example extend the folder str
 
     The prefix `(db-jlab)$` for all command examples in this document assumes that the conda enviromnent `db-jlab` is activated.
 
-2. **The tool databrickslabs_jupyterlab**
+2. **The tool *databrickslabs-jupyterlab / dj***
 
     It comes with a batch file `dj.bat` for Windows. On MacOS or Linux both `dj` and `databrickslabs_jupyterlab` exist
 
-3. **Bootstrap databrickslabs_jupyterlab**
+3. **Bootstrap *Jupyterlab Integration***
 
     Bootstrap the environment for *Jupyterlab Integration* with the following command (which will show the usage after successfully configuring *Juypterlab Integration*):
 
@@ -231,25 +231,40 @@ If you you do not want this to happen, you can for example extend the folder str
 ## 4 Getting started with local installation or docker
 
 Ensure, ssh access is correctly configured, see [Configure SSH access](docs/ssh-configurations.md)
-If you work with the docker variant, use `dk-dj` instead of `dj` and `dk-jupyter` instead of `jupyter`.
 
 ### 4.1 Starting JupyterLab
 
 1. **Create a kernel specification**
-    In the terminal, create a jupyter kernel specification for a *Databricks CLI* profile `$PROFILE` and start JupyterLab with the following command:
 
-    ```bash
-    (db-jlab)$ dj $PROFILE -k
-    ```
+    In the terminal, create a jupyter kernel specification for a *Databricks CLI* profile `$PROFILE` with the following command:
+
+    - Local installation
+    
+        ```bash
+        (db-jlab)$ dj $PROFILE -k
+        ```
+
+    - With docker
+
+        ```bash
+        (db-jlab)$ dk-dj $PROFILE -k
+        ```
 
     A new kernel is available in the kernel change menu (see [here](docs/v2/kernel-name.md) for an explanation of the kernel name structure)
 
 2. **Start JupyterLab**
-    Start JupyterLab using *databrickslabs-jupyterlab*
+    
+    - Local installation
 
-    ```bash
-    (db-jlab)$ dj $PROFILE -l
-    ```
+        ```bash
+        (db-jlab)$ dj $PROFILE -l      # or 'jupyter lab'
+        ```
+
+    - With docker
+
+        ```bash
+        (db-jlab)$ dk-dj $PROFILE -l   # or 'dk-jupyter lab'
+        ```
 
     The command with `-l` is a safe version for the standard command to start JupyterLab (`jupyter lab`) that ensures that the kernel specificiation is updated.
 
@@ -261,11 +276,11 @@ If you work with the docker variant, use `dk-dj` instead of `dj` and `dk-jupyter
 
     When the notebook connected successfully to the cluster, the status bar at the bottom of JupyterLab should show 
     
-    ![kernel ready](docs/v2/connect_running_spark.png)
+    <img src="docs/v2/connect_running_spark.png" width="640px">
 
     if you use a kernel with *Spark*, else just
 
-    ![kernel ready](docs/v2/connect_running.png)
+    <img src="docs/v2/connect_running.png" width="640px">
 
     If this is not the case, see [Troubleshooting](docs/v2/troubleshooting.md)
 
