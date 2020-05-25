@@ -17,11 +17,7 @@ To understand SSH access to and configure Databricks clusters for SSH, please re
 
 The 2nd step (cluster configuration) can also be done using the *databrickslabs_jupyterlab* command from the command line:
 
-- Get the cluster ID from the cluster URL: Select menu entry *Clusters* and then click on the cluster of choice. The URL in the browser address bar should look like:
-
-    ```text
-    https://$WORKSPACE.cloud.databricks.com/#/setting/clusters/$CLUSTER_ID/configuration
-    ```
+- Get the cluster ID from the cluster URL: Select menu entry *Clusters* and then click on the cluster of choice. The URL in the browser address bar should look like:  `https://$WORKSPACE.cloud.databricks.com/#/setting/clusters/$CLUSTER_ID/configuration`
 
 - Configure the ssh access
 
@@ -42,11 +38,7 @@ The 2nd step (cluster configuration) can also be done using the *databrickslabs_
 
 The 2nd step (cluster configuration) can also be done using the *databrickslabs_jupyterlab* command from the command line:
 
-- Get the cluster ID from the cluster URL: Select menu entry *Clusters* and then click on the cluster of choice. The URL in the browser address bar should look like:
-
-    ```text
-    https://$REGION.azuredatabricks.net/?o=$ORG_ID#/setting/clusters/$CLUSTER_ID/configuration
-    ```
+- Get the cluster ID from the cluster URL: Select menu entry *Clusters* and then click on the cluster of choice. The URL in the browser address bar should look like: `https://$REGION.azuredatabricks.net/?o=$ORG_ID#/setting/clusters/$CLUSTER_ID/configuration`
 
 - Configure the ssh access
 

@@ -276,11 +276,11 @@ Ensure, ssh access is correctly configured, see [Configure SSH access](docs/ssh-
 
     When the notebook connected successfully to the cluster, the status bar at the bottom of JupyterLab should show 
     
-    <img src="docs/v2/connect_running_spark.png" width="640px">
+    <img src="docs/v2/connect_running_spark.png" width="680px">
 
     if you use a kernel with *Spark*, else just
 
-    <img src="docs/v2/connect_running.png" width="640px">
+    <img src="docs/v2/connect_running.png" width="680px">
 
     If this is not the case, see [Troubleshooting](docs/v2/troubleshooting.md)
 
@@ -300,7 +300,7 @@ Ensure, ssh access is correctly configured, see [Configure SSH access](docs/ssh-
 
     It will show that the kernel is actually running remotely and the hostname of the driver. The second part quickly smoke tests a Spark job.
 
-    ![Spark test](docs/v2/spark_result.png)
+     <img src="docs/v2/spark_result.png" width="680px">
 
 **Success:** Your local JupyterLab is successfully contected to the remote Databricks cluster
 

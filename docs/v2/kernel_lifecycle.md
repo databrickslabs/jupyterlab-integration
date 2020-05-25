@@ -13,11 +13,11 @@ A simple Kernel Restart by Jupyter lab will not work since this does not refresh
 
 Should the cluster auto terminate while the notebook is connected or the network connection is down, the status bar will change to
 
-- ![kernel disconnected](cluster_unreachable.png)
+<img src="cluster_unreachable.png" width="720px">
 
 Additionally a dialog to confirm that the remote cluster should be started again will be launched in JupyterLab:
 
-![running with Spark](restart-dialog.png)
+<img src="restart-dialog.png" width="640px">
 
 Notes: 
 
@@ -27,31 +27,40 @@ Notes:
 During restart the following status messages will be shown in this order:
 
 - Starting 
-    ![cluster-starting](cluster_starting-1.png)
+    <img src="cluster_starting-1.png" width="720px">
+
 - Starting
-    ![cluster-starting](cluster_starting_5.png)
+    <img src="cluster_starting_5.png" width="720px">
+
 - Configuring SSH
-    ![configure-ssh](configuring_ssh.png)
+    <img src="configuring_ssh.png" width="720px">
+
 - Installing cluster libraries
-    ![installing-cluster-libs](installing_cluster_libraries.png)
+    <img src="installing_cluster_libraries.png" width="720px">
+
 - Installing driver libraries
-    ![installing-driver-libs](installing_driver_libs.png)
+    <img src="installing_driver_libs.png" width="720px">
+
 - Successfully connected to kernel
-    ![connected](connect_idle.png)
+    <img src="connect_idle.png" width="640px">
+
 - Successfully running
-    ![running](connect_running.png)
+    <img src="connect_running.png" width="640px">
+
 - Successfully running with Spark
-    ![running with Spark](connect_running_spark.png)
+    <img src="connect_running_spark.png" width="640px">
+
 
 ### 5.1.3 Reconfiguring the cluster
 
 If the cluster was restarted and the frontend did not recognize the restart, Clicking on the `[Running]` or `[Running(Spark)]` entry in the status bar of JupyterLab will raise the following dialog box:
 
-- ![kernel disconnected](reconfigure.png)
+<img src="reconfigure.png" width="500px">
 
 This will repeat the steps
 
 - Configuring SSH
-    ![configure-ssh](configuring_ssh.png)
+    <img src="configuring_ssh.png" width="720px">
+
 - Installing driver libraries
-    ![installing-driver-libs](installing_driver_libs.png)
+    <img src="installing_driver_libs.png" width="720px">
