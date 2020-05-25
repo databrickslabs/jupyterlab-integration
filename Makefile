@@ -112,4 +112,4 @@ docker:
 	@cd docker/image && docker build -t bwalter42/databrickslabs_jupyterlab:$(CURRENT_VERSION) .
 
 upload_docker: docker
-	@docker publish bwalter42/databrickslabs_jupyterlab:$(CURRENT_VERSION)
+	@docker push bwalter42/databrickslabs_jupyterlab:$(CURRENT_VERSION)
