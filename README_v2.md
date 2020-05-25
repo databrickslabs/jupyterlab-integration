@@ -142,7 +142,7 @@ A docker image ready for working with *Jupyterlab Integration* is available from
             -v $HOME/.ssh/:/home/dbuser/.ssh  \
             -v $HOME/.databrickscfg:/home/dbuser/.databrickscfg \
             -v $(pwd):/home/dbuser/notebooks \
-            bwalter42/databrickslabs_jupyterlab:2.0.0-rc2 \
+            bwalter42/databrickslabs_jupyterlab:2.0.0-rc3 \
             /opt/conda/bin/databrickslabs-jupyterlab $@
     }
     ```
@@ -159,7 +159,7 @@ A docker image ready for working with *Jupyterlab Integration* is available from
             -v $HOME/.ssh/:/home/dbuser/.ssh  \
             -v $HOME/.databrickscfg:/home/dbuser/.databrickscfg \
             -v $(pwd):/home/dbuser/notebooks \
-            bwalter42/databrickslabs_jupyterlab:2.0.0-rc2 \
+            bwalter42/databrickslabs_jupyterlab:2.0.0-rc3 \
             /opt/conda/bin/jupyter $@
     }
     ```
@@ -211,7 +211,7 @@ If you you do not want this to happen, you can for example extend the folder str
     ```bash
     (base)$ conda create -n db-jlab python=3.7
     (base)$ conda activate db-jlab
-    (db-jlab)$ pip install --upgrade databrickslabs-jupyterlab==2.0.0-rc2
+    (db-jlab)$ pip install --upgrade databrickslabs-jupyterlab==2.0.0-rc3
     ```
 
     The prefix `(db-jlab)$` for all command examples in this document assumes that the conda enviromnent `db-jlab` is activated.
