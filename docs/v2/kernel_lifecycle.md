@@ -27,27 +27,35 @@ Notes:
 During restart the following status messages will be shown in this order:
 
 - Starting 
+
     <img src="cluster_starting-1.png" width="720px">
 
 - Starting
+
     <img src="cluster_starting_5.png" width="720px">
 
 - Configuring SSH
+
     <img src="configuring_ssh.png" width="720px">
 
 - Installing cluster libraries
+
     <img src="installing_cluster_libraries.png" width="720px">
 
 - Installing driver libraries
+
     <img src="installing_driver_libs.png" width="720px">
 
 - Successfully connected to kernel
+
     <img src="connect_idle.png" width="640px">
 
 - Successfully running
+
     <img src="connect_running.png" width="640px">
 
 - Successfully running with Spark
+
     <img src="connect_running_spark.png" width="640px">
 
 
@@ -60,7 +68,9 @@ If the cluster was restarted and the frontend did not recognize the restart, Cli
 This will repeat the steps
 
 - Configuring SSH
+
     <img src="configuring_ssh.png" width="720px">
 
 - Installing driver libraries
+
     <img src="installing_driver_libs.png" width="720px">
