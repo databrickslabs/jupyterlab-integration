@@ -8,5 +8,6 @@ dist
 examples/artifacts
 TODO
 labextensions.txt.bak
+dj
 node_modules
 clusters.yaml

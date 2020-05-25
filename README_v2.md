@@ -71,30 +71,35 @@ This package allows to connect to a remote Databricks cluster from a locally run
 
 1. **Operating System**
 
-    macOS, Linux and Windows 10 (with OpenSSH)
+    *Jupyterlab Integration* will run on the following operation systems:
 
-2. **Anaconda installation**
+    - macOS
+    - Linux
+    - Windows 10 (with OpenSSH)
 
-    - A recent version of [Anaconda](https://www.anaconda.com/distribution) with Python >= *3.6*
-    - Since *Jupyterlab Integration* will create a separate conda environment, [Miniconda](https://docs.conda.io/en/latest/miniconda.html) is sufficient to start
+2. **Anaconda**
+
+    *JupyterLab Integration* is based on [Anaconda](https://www.anaconda.com/distribution) and supports:
+
+    - A recent version of Anaconda with Python >= *3.6*
     - The tool *conda* must be newer than *4.7.5*, test were executed with *4.8.x*.
+
+    Since *Jupyterlab Integration* will create a separate conda environment, [Miniconda](https://docs.conda.io/en/latest/miniconda.html) is sufficient to start
 
 3. **Python**
 
-    - Python 3.6 and Python 3.7 both on the remote cluster and locally (only for *DBR 5.5 LTS* Python 3.5 should be used locally).
-    - Python 2.7 is not supported, neither on the remote cluster nor locally
-
+    *JupyterLab Integration* only works with Python 3 and supports Python 3.6 and Python 3.7 both on the remote cluster and locally (only for *DBR 5.5 LTS* Python 3.5 should be used locally).
 
 4. **Databricks CLI**
 
-    To install Databricks CLI and configure profile(s) for your cluster(s), please refer to [AWS](https://docs.databricks.com/user-guide/dev-tools/databricks-cli.html) / [Azure](https://docs.azuredatabricks.net/user-guide/dev-tools/databricks-cli.html)
+    For *JupyterLab Integration* a recent version of *Databricks CLI* is needed. To install *Databricks CLI* and to configure profiles for your clusters, please refer to [AWS](https://docs.databricks.com/user-guide/dev-tools/databricks-cli.html) / [Azure](https://docs.azuredatabricks.net/user-guide/dev-tools/databricks-cli.html).
 
     Note: 
 
-    - JupyterLab Integration does not support Databricks CLI profile with username password. Only [Personal Access Tokens](https://docs.databricks.com/dev-tools/api/latest/authentication.html) are supported.
+    - *JupyterLab Integration* does not support Databricks CLI profiles with username password. Only [Personal Access Tokens](https://docs.databricks.com/dev-tools/api/latest/authentication.html) are supported.
     - Whenever `$PROFILE` is used in this documentation, it refers to a valid Databricks CLI profile name, stored in a shell environment variable.
 
-5. **SSH access to the Databricks cluster**
+5. **SSH access to Databricks clusters**
 
     Configure your Databricks clusters to allow ssh access, see [Configure SSH access](docs/ssh-configurations.md)
 
@@ -104,7 +109,7 @@ This package allows to connect to a remote Databricks cluster from a locally run
 
 6. **Databricks Runtime**
 
-    The project has been tested with Databricks runtimes on AWS and Azure for both MacOS and Windows client:
+    *JupyterLab Integration* has been tested with Databricks runtimes on AWS and Azure for both MacOS and Windows client:
 
     - 5.5 LTS * / 5.5 ML LTS
     - 6.3 / 6.3 ML
@@ -202,13 +207,7 @@ If you you do not want this to happen, you can for example extend the folder str
 
 2. **The tool databrickslabs_jupyterlab**
 
-    It comes with a batch file `dj.bat` for Windows. On MacOS or Linux, an alias is recommended
-
-    ```bash
-    alias dj=databrickslabs_jupyterlab
-    ```
-
-    The following description will assume, this alias is set so that Windows, macOS and Linux share the same commands.
+    It comes with a batch file `dj.bat` for Windows. On MacOS or Linux both `dj` and `databrickslabs_jupyterlab` exist
 
 3. **Bootstrap databrickslabs_jupyterlab**
 

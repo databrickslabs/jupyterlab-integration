@@ -1,4 +1,5 @@
 import os
+import platform
 import re
 from setuptools import setup, find_packages
 
@@ -41,7 +42,7 @@ setup(
     license="Databricks License",
     keywords="databricks jupyter jupyterlab spark",
     packages=find_packages(),
-    scripts=["databrickslabs-jupyterlab", "dj.bat"],
+    scripts=["databrickslabs-jupyterlab", "dj", "dj.bat"],
     install_requires=INSTALL_REQUIRES,
     extras_require=EXTRAS_REQUIRE,
     data_files=[
