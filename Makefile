@@ -1,4 +1,4 @@
-.PHONY: clean wheel install tests check_version dist check_dist upload_test upload dev_tools bump bump_ext release docker
+.PHONY: clean wheel install tests check_version dist check_dist upload_test upload dev_tools bump bump_ext release docker upload_docker
 
 NO_COLOR = \x1b[0m
 OK_COLOR = \x1b[32;01m
@@ -13,7 +13,7 @@ clean:
 	@echo "$(OK_COLOR)=> Cleaning$(NO_COLOR)"
 	@rm -fr build dist $(EGGS) $(PYCACHE) databrickslabs_jupyterlab/lib/* databrickslabs_jupyterlab/env_files/*
 	@rm dj
-	
+
 prepare: clean
 	git add .
 	git status
@@ -110,3 +110,6 @@ dev_tools:
 
 docker:
 	@cd docker/image && docker build -t bwalter42/databrickslabs_jupyterlab:$(CURRENT_VERSION) .
+
+upload_docker: docker
+	@docker publish bwalter42/databrickslabs_jupyterlab:$(CURRENT_VERSION)

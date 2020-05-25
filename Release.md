@@ -178,7 +178,7 @@ In case the jupyter labextions and/or the python code has been changed:
 2. Publish image
 
     ```bash
-    TODO
+    make upload_docker
     ```
 
 ### 5 Push changes
