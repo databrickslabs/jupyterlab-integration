@@ -18,7 +18,7 @@ This package allows to connect to a remote Databricks cluster from a locally run
 
 - **Native Windows support**
 
-    Anaconda and Jupyter on Windows 10 (with OpenSSH) can be used with *JupyterLab Integration*
+    Anaconda and Jupyter on Windows 10 (with OpenSSH) can be used with *JupyterLab Integration* *[(DEMO)](docs/v2/news/windows.md)*.
 
 - **Docker support**
 
@@ -36,7 +36,7 @@ This package allows to connect to a remote Databricks cluster from a locally run
 
     - **MLflow browser**
 
-        A mlflow experiements browser that converts all runs of an experiment into a Pandas Dataframe to query and compare best runs in pandas.
+        A mlflow experiements browser that converts all runs of an experiment into a Pandas Dataframe to query and compare best runs in pandas. *[(DEMO - Intro)](docs/v2/news/mlflow-browser-1.md)*, *[(DEMO - Keras)](docs/v2/news/mlflow-browser-2.md)*, *[(DEMO - MLlib)](docs/v2/news/mlflow-browser-3.md)*
 
 - **dbutils**
 
@@ -71,10 +71,6 @@ This package allows to connect to a remote Databricks cluster from a locally run
     - **%fs support (*experimental*)**
 
         The `%fs` of `%%fs` magic is supported as a shortcut for `dbutils.fs.xxx` *[(DEMO)](docs/v2/news/fs-magic.md)*
-
-    - **Improved Databricks example notebook download from the Databricks documentation (*experimental*)**
-
-        Supports downloading *.html* notebooks from the Databricks documentation web pages. Databricks magics like `%sh`, `%scala`, `%sql`, ... will be properly translated to Jupyter magics `%%sh`, `%%scala`, `%%sql`, ...
 
 ## 1 Prerequisites
 
@@ -181,10 +177,7 @@ $PWD  <= Start jupyterLab from here
  |_ ...
 ```
 
-Notes:
-
-- If you keep the defaults in the two scripts, create a folder `./kernels` in your working directory before running.
-- **The two scripts will modify your ~/.ssh/config and ~/.ssh/know_hosts**:
+**Note: The two scripts will modify your ~/.ssh/config and ~/.ssh/know_hosts**:
 If you you do not want this to happen, you can for example extend the folder structure to
 
     ```text
@@ -202,9 +195,11 @@ If you you do not want this to happen, you can for example extend the folder str
     |_ ...
     ```
 
-     create the necessary public/private key pair in `$(pwd)/.ssh` and change the parameter `-v $HOME/.ssh/:/home/dbuser/.ssh` to  `-v $(pwd)/.ssh/:/home/dbuser/.ssh` in both commands.
-
-- The scripts can be easily edited, used via alias or ported to Windows.
+and create the necessary public/private key pair in `$(pwd)/.ssh` and change the parameter 
+`-v $HOME/.ssh/:/home/dbuser/.ssh` 
+to  
+`-v $(pwd)/.ssh/:/home/dbuser/.ssh` 
+in both commands.
 
 ## 3 Local installation
 
