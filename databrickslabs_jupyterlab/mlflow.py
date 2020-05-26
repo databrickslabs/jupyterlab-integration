@@ -59,7 +59,7 @@ class MLflowBrowser:
 
         return result
 
-    def get_runs(self):
+    def get_runs(self, run_id=None):
         self.runs = self.client.search_runs(self.experiment_id)
         df = pd.DataFrame([self.summarize_run(run) for run in self.runs]).sort_values(
             ["date"], ascending=False
@@ -69,7 +69,10 @@ class MLflowBrowser:
         self.table = df[
             ["status", "date", "run_id", "parent_run_id", "run_name"] + params + metrics + ["user"]
         ]
-        return self.table
+        if run_id is None:
+            return self.table
+        else:
+            return self.table[(self.table["run_id"] == run_id) | (self.table["parent_run_id"] == run_id)]
 
     def display(self, runs):
         print("=> Click on a run_id to open the run on the managed MLflow Tracking Server\n")
