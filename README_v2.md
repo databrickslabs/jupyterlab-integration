@@ -128,9 +128,16 @@ This package allows to connect to a remote Databricks cluster from a locally run
 
 ## 2 Running with docker
 
-A docker image ready for working with *Jupyterlab Integration* is available from Dockerhub. There are two scripts in the folder `docker`. Alternatively, under macOS and Linux use the following bash functions:
+A docker image ready for working with *Jupyterlab Integration* is available from Dockerhub. It is recommended to prepare your environment by pulling the repository: `docker pull bwalter42/databrickslabs_jupyterlab:2.0.0-rc3`
 
-- *databrickslabs-jupyterlab* for docker (see also `docker/dk-dj`):
+There are two scripts in the folder `docker`:
+
+- for Windows: `dk.dj.bat` and `dk-jupyter.bat`
+- for macOS/Linux: `dk-dj` and `dk-jupyter`
+
+Alternatively, under macOS and Linux one can use the following bash functions:
+
+- *databrickslabs-jupyterlab* for docker:
 
     This is the *Jupyterlab Integration* configuration utility using the docker image:
 
@@ -147,7 +154,7 @@ A docker image ready for working with *Jupyterlab Integration* is available from
     }
     ```
 
-- *jupyter* for docker (see also `docker/dk-jupyter`):
+- *jupyter* for docker:
 
     Allows to run *jupyter* commands using the docker image:
 
@@ -177,28 +184,26 @@ $PWD  <= Start jupyterLab from here
  |_ ...
 ```
 
-**Note: The two scripts will modify your ~/.ssh/config and ~/.ssh/know_hosts**:
+**Note, the scripts `dk-dj` / `dk-dj.bat` will modify your `~/.ssh/config` and `~/.ssh/know_hosts`!**
 If you you do not want this to happen, you can for example extend the folder structure to
 
-    ```text
-    $PWD  <= Start jupyterLab from here
-    |_ .ssh                      <= new
-    |  |_ config                 <= new
-    |  |_ id_$PROFILE            <= new
-    |  |_ id_$PROFILE.pub        <= new
-    |_ kernels
-    |  |_ <Jupyterlab Integration kernel spec>
-    |  |_ ... 
-    |_ project
-    |  |_ notebook.ipynb
-    |_ notebook.ipynb
-    |_ ...
-    ```
+```text
+$PWD  <= Start jupyterLab from here
+|_ .ssh                      <= new
+|  |_ config                 <= new
+|  |_ id_$PROFILE            <= new
+|  |_ id_$PROFILE.pub        <= new
+|_ kernels
+|  |_ <Jupyterlab Integration kernel spec>
+|  |_ ... 
+|_ project
+|  |_ notebook.ipynb
+|_ notebook.ipynb
+|_ ...
+```
 
 and create the necessary public/private key pair in `$(pwd)/.ssh` and change the parameter 
-`-v $HOME/.ssh/:/home/dbuser/.ssh` 
-to  
-`-v $(pwd)/.ssh/:/home/dbuser/.ssh` 
+`-v $HOME/.ssh/:/home/dbuser/.ssh` to `-v $(pwd)/.ssh/:/home/dbuser/.ssh` 
 in both commands.
 
 ## 3 Local installation
