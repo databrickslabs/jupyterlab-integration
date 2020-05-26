@@ -128,7 +128,7 @@ This package allows to connect to a remote Databricks cluster from a locally run
 
 ## 2 Running with docker
 
-A docker image ready for working with *Jupyterlab Integration* is available from Dockerhub. It is recommended to prepare your environment by pulling the repository: `docker pull bwalter42/databrickslabs_jupyterlab:2.0.0-rc4`
+A docker image ready for working with *Jupyterlab Integration* is available from Dockerhub. It is recommended to prepare your environment by pulling the repository: `docker pull bwalter42/databrickslabs_jupyterlab:2.0.0-rc5`
 
 There are two scripts in the folder `docker`:
 
@@ -149,7 +149,7 @@ Alternatively, under macOS and Linux one can use the following bash functions:
             -v $HOME/.ssh/:/home/dbuser/.ssh  \
             -v $HOME/.databrickscfg:/home/dbuser/.databrickscfg \
             -v $(pwd):/home/dbuser/notebooks \
-            bwalter42/databrickslabs_jupyterlab:2.0.0-rc4 \
+            bwalter42/databrickslabs_jupyterlab:2.0.0-rc5 \
             /opt/conda/bin/databrickslabs-jupyterlab $@
     }
     ```
@@ -166,7 +166,7 @@ Alternatively, under macOS and Linux one can use the following bash functions:
             -v $HOME/.ssh/:/home/dbuser/.ssh  \
             -v $HOME/.databrickscfg:/home/dbuser/.databrickscfg \
             -v $(pwd):/home/dbuser/notebooks \
-            bwalter42/databrickslabs_jupyterlab:2.0.0-rc4 \
+            bwalter42/databrickslabs_jupyterlab:2.0.0-rc5 \
             /opt/conda/bin/jupyter $@
     }
     ```
@@ -215,7 +215,7 @@ in both commands.
     ```bash
     (base)$ conda create -n db-jlab python=3.7
     (base)$ conda activate db-jlab
-    (db-jlab)$ pip install --upgrade databrickslabs-jupyterlab==2.0.0-rc4
+    (db-jlab)$ pip install --upgrade databrickslabs-jupyterlab==2.0.0-rc5
     ```
 
     The prefix `(db-jlab)$` for all command examples in this document assumes that the conda enviromnent `db-jlab` is activated.

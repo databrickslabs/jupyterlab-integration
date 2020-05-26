@@ -1,0 +1,3 @@
+@jupyter-widgets/jupyterlab-manager@2.x
+databrickslabs-jupyterlab-statusbar@v2.0.1
+interrupt-ipykernel-extension@1.0.0

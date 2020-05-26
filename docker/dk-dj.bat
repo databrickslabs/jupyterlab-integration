@@ -4,5 +4,5 @@ docker run -it --rm ^
     -v %HOMEDRIVE%%HOMEPATH%/.ssh/:/home/dbuser/.ssh ^
     -v %HOMEDRIVE%%HOMEPATH%/.databrickscfg:/home/dbuser/.databrickscfg ^
     -v %CD%:/home/dbuser/notebooks ^
-    bwalter42/databrickslabs_jupyterlab:2.0.0-rc4 ^
+    bwalter42/databrickslabs_jupyterlab:2.0.0-rc5 ^
     /opt/conda/bin/databrickslabs-jupyterlab %*
