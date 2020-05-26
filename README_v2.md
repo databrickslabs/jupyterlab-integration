@@ -22,7 +22,7 @@ This package allows to connect to a remote Databricks cluster from a locally run
 
 - **Docker support**
 
-    No need for local Anaconda and *JupyterLab Integration* installation - the quickest way to test *JupyterLab Integration*.
+    No need for local Anaconda and *JupyterLab Integration* installation - the quickest way to test *JupyterLab Integration* *[(DEMO)](docs/v2/news/docker.md)*.
 
 - **Browsers**
 
@@ -118,15 +118,17 @@ This package allows to connect to a remote Databricks cluster from a locally run
 
 6. **Databricks Runtime**
 
-    *JupyterLab Integration* has been tested with Databricks runtimes on AWS and Azure for both MacOS and Windows client:
+    *JupyterLab Integration* works with the following Databricks runtimes on AWS and Azure:
 
-    - 5.5 LTS * / 5.5 ML LTS
-    - 6.3 / 6.3 ML
-    - 6.4 / 6.4 ML 
-    - 6.5 / 6.5 ML
-    - 7.0 BETA, 7.0 ML BETA 
+    - *'5.5 ML LTS'*
+    - *'6.3'* and *'6.3 ML'*
+    - *'6.4'* and *'6.4 ML'*
+    - *'6.5'* and *'6.5 ML'*
+    - *'7.0 BETA'* and *'7.0 ML BETA'*
 
-    \* *not supported with Windows client due to conflicts with Python 3.5*
+    Supported only on AWS:
+
+    - *'5.5 LTS'*
 
 ## 2 Running with docker
 
@@ -220,7 +222,7 @@ If you you do not want this to happen, you can for example extend the folder str
 
 2. **The tool *databrickslabs-jupyterlab / dj***
 
-    It comes with a batch file `dj.bat` for Windows. On MacOS or Linux both `dj` and `databrickslabs_jupyterlab` exist
+    It comes with a batch file `dj.bat` for Windows. On MacOS or Linux both `dj` and `databrickslabs-jupyterlab` exist
 
 3. **Bootstrap *Jupyterlab Integration***
 
