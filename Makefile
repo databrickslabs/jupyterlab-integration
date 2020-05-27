@@ -106,7 +106,7 @@ check_version:
 	dev_tools/check_versions env.yml
 
 dev_tools:
-	pip install twine bumpversion yapf pylint pyYaml
+	pip install twine bumpversion yapf pylint pyYaml pytest
 
 docker:
 	@cd docker/image && docker build -t bwalter42/databrickslabs_jupyterlab:$(CURRENT_VERSION) .
