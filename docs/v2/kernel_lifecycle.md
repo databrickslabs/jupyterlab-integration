@@ -1,6 +1,6 @@
-## 5.1 Kernel Lifecycle
+## 7.1 Kernel Lifecycle
 
-### 5.1.1 Switching kernels
+### 7.1.1 Switching kernels
 
 Kernels can be switched via the Jupyterlab Kernel Change dialog. However, when switching to a remote kernel, the local connection context might get out of sync and the notebook cannot be used. In this case:
 
@@ -9,7 +9,7 @@ Kernels can be switched via the Jupyterlab Kernel Change dialog. However, when s
 
 A simple Kernel Restart by Jupyter lab will not work since this does not refresh the connection context!
 
-### 5.1.2 Restart after cluster auto-termination
+### 7.1.2 Restart after cluster auto-termination
 
 Should the cluster auto terminate while the notebook is connected or the network connection is down, the status bar will change to
 
@@ -59,7 +59,7 @@ During restart the following status messages will be shown in this order:
     <img src="connect_running_spark.png" width="640px">
 
 
-### 5.1.3 Reconfiguring the cluster
+### 7.1.3 Reconfiguring the cluster
 
 If the cluster was restarted and the frontend did not recognize the restart, Clicking on the `[Running]` or `[Running(Spark)]` entry in the status bar of JupyterLab will raise the following dialog box:
 

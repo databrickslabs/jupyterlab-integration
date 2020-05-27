@@ -1,4 +1,4 @@
-## 5.4 How it works
+## 7.4 How it works
 
 To understand how databrickslabs_jupyterlab works, let's fist look at how Standard Jupyter kernels get started
 
@@ -8,10 +8,10 @@ To understand how databrickslabs_jupyterlab works, let's fist look at how Standa
 
 ![remote_ssh_ipykernel](remote_ssh_ipykernel.png)
 
-While starting the kernel, the kernel manager will use an own kernel client and create the Spark Session and other artifacts via REST API and the secure SSH tunnels:
+While starting the kernel, the kernel manager will create execution contexts for Python and Scala via REST API and use an own kernel client to create the Spark Session through the secure SSH tunnels:
 
-MISSING: ![remote_dbcontext](remote_spark_context.png)
+![remote_dbcontext](remote_sparksession.png)
 
-Finally, since there is a network connection between Jupyter and the kernel and since clusters can auto terminate, the local ssh tunnel gets monitored and the result transferred to Juyopter frontend
+Finally, since there is a network connection between Jupyter and the kernel and since clusters can auto terminate, the local ssh tunnel gets monitored and the result transferred to Juypter frontend
 
 ![remote_monitoring](remote_monitoring.png)

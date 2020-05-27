@@ -1,4 +1,4 @@
-## 5.3 Details
+## 7.3 Details
 
 Details to some of the flags of `dj` / `databrickslabs_jupyterlab`
 

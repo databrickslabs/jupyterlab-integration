@@ -3,17 +3,17 @@
 This package allows to connect to a remote Databricks cluster from a locally running JupyterLab.
 
 ```text
-                                    ______________________________________
-                              _____|                                      |_____
-                              \    |    NEW MAJOR RELEASE V2 (May 2020)   |    /
-                               )   |______________________________________|   (
-                              /______)                                  (______\
+                                  ______________________________________
+                            _____|                                      |_____
+                            \    |    NEW MAJOR RELEASE V2 (May 2020)   |    /
+                             )   |______________________________________|   (
+                            /______)                                  (______\
 ```
 
-## New features
+## 1 New features
 
 - Input of Personal Access Token (PAT) in Jupyter is not necessary any more *([demo](docs/v2/news/start-kernelspec.md))*
-- Native Windows client support *([demo](docs/v2/news/windows.md))*
+- Native Windows 10 support *([demo](docs/v2/news/windows.md))*
 - Docker support on macOS, Linux and Windows *([demo](docs/v2/news/docker.md))*.
 - Browsers for Databricks entities
     - DBFS browser with file preview *([demo](docs/v2/news/dbfs-browser.md))*
@@ -29,11 +29,11 @@ This package allows to connect to a remote Databricks cluster from a locally run
     - Scala magic (`%%scala`) support (*experimental*) *([demo](docs/v2/news/scala-magic.md))*
     - DBFS file system (`%fs`) support (*experimental*) *([demo](docs/v2/news/fs-magic.md))*
 
-## Overview
+## 2 Overview
 ![introduction](docs/v2/introduction.gif)
 
 
-## 1 Prerequisites
+## 3 Prerequisites
 
 1. **Operating System**
 
@@ -54,7 +54,7 @@ This package allows to connect to a remote Databricks cluster from a locally run
 
 3. **Python**
 
-    *JupyterLab Integration* only works with Python 3 and supports Python 3.6 and Python 3.7 both on the remote cluster and locally (only for *DBR 5.5 LTS* Python 3.5 should be used locally).
+    *JupyterLab Integration* only works with Python 3 and supports Python 3.6 and Python 3.7 both on the remote cluster and locally.
 
 4. **Databricks CLI**
 
@@ -87,7 +87,7 @@ This package allows to connect to a remote Databricks cluster from a locally run
 
     - *'5.5 LTS'*
 
-## 2 Running with docker
+## 4 Running with docker
 
 A docker image ready for working with *Jupyterlab Integration* is available from Dockerhub. It is recommended to prepare your environment by pulling the repository: `docker pull bwalter42/databrickslabs_jupyterlab:2.0.0-rc5`
 
@@ -104,14 +104,12 @@ Alternatively, under macOS and Linux one can use the following bash functions:
 
     ```bash
     function dk-dj {
-        docker run -it --rm \
-            -p 8888:8888 \
+        docker run -it --rm -p 8888:8888 \
             -v $(pwd)/kernels:/home/dbuser/.local/share/jupyter/kernels/ \
             -v $HOME/.ssh/:/home/dbuser/.ssh  \
             -v $HOME/.databrickscfg:/home/dbuser/.databrickscfg \
             -v $(pwd):/home/dbuser/notebooks \
-            bwalter42/databrickslabs_jupyterlab:2.0.0-rc5 \
-            /opt/conda/bin/databrickslabs-jupyterlab $@
+            bwalter42/databrickslabs_jupyterlab:2.0.0-rc5 /opt/conda/bin/databrickslabs-jupyterlab $@
     }
     ```
 
@@ -121,14 +119,12 @@ Alternatively, under macOS and Linux one can use the following bash functions:
 
     ```bash
     function dk-jupyter {
-        docker run -it --rm \
-            -p 8888:8888 \
+        docker run -it --rm -p 8888:8888 \
             -v $(pwd)/kernels:/home/dbuser/.local/share/jupyter/kernels/ \
             -v $HOME/.ssh/:/home/dbuser/.ssh  \
             -v $HOME/.databrickscfg:/home/dbuser/.databrickscfg \
             -v $(pwd):/home/dbuser/notebooks \
-            bwalter42/databrickslabs_jupyterlab:2.0.0-rc5 \
-            /opt/conda/bin/jupyter $@
+            bwalter42/databrickslabs_jupyterlab:2.0.0-rc5 /opt/conda/bin/jupyter $@
     }
     ```
 
@@ -167,7 +163,7 @@ and create the necessary public/private key pair in `$(pwd)/.ssh` and change the
 `-v $HOME/.ssh/:/home/dbuser/.ssh` to `-v $(pwd)/.ssh/:/home/dbuser/.ssh` 
 in both commands.
 
-## 3 Local installation
+## 5 Local installation
 
 1. **Install *Jupyterlab Integration***
 
@@ -193,11 +189,11 @@ in both commands.
     (db-jlab)$ dj -b
     ```
 
-## 4 Getting started with local installation or docker
+## 6 Getting started with local installation or docker
 
 Ensure, ssh access is correctly configured, see [Configure SSH access](docs/ssh-configurations.md)
 
-### 4.1 Starting JupyterLab
+### 6.1 Starting JupyterLab
 
 1. **Create a kernel specification**
 
@@ -233,7 +229,7 @@ Ensure, ssh access is correctly configured, see [Configure SSH access](docs/ssh-
 
     The command with `-l` is a safe version for the standard command to start JupyterLab (`jupyter lab`) that ensures that the kernel specificiation is updated.
 
-### 4.2 Using Spark in the Notebook
+### 6.2 Using Spark in the Notebook
 
 1. **Check whether the notebook is properly connected**
 
@@ -267,31 +263,27 @@ Ensure, ssh access is correctly configured, see [Configure SSH access](docs/ssh-
 
 **Success:** Your local JupyterLab is successfully contected to the remote Databricks cluster
 
-## 5 Advanced topics
+## 7 Advanced topics
 
-[5.1 Switching kernels and restart after cluster auto-termination](docs/v2/kernel_lifecycle.md)
+[7.1 Switching kernels and restart after cluster auto-termination](docs/v2/kernel_lifecycle.md)
 
-[5.2 Creating a mirror of a remote Databricks cluster](docs/v2/mirrored-environment.md)
+[7.2 Creating a mirror of a remote Databricks cluster](docs/v2/mirrored-environment.md)
 
-[5.3 Detailed databrickslabs_jupyterlab command overview](docs/v2/details.md)
+[7.3 Detailed databrickslabs_jupyterlab command overview](docs/v2/details.md)
 
-[5.4 How it works](docs/v2/how-it-works.md)
+[7.4 How it works](docs/v2/how-it-works.md)
 
-[5.5 Troubleshooting](docs/v2/troubleshooting.md)
+[7.5 Troubleshooting](docs/v2/troubleshooting.md)
 
 
-## 6 Project Support
+## 8 Project Support
 Please note that all projects in the /databrickslabs github account are provided for your exploration only, and are not formally supported by Databricks with Service Level Agreements (SLAs). They are provided AS-IS and we do not make any guarantees of any kind. Please do not submit a support ticket relating to any issues arising from the use of these projects.
 
 Any issues discovered through the use of this project should be filed as GitHub Issues on the Repo. They will be reviewed as time permits, but there are no formal SLAs for support.
 
-## 7 Test notebooks
+## 9 Test notebooks
 
 To work with the test notebooks in `./examples` the remote cluster needs to have the following libraries installed:
 
 - mlflow==1.x
 - spark-sklearn
-
-## 8 Feature History
-
-see [HISTORY.md](HISTORY.md)
