@@ -1,7 +1,7 @@
 FROM continuumio/miniconda3
 
 RUN . /opt/conda/bin/activate base && \
-    /opt/conda/bin/pip install --upgrade databrickslabs-jupyterlab==2.0.0-rc5 && \
+    /opt/conda/bin/pip install --upgrade databrickslabs-jupyterlab==2.0.0 && \
     /opt/conda/bin/databrickslabs-jupyterlab -b && \
     echo "cleaning" && \
     npm install -g yarn && \
