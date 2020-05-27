@@ -29,6 +29,10 @@ This package allows to connect to a remote Databricks cluster from a locally run
     - Scala magic (`%%scala`) support (*experimental*) *([demo](docs/v2/news/scala-magic.md))*
     - DBFS file system (`%fs`) support (*experimental*) *([demo](docs/v2/news/fs-magic.md))*
 
+## Overview
+![introduction](docs/v2/introduction.gif)
+
+
 ## 1 Prerequisites
 
 1. **Operating System**
