@@ -12,7 +12,7 @@ This package allows to connect to a remote Databricks cluster from a locally run
 
 ## 1 New features
 
-- Input of Personal Access Token (PAT) in Jupyter is not necessary any more *([demo](docs/v2/news/start-kernelspec.md))*, *[how it works](docs/v2/how-it-works.md)
+- Input of Personal Access Token (PAT) in Jupyter is not necessary any more *([demo](docs/v2/news/start-kernelspec.md)*, *[how it works](docs/v2/how-it-works.md))*
 - Native Windows 10 support *([demo](docs/v2/news/windows.md))*
 - Docker support on macOS, Linux and Windows *([demo](docs/v2/news/docker.md))*.
 - Browsers for Databricks entities
