@@ -26,7 +26,6 @@ if os.environ.get("DB_HOME") is None:
         "notebook==%s" % notebook_version(),
         "version_parser",
         "questionary",
-        "ssh_config==0.0.14",
         "databricks_cli",
     ]
     EXTRAS_REQUIRE = {"dev": ["pytest", "jupyter-console", "pyyaml"]}

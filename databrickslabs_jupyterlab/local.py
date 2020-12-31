@@ -3,12 +3,11 @@ import json
 import os
 import shutil
 import sys
-import textwrap
 import time
 from os.path import expanduser
 
 from jupyter_client import kernelspec
-from ssh_config import SSHConfig, Host
+from .ssh_config import SshConfig
 
 from databrickslabs_jupyterlab.utils import (
     bye,
@@ -20,82 +19,6 @@ from databrickslabs_jupyterlab.utils import (
 )
 
 PREFIX = "ssh_"
-
-# add all missing keys to ssh_config
-Host.attrs += [
-    ("Host", str),
-    ("CanonicalizeFallbackLocal", str),
-    ("CanonicalizeHostname", str),
-    ("CanonicalizeMaxDots", str),
-    ("CanonicalizePermittedCNAMEs", str),
-    ("CASignatureAlgorithms", str),
-    ("CertificateFile", str),
-    ("ChallengeResponseAuthentication", str),
-    ("CheckHostIP", str),
-    ("Ciphers", str),
-    ("ClearAllForwardings", str),
-    ("Compression", str),
-    ("ConnectionAttempts", str),
-    ("ConnectTimeout", str),
-    ("ControlMaster", str),
-    ("ControlPath", str),
-    ("ControlPersist", str),
-    ("DynamicForward", str),
-    ("EnableSSHKeysign", str),
-    ("EscapeChar", str),
-    ("ExitOnForwardFailure", str),
-    ("FingerprintHash", str),
-    ("ForwardX11", str),
-    ("ForwardX11Timeout", str),
-    ("ForwardX11Trusted", str),
-    ("GatewayPorts", str),
-    ("GlobalKnownHostsFile", str),
-    ("GSSAPIAuthentication", str),
-    ("GSSAPIDelegateCredentials", str),
-    ("HashKnownHosts", str),
-    ("HostbasedAuthentication", str),
-    ("HostbasedKeyTypes", str),
-    ("HostKeyAlgorithms", str),
-    ("HostKeyAlias", str),
-    ("IdentitiesOnly", str),
-    ("IgnoreUnknown", str),
-    ("Include", str),
-    ("IPQoS", str),
-    ("KbdInteractiveAuthentication", str),
-    ("KbdInteractiveDevices", str),
-    ("KexAlgorithms", str),
-    ("MACs", str),
-    ("NoHostAuthenticationForLocalhost", str),
-    ("NumberOfPasswordPrompts", str),
-    ("PasswordAuthentication", str),
-    ("PermitLocalCommand", str),
-    ("PKCS11Provider", str),
-    ("ProxyJump", str),
-    ("ProxyUseFdpass", str),
-    ("PubkeyAcceptedKeyTypes", str),
-    ("PubkeyAuthentication", str),
-    ("RekeyLimit", str),
-    ("RemoteCommand", str),
-    ("RemoteForward", str),
-    ("RequestTTY", str),
-    ("RevokedHostKeys", str),
-    ("SendEnv", str),
-    ("ServerAliveCountMax", str),
-    ("SetEnv", str),
-    ("StreamLocalBindMask", str),
-    ("StreamLocalBindUnlink", str),
-    ("StrictHostKeyChecking", str),
-    ("SyslogFacility", str),
-    ("TCPKeepAlive", str),
-    ("Tunnel", str),
-    ("TunnelDevice", str),
-    ("UpdateHostKeys", str),
-    ("UseKeychain", str),
-    ("UserKnownHostsFile", str),
-    ("VerifyHostKeyDNS", str),
-    ("VisualHostKey", str),
-    ("XAuthLocation", str),
-]
 
 
 def conda_version():
@@ -219,41 +142,34 @@ def prepare_ssh_config(cluster_id, profile, public_dns):
     if not os.path.exists(os.path.expanduser(backup_path)):
         os.makedirs(os.path.expanduser(backup_path))
 
-    print_warning("   => ~/.ssh/config will be changed")
-    backup = "%s/config.%s" % (backup_path, time.strftime("%Y-%m-%d_%H-%M-%S"))
-    print_warning("   => A backup of the current ~/.ssh/config has been created")
-    print_warning("   => at %s" % backup)
+    data = ""
+    if os.path.exists(config):
+        print_warning("   => ~/.ssh/config will be changed")
+        backup = "%s/config.%s" % (backup_path, time.strftime("%Y-%m-%d_%H-%M-%S"))
+        print_warning("   => A backup of the current ~/.ssh/config has been created")
+        print_warning("   => at %s" % backup)
 
-    shutil.copy(config, os.path.expanduser(backup))
-    try:
-        sc = SSHConfig.load(config)
-    except:  # pylint: disable=bare-except
-        sc = SSHConfig(config)
-    hosts = [h.name for h in sc.hosts()]
-    if cluster_id in hosts:
-        host = sc.get(cluster_id)
-        host.set("HostName", public_dns)
-        host.set("ServerAliveInterval", 30)
-        host.set("ServerAliveCountMax", 5760)
-        host.set("ConnectTimeout", 5)
-        print("   => Added ssh config entry or modified IP address:\n")
-        print(textwrap.indent(str(host), "      "))
-    else:
-        # ServerAliveInterval * ServerAliveCountMax = 48h
-        attrs = {
-            "HostName": public_dns,
-            "IdentityFile": "~/.ssh/id_%s" % profile,
-            "Port": 2200,
-            "User": "ubuntu",
-            "ServerAliveInterval": 30,
-            "ServerAliveCountMax": 5760,
-            "ConnectTimeout": 5,
-        }
-        host = Host(name=cluster_id, attrs=attrs)
-        print("   => Adding ssh config to ~/.ssh/config:\n")
-        print(textwrap.indent(str(host), "      "))
-        sc.append(host)
-    sc.write()
+        shutil.copy(config, os.path.expanduser(backup))
+        with open(config, "r") as fd:
+            data = fd.read()
+
+    ssh_config = SshConfig(data)
+
+    host = ssh_config.get_host(cluster_id)
+    if host is None:
+        host = ssh_config.add_host(cluster_id)
+        (host.set_param("HostName", public_dns)
+            .set_param("IdentityFile", "~/.ssh/id_%s" % profile)
+            .set_param("Port", 2200)
+            .set_param("User", "ubuntu")
+            .set_param("ServerAliveInterval", 30)
+            .set_param("ServerAliveCountMax", 5760)
+            .set_param("ConnectTimeout", 5)
+        )
+    print(f"   => Jupyterlab Integration made the following changes to {config}:")
+    ssh_config.dump()
+    with open(config, "w") as fd:
+        fd.write(ssh_config.to_string())
 
     add_known_host(public_dns)
 
