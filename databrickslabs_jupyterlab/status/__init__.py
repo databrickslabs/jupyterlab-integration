@@ -46,11 +46,11 @@ _logger.addHandler(_console)
 
 def get_cluster_state(profile, cluster_id):
     """Get cluster state
-    
+
     Args:
         profile (str): Databricks CLI profile string
         cluster_id (str): Cluster ID
-    
+
     Returns:
         dict: ClusterStatus
     """
@@ -81,11 +81,11 @@ class Status:
 
     def get_status(self, profile, cluster_id):
         """Get current cluster start status for the jupyterlab status line
-        
+
         Args:
             profile (str): Databricks CLI profile string
             cluster_id (str): Cluster ID
-        
+
         Returns:
             str: Cluster status or "UNKNOWN"
         """
@@ -110,12 +110,12 @@ class Status:
 
     def set_status(self, profile, cluster_id, status, new_status=True):
         """Set Cluster start status for the jupyterlab status line
-        
+
         Args:
             profile (str): Databricks CLI profile string
             cluster_id (str): Cluster ID
             status (str): Status value
-            new_status (bool, optional): If True, number of progress dots is set to 0. 
+            new_status (bool, optional): If True, number of progress dots is set to 0.
                                          Defaults to True.
         """
         self.dots = 0 if new_status else (self.dots + 1) % 6
@@ -123,11 +123,11 @@ class Status:
 
     def installing(self, profile, cluster_id):
         """Check whether cluster is currently in installation mode
-        
+
         Args:
             profile (str): Databricks CLI profile string
             cluster_id (str): Cluster ID
-        
+
         Returns:
             bool: True if in installation mode, else False
         """
@@ -135,7 +135,7 @@ class Status:
 
     def set_installing(self, profile, cluster_id):
         """Set installation mode for a cluster
-        
+
         Args:
             profile (str): Databricks CLI profile string
             cluster_id (str): Cluster ID
@@ -144,7 +144,7 @@ class Status:
 
     def unset_installing(self, profile, cluster_id):
         """Unset installation mode for a cluster
-        
+
         Args:
             profile (str): Databricks CLI profile string
             cluster_id (str): Cluster ID
@@ -166,10 +166,10 @@ class KernelHandler(IPythonHandler):
 
     def get_kernel(self, kernel_id):
         """Get jupyter kernel for given kernel Id
-        
+
         Args:
             kernel_id (str): Internal jupyter kernel ID
-        
+
         Returns:
             KernelManager: KernelManager object
         """
@@ -274,7 +274,7 @@ class DbStartHandler(KernelHandler):
 
     def start_cluster(self, profile, cluster_id, kernel_id):
         """Start cluster in a separate thread
-        
+
         Args:
             profile (str): Databricks CLI profile string
             cluster_id (str): Cluster ID
@@ -320,4 +320,8 @@ def _jupyter_server_extension_paths():
     """
     Set up the server extension for status handling
     """
-    return [{"module": "databrickslabs_jupyterlab",}]
+    return [
+        {
+            "module": "databrickslabs_jupyterlab",
+        }
+    ]
