@@ -12,7 +12,6 @@ NORMALIZED_VERSION := $(subst -,,$(CURRENT_VERSION))
 clean:
 	@echo "$(OK_COLOR)=> Cleaning$(NO_COLOR)"
 	@rm -fr build dist $(EGGS) $(PYCACHE) databrickslabs_jupyterlab/lib/* databrickslabs_jupyterlab/env_files/*
-	@rm -f dj
 
 prepare: clean
 	git add .
@@ -67,7 +66,6 @@ endif
 dist:
 	@mkdir -p databrickslabs_jupyterlab/lib
 	@cp env.yml labextensions.txt "databrickslabs_jupyterlab/lib/"
-	@cp databrickslabs-jupyterlab dj
 ifdef CLUSTER
 	(DB_HOME=/databricks python setup.py sdist bdist_wheel)
 else
