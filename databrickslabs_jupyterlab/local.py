@@ -233,7 +233,7 @@ def create_kernelspec(
         module="databrickslabs_jupyterlab",
         opt_args=["--no-spark"] if no_spark else [],
     )
-    print("   => Kernel specification 'SSH %s %s' created or updated" % (cluster_id, display_name))
+    print("   => Kernel specification '%s' created or updated" % (display_name))
 
 
 def remove_kernelspecs():
