@@ -490,32 +490,21 @@ def configure_ssh(profile, cluster_id):
         bye()
 
     request = {}
-    for key in [
-        "autotermination_minutes",
-        "cluster_id",
-        "cluster_name",
-        "cluster_source",
-        "creator_user_name",
-        "default_tags",
-        "driver_node_type_id",
-        "enable_elastic_disk",
-        "init_scripts_safe_mode",
-        "node_type_id",
-        "spark_version",
-    ]:
-        request[key] = response[key]
 
-    if response.get("spark_env_vars", None) is not None:
-        request["spark_env_vars"] = response["spark_env_vars"]
-
-    if response.get("aws_attributes", None) is not None:
-        request["aws_attributes"] = response["aws_attributes"]
-
-    if response.get("num_workers", None) is not None:
-        request["num_workers"] = response["num_workers"]
-
-    if response.get("autoscale", None) is not None:
-        request["autoscale"] = response["autoscale"]
+    for key, val in response.items():
+        if key not in [
+            "driver",
+            "executors",
+            "spark_context_id",
+            "state",
+            "state_message",
+            "start_time",
+            "terminated_time",
+            "last_state_loss_time",
+            "last_activity_time",
+            "disk_spec",
+        ]:  # omit runtime attributes
+            request[key] = val
 
     request["ssh_public_keys"] = ssh_public_keys + [sshkey]
 
