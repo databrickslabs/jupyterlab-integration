@@ -31,10 +31,10 @@ from databrickslabs_jupyterlab.local import execute, get_local_libs
 
 def connect(profile):
     """Initialize Databricks API client
-    
+
     Args:
         profile (str): Databricks CLI profile string
-    
+
     Returns:
         ApiClient: Databricks ApiClient object
     """
@@ -57,10 +57,10 @@ def connect(profile):
 
 def select_cluster(clusters):
     """Build a list of clusters for the user to select one
-    
+
     Args:
         clusters (list): list of clusters
-    
+
     Returns:
         dict: Cluster config of selected cluster
     """
@@ -97,7 +97,7 @@ def select_cluster(clusters):
 
 def get_cluster(profile, cluster_id=None, status=None):
     """Get the cluster configuration from remote
-    
+
     Args:
         profile (str): Databricks CLI profile string
         cluster_id (str, optional): If cluster_id is given, users will not be asked to select one.
@@ -286,7 +286,7 @@ def get_python_path(host, conda_env=None):  # pylint: disable=unused-argument
 
 def install_libs(cluster_id, host, token):
     """Install ipywidgets, databrickslabs_jupyterlab libraries on the driver
-    
+
     Args:
         host (str): host from databricks cli config for given profile string
         python_path (str): Remote python path to be used for kernel
@@ -356,12 +356,12 @@ def is_reachable(public_dns):
 
 def get_library_state(profile, cluster_id):
     """Get the state of the library installation on the remote cluster
-    
+
     Args:
         cluster_id (str): Cluster ID
         host (str): host from databricks cli config for given profile string
         token (str): token from databricks cli config for given profile stringf
-    
+
     Returns:
         list: list of installation status for each custom library
     """
@@ -381,9 +381,9 @@ def get_library_state(profile, cluster_id):
 
 def check_installed(cluster_id, host, token):
     """Check whether databrickslabs_jupyterlab is installed on the remote host
-    
+
     Args:
-    
+
     Returns:
         bool: True if installed else False
     """
@@ -401,7 +401,7 @@ def check_installed(cluster_id, host, token):
 
 def version_check(cluster_id, host, token, flag):
     """Compare local and remote library versions
-    
+
     Args:
         cluster_id (str): Cluster ID
         host (str): host from databricks cli config for given profile string
@@ -444,7 +444,7 @@ def version_check(cluster_id, host, token, flag):
 
 def configure_ssh(profile, cluster_id):
     """Configure SSH for the remote cluster
-    
+
     Args:
         profile (str): Databricks CLI profile string
         host (str): host from databricks cli config for given profile string
@@ -540,7 +540,7 @@ def configure_ssh(profile, cluster_id):
 def download_notebook(url, prefix="."):
     """Download Databricks demo notebooks from docs.databricks.com.
     It adds two cells on the top to initialize the Databricks context and MLflow
-    
+
     Args:
         url (str): The HTML url copied from the "Get notebook link"
     """
