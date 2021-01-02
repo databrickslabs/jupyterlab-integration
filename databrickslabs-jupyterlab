@@ -343,7 +343,7 @@ if args.lab:
 #
 # Create a jupyter kernelspecification
 #
-print(args.no_spark)
+
 if args.kernelspec:
     print("\n* Creating remote kernel spec")
     python_path = get_python_path(cluster_id)
