@@ -74,8 +74,7 @@ def write_config():
 
 
 def get_local_libs():
-    """Get installed libraries of the currtent conda environment
-    """
+    """Get installed libraries of the currtent conda environment"""
     result = execute(["conda", "list", "--json"])
     if result["returncode"] != 0:
         print_error(result["stderr"])
@@ -90,10 +89,10 @@ def get_local_libs():
 
 def get_db_config(profile):
     """Get Databricks configuration from ~/.databricks.cfg for given profile
-    
+
     Args:
         profile (str): Databricks CLI profile string
-    
+
     Returns:
         tuple: The tuple of host and personal access token from ~/.databrickscfg
     """
@@ -193,9 +192,9 @@ def create_kernelspec(
     profile, organisation, host, cluster_id, cluster_name, local_env, python_path, no_spark
 ):
     """Create or edit the ssh_ipykernel specification for jupyter lab
-    
+
     Args:
-        profile (str): Databricks CLI profile string    
+        profile (str): Databricks CLI profile string
         organisation (str): In case of Azure, the organization ID, else None
         host (str): host from databricks cli config for given profile string
         cluster_id (str): Cluster ID
