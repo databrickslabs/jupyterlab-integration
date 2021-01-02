@@ -147,7 +147,11 @@ parser.add_argument(
     help="Print blacklist (exclude pkg) of packages to install",
 )
 parser.add_argument(
-    "-N", "--no-spark", dest="no_spark", action="store_true", help="Do not create a Spark Session",
+    "-N",
+    "--no-spark",
+    dest="no_spark",
+    action="store_true",
+    help="Do not create a Spark Session",
 )
 
 args = parser.parse_args()
