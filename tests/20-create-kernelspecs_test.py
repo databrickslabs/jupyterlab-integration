@@ -63,12 +63,12 @@ class TestKernelSpec:
         self.log.info("Using %s on %s", EXE, ("AWS" if is_aws() else "Azure"))
 
     def test_configure_ssh(self, name, cluster_id):
-        cluster_id2, public_ip, cluster_name, _ = get_cluster(self.profile, cluster_id)
+        cluster_id2, endpoint, cluster_name, _ = get_cluster(self.profile, cluster_id)
         assert cluster_id2 == cluster_id
         assert cluster_name == name
-        assert public_ip is not None
+        assert endpoint is not None
 
-        prepare_ssh_config(cluster_id, self.profile, public_ip)
+        prepare_ssh_config(cluster_id, self.profile, endpoint)
         ssh_config = os.path.expanduser("~/.ssh/config")
         sc = SSHConfig.load(ssh_config)
         host = sc.get(cluster_id)
@@ -76,7 +76,7 @@ class TestKernelSpec:
         assert host.get("ServerAliveCountMax") == "5760"
         assert host.get("IdentityFile") == "~/.ssh/id_{}".format(self.profile)
 
-        assert is_reachable(public_dns=public_ip)
+        assert is_reachable(endpoint)
 
         subprocess.check_output([SSH, cluster_id, "hostname"])
 

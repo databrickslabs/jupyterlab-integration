@@ -103,14 +103,24 @@ def get_cluster(profile, cluster_id=None, status=None):
         cluster_id (str, optional): If cluster_id is given, users will not be asked to select one.
                                     Defaults to None.
         status (Status, optional): A Status class providing set_status. Defaults to None.
-    
+        tunnel (str, optional): An ssh tunne geiven as "address:port"
+
     Returns:
-        tuple: Cluster configs: cluster_id, public_ip, cluster_name and a flag 
+        tuple: Cluster configs: cluster_id, public_ip, cluster_name and a flag
                                 whether it was started
-    
+
     Returns:
         tuple: (cluster_id, public_ip, cluster_name, started)
     """
+
+    if os.environ.get("SSH_TUNNEL") is None:
+        tunnel = None
+    else:
+        tunnel = os.environ.get("SSH_TUNNEL")
+        print_warning("\n  ==> Using tunnel: " + tunnel + "\n")
+
+    failure = (None, None, None, None)
+
     with open("%s/.ssh/id_%s.pub" % (expanduser("~"), profile)) as fd:
         try:
             ssh_pub = fd.read().strip()
@@ -127,7 +137,7 @@ def get_cluster(profile, cluster_id=None, status=None):
         clusters = client.list_clusters()
     except Exception as ex:  # pylint: disable=broad-except
         print_error(ex)
-        return (None, None, None, None)
+        return failure
 
     clusters = clusters["clusters"]
 
@@ -143,14 +153,14 @@ def get_cluster(profile, cluster_id=None, status=None):
                 "   Error: A cluster with id '%s' does not exist in the workspace of profile '%s'"
                 % (cluster_id, profile)
             )
-            return (None, None, None, None)
+            return failure
 
         if ssh_pub not in [c.strip() for c in cluster.get("ssh_public_keys", [])]:
             print_error(
                 "   Error: Cluster with id '%s' does not have ssh key '~/.ssh/id_%s' configured"
                 % (cluster_id, profile)
             )
-            return (None, None, None, None)
+            return failure
     else:
         my_clusters = [
             cluster
@@ -173,7 +183,7 @@ def get_cluster(profile, cluster_id=None, status=None):
                 )
                 % profile
             )
-            return (None, None, None, None)
+            return failure
 
         current_conda_env = os.environ.get("CONDA_DEFAULT_ENV", None)
         found = None
@@ -195,7 +205,7 @@ def get_cluster(profile, cluster_id=None, status=None):
 
         cluster = select_cluster(my_clusters)
         if cluster is None:
-            return (None, None, None, None)
+            return failure
 
     cluster_id = cluster["cluster_id"]
     cluster_name = cluster["cluster_name"]
@@ -204,7 +214,7 @@ def get_cluster(profile, cluster_id=None, status=None):
         response = client.get_cluster(cluster_id)
     except Exception as ex:  # pylint: disable=broad-except
         print_error(ex)
-        return (None, None, None, None)
+        return failure
 
     state = response["state"]
     if not state in ["RUNNING", "RESIZING"]:
@@ -216,7 +226,7 @@ def get_cluster(profile, cluster_id=None, status=None):
                 response = client.start_cluster(cluster_id)
             except Exception as ex:  # pylint: disable=broad-except
                 print_error(ex)
-                return (None, None, None, None)
+                return failure
 
         print("   => Waiting for cluster %s being started (this can take up to 5 min)" % cluster_id)
         print("   ", end="", flush=True)
@@ -230,11 +240,11 @@ def get_cluster(profile, cluster_id=None, status=None):
                 response = client.get_cluster(cluster_id)
             except Exception as ex:  # pylint: disable=broad-except
                 print_error(ex)
-                return (None, None, None, None)
+                return failure
 
             if response.get("error", None) is not None:
                 print_error(response["error"])
-                return (None, None, None, None)
+                return failure
             else:
                 state = response["state"]
         print_ok("\n   => OK")
@@ -254,7 +264,7 @@ def get_cluster(profile, cluster_id=None, status=None):
                 states = get_library_state(profile, cluster_id)
             except DatabricksApiException as ex:
                 print_error(ex)
-                return (None, None, None, None)
+                return failure
 
             installing = any([s in ["PENDING", "RESOLVING", "INSTALLING"] for s in states])
             if installing:
@@ -269,14 +279,18 @@ def get_cluster(profile, cluster_id=None, status=None):
         if status is not None:
             status.set_status(profile, cluster_id, "Cluster libraries installed", False)
 
-    public_ip = response["driver"].get("public_dns", None)
-    if public_ip is None:
-        print_error("   Error: Cluster does not have public DNS name")
-        return (None, None, None, None)
+    if tunnel is not None:
+        address = tunnel
+    else:
+        public_dns = response["driver"].get("public_dns")
+        if public_dns is None:
+            print_error("   Error: Cluster does not have public DNS name")
+            return failure
+        address = "%s:%s" % (public_dns, 2200)
 
-    print_ok("   => Selected cluster: %s (%s)" % (cluster_name, public_ip))
+    print_ok("   => Selected cluster: %s (%s)" % (cluster_name, address))
 
-    return (cluster_id, public_ip, cluster_name, None)
+    return (cluster_id, address, cluster_name, None)
 
 
 def get_python_path(host, conda_env=None):  # pylint: disable=unused-argument
@@ -332,20 +346,21 @@ def get_remote_packages(cluster_id, host, token):
     return result
 
 
-def is_reachable(public_dns):
+def is_reachable(endpoint):
     """Check whether a remote cluster is reachable
-    
+
     Args:
-        public_dns (str): Public IP address or DNS name
-    
+        endpoint (str): Public IP address or DNS name and port as "address:port"
+
     Returns:
         bool: True if reachable else False
     """
-    # return subprocess.call(["nc", "-z", public_dns, "2200"]) == 0
+    # return subprocess.call(["nc", "-z", address, str(port)]) == 0
+    address, port = endpoint.split(":")
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(3)
     try:
-        result = sock.connect_ex((public_dns, 2200))
+        result = sock.connect_ex((address, int(port)))
         result = result == 0
     except:  # pylint: disable=bare-except
         result = False

@@ -100,9 +100,6 @@ parser.add_argument(
     action="store_true",
     help="Reconfigure cluster with id cluster_id",
 )
-# parser.add_argument(
-#     "-s", "--sshfs", dest="sshfs", action="store_true", help="Mount remote filesystem via sshfs"
-# )
 parser.add_argument(
     "-s",
     "--ssh-config",
@@ -289,16 +286,19 @@ if not os.path.exists(os.path.expanduser("~/.ssh/id_%s.pub" % profile)):
 #
 if args.kernelspec or args.reconfigure or args.lab or args.versioncheck or args.mirror:
     print("\n* Select remote cluster\n")
-    cluster_id, public_ip, cluster_name, conda_env = get_cluster(profile, args.cluster_id)
+    cluster_id, endpoint, cluster_name, conda_env = get_cluster(profile, args.cluster_id)
     if cluster_name is None:
         bye(1)
 
     print("\n* Configuring ssh config for remote cluster")
-    prepare_ssh_config(cluster_id, profile, public_ip)
+    prepare_ssh_config(cluster_id, profile, endpoint)
     print("   => Testing whether cluster can be reached")
-    if not is_reachable(public_dns=public_ip):
+    if not is_reachable(endpoint):
         print_error("Cannot connect to remote cluster. Please check:")
-        print_error("- whether port 2200 is open in cloud security group")
+        print_error(
+            "- whether the address is reachable and the port is open of %s in cloud security group"
+            % endpoint
+        )
         print_error("- whether VPN is enabled if you need one to connect to the cluster")
         bye(1)
     print_ok("   => OK")

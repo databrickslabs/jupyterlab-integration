@@ -289,7 +289,7 @@ class DbStartHandler(KernelHandler):
             global_status.set_installing(profile, cluster_id)
 
             host, token = get_db_config(profile)
-            cluster_id, public_ip, cluster_name, dummy = get_cluster(
+            cluster_id, endpoint, cluster_name, dummy = get_cluster(
                 profile, cluster_id, global_status
             )
             if cluster_name is None:
@@ -297,8 +297,8 @@ class DbStartHandler(KernelHandler):
                 return
 
             global_status.set_status(profile, cluster_id, "Configuring SSH")
-            prepare_ssh_config(cluster_id, profile, public_ip)
-            if not is_reachable(public_dns=public_ip):
+            prepare_ssh_config(cluster_id, profile, endpoint)
+            if not is_reachable(endpoint):
                 global_status.set_status(profile, cluster_id, "UNREACHABLE")
             else:
                 global_status.set_status(profile, cluster_id, "Installing driver libs")

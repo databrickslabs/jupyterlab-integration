@@ -114,26 +114,26 @@ def get_db_config(profile):
         return host, token
 
 
-def add_known_host(public_dns, known_hosts="~/.ssh/known_hosts"):
-    result = execute(["ssh-keygen", "-R", "[%s]:2200" % public_dns])
-    result = execute(["ssh-keyscan", "-p", "2200", public_dns])
+def add_known_host(address, port, known_hosts="~/.ssh/known_hosts"):
+    result = execute(["ssh-keygen", "-R", "[%s]:%s" % (address, port)])
+    result = execute(["ssh-keyscan", "-p", str(port), address])
     if result["returncode"] == 0:
         fingerprint = result["stdout"]
         known_hosts_file = os.path.expanduser(known_hosts)
         with open(known_hosts_file, "a") as fd:
             fd.write("\n%s" % fingerprint)
-        print("   => Known hosts fingerprint added for %s\n" % public_dns)
+        print("   => Known hosts fingerprint added for %s:%s\n" % (address, port))
     else:
-        print_warning("   => Could not add know_hosts fingerprint for %s\n" % public_dns)
+        print_warning("   => Could not add know_hosts fingerprint for %s:%s\n" % (address, port))
 
 
-def prepare_ssh_config(cluster_id, profile, public_dns):
+def prepare_ssh_config(cluster_id, profile, endpoint):
     """Add/edit the ssh configuration belonging to the given cluster in ~/.ssh/config
-    
+
     Args:
         cluster_id (str): Cluster ID
         profile (str): Databricks CLI profile string
-        public_dns (str): Public DNS/IP address
+        endpoint (str): Public DNS/IP address and Port as "address:port"
     """
     backup_path = "~/.databrickslabs_jupyterlab/ssh_config_backup"
 
@@ -157,20 +157,22 @@ def prepare_ssh_config(cluster_id, profile, public_dns):
     host = ssh_config.get_host(cluster_id)
     if host is None:
         host = ssh_config.add_host(cluster_id)
-        (host.set_param("HostName", public_dns)
-            .set_param("IdentityFile", "~/.ssh/id_%s" % profile)
-            .set_param("Port", 2200)
-            .set_param("User", "ubuntu")
-            .set_param("ServerAliveInterval", 30)
-            .set_param("ServerAliveCountMax", 5760)
-            .set_param("ConnectTimeout", 5)
-        )
+
+    address, port = endpoint.split(":")
+    host.set_param("HostName", address)
+    host.set_param("IdentityFile", "~/.ssh/id_%s" % profile)
+    host.set_param("Port", port)
+    host.set_param("User", "ubuntu")
+    host.set_param("ServerAliveInterval", 30)
+    host.set_param("ServerAliveCountMax", 5760)
+    host.set_param("ConnectTimeout", 5)
+
     print(f"   => Jupyterlab Integration made the following changes to {config}:")
     ssh_config.dump()
     with open(config, "w") as fd:
         fd.write(ssh_config.to_string())
 
-    add_known_host(public_dns)
+    add_known_host(address, port)
 
 
 def show_profiles():
