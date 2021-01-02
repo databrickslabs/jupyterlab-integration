@@ -1,3 +1,16 @@
+### V2.1.0 (Jan 2021)
+
+- **A new parser for ssh/config** 
+    It aims for minimum changes (including whitespaces and comments). For verification it shows the diff view to the original version.
+
+- **SSH tunnels**
+    SSH tunnels are now supported by setting the environment variable SSH_TUNNEL to `address:port` of the tunnel service. See above where a standard AWS Databricks hostname and port (`ec2-11-22-33-44.eu-central-1.compute.amazonaws.com`, `2200`) got replaced by a SSH tunnel at `111.222.333.444` and port `2222`. 
+    For the ssh tunnel one can use a managed service like [ngrok](https://ngrok.com/). 
+    Alternatively, build your own tunneling service based on e.g. [Fast Reverse Proxy (fpr)](https://github.com/fatedier/frp) as described in ![Fast Reverse proxy configuration](docs/v2/frp.md).
+    
+- **Support of Databricks Runtimes 6.4 and higher (incl 7.5)**
+
+
 ### V2.0.0 (May 2020)
 
 - **Input of Personal Access Token (PAT) in Jupyter is not necessary any more**

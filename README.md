@@ -2,32 +2,38 @@
 
 This package allows to connect to a remote Databricks cluster from a locally running JupyterLab.
 
-```text
-                                  ______________________________________
-                            _____|                                      |_____
-                            \    |    NEW MAJOR RELEASE V2 (May 2020)   |    /
-                             )   |______________________________________|   (
-                            /______)                                  (______\
-```
+## >>> New minor release V2.1 (Jan 2021) <<<
 
 ## 1 New features
 
-- Input of Personal Access Token (PAT) in Jupyter is not necessary any more *([demo](docs/v2/news/start-kernelspec.md)*, *[how it works](docs/v2/how-it-works.md))*
-- Native Windows 10 support *([demo](docs/v2/news/windows.md))*
-- Docker support on macOS, Linux and Windows *([demo](docs/v2/news/docker.md))*.
-- Browsers for Databricks entities
-    - DBFS browser with file preview *([demo](docs/v2/news/dbfs-browser.md))*
-    - Database browser with schema and data preview *([demo](docs/v2/news/database-browser.md))*
-    - MLflow experiments as Pandas dataframes linked with Managed Tracking Server *(demo: [Intro](docs/v2/news/mlflow-browser-1.md)*, *[Keras](docs/v2/news/mlflow-browser-2.md)*, *[ MLlib](docs/v2/news/mlflow-browser-3.md))*
-- dbutils support
-    - Support for `dbutils.secrets` *([demo](docs/v2/news/dbutils.secrets.md))*
-    - Support for `dbutils.notebook` *([demo](docs/v2/news/dbutils.notebook.run.md))*
-- Support for kernels without Spark, e.g. for Deep Learning *([demo](docs/v2/news/with-and-without-spark.md))*
-- Support of Databricks Runtimes 6.4 and higher (incl 7.0)
-- JupyterLab 2.1 is now default
-- Experimental features
-    - Scala magic (`%%scala`) support (*experimental*) *([demo](docs/v2/news/scala-magic.md))*
-    - DBFS file system (`%fs`) support (*experimental*) *([demo](docs/v2/news/fs-magic.md))*
+- A new parser for ssh/config that aims for minimum changes (including whitespaces and comments). For verification it shows the diff view to the original version:
+    ```text
+        Host 0102-115241-craws1
+    -     HostName ec2-11-22-33-44.eu-central-1.compute.amazonaws.com
+    +     HostName 111.222.333.444
+        User ubuntu
+    -     Port 2200
+    ?            ^^
+
+    +     Port 2222
+    ?            ^^
+
+        IdentityFile ~/.ssh/id_aws-ffm
+        ServerAliveInterval 30
+        ConnectTimeout 5
+        ServerAliveCountMax 5760
+    ```
+- SSH tunnels are now supported by setting the environment variable SSH_TUNNEL to `address:port` of the tunnel service. See above where a standard AWS Databricks hostname and port (`ec2-11-22-33-44.eu-central-1.compute.amazonaws.com`, `2200`) got replaced by a SSH tunnel at `111.222.333.444` and port `2222`. 
+For the ssh tunnel one can use a managed service like [ngrok](https://ngrok.com/). 
+Alternatively, build your own tunneling service based on e.g. [Fast Reverse Proxy (fpr)](https://github.com/fatedier/frp) as described in ![Fast Reverse proxy configuration](docs/v2/frp.md).
+In both cases, one will use it as 
+
+    ```bash
+    export SSH_TUNNEL=52.52.52.52:2222
+    dj <profile> -k
+    ```
+
+- Support of Databricks Runtimes 6.4 and higher (incl 7.5)
 
 ## 2 Overview
 ![introduction](docs/v2/introduction.gif)
