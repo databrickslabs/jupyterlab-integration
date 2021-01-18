@@ -5,7 +5,7 @@ import subprocess
 
 import yaml
 
-from ssh_config import SSHConfig
+from databrickslabs_jupyterlab.ssh_config import SshConfig
 
 from databrickslabs_jupyterlab.remote import (
     #    configure_ssh,
@@ -70,11 +70,13 @@ class TestKernelSpec:
 
         prepare_ssh_config(cluster_id, self.profile, endpoint)
         ssh_config = os.path.expanduser("~/.ssh/config")
-        sc = SSHConfig.load(ssh_config)
-        host = sc.get(cluster_id)
-        assert host.get("ConnectTimeout") == "5"
-        assert host.get("ServerAliveCountMax") == "5760"
-        assert host.get("IdentityFile") == "~/.ssh/id_{}".format(self.profile)
+        with open(ssh_config, "r") as fd:
+            data = fd.read()
+        sc = SshConfig(data)
+        host = sc.get_host(cluster_id)
+        assert host.get_param("ConnectTimeout").value == "5"
+        assert host.get_param("ServerAliveCountMax").value == "5760"
+        assert host.get_param("IdentityFile").value == "~/.ssh/id_{}".format(self.profile)
 
         assert is_reachable(endpoint)
 
