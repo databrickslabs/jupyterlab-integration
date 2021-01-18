@@ -36,6 +36,43 @@ def conda_version():
         return None
 
 
+def _build_config_content(lines, config):
+    """
+    Args:
+        lines: list[str] - a list of original config file lines
+        config: dict[str, Any] - a dictionary of config params to overwrite
+
+    Returns: list[str] - a list of resulting config file lines which should be written
+    """
+    result_config = []
+
+    is_key_value_pair = False
+    is_set_from_config = False
+
+    for line in lines:
+        kv = line.strip().split("=")
+        if len(kv) == 2:
+            k, v = kv
+            is_key_value_pair = True
+            if config.get(k, None) is not None:
+                result_config.append("%s=%s\n" % (k, config[k]))
+                del config[k]
+                is_set_from_config = True
+            else:
+                result_config.append("%s\n" % line)
+                is_set_from_config = False
+        else:
+            if is_key_value_pair and is_set_from_config:
+                continue
+            result_config.append("%s\n" % line)
+            is_key_value_pair = False
+
+    for k, v in config.items():
+        result_config.append("%s=%s\n" % (k, v))
+
+    return result_config
+
+
 def write_config():
     """Store jupyter lab configuration necessary for databrickslabs_jupyterlab
     Set values:
@@ -57,17 +94,7 @@ def write_config():
             lines = fd.read().split("\n")
 
         with open(config_file, "w") as fd:
-            for line in lines:
-                kv = line.strip().split("=")
-                if len(kv) == 2:
-                    k, v = kv
-                    if config.get(k, None) is not None:
-                        fd.write("%s=%s\n" % (k, config[k]))
-                        del config[k]
-                    else:
-                        fd.write("%s\n" % line)
-            for k, v in config.items():
-                fd.write("%s=%s\n" % (k, v))
+            fd.writelines(_build_config_content(lines, config))
     else:
         with open(config_file, "w") as fd:
             fd.write("\n".join(["%s=%s" % (k, v) for k, v in config.items()]))
@@ -159,13 +186,13 @@ def prepare_ssh_config(cluster_id, profile, public_dns):
     if host is None:
         host = ssh_config.add_host(cluster_id)
         (host.set_param("HostName", public_dns)
-            .set_param("IdentityFile", "~/.ssh/id_%s" % profile)
-            .set_param("Port", 2200)
-            .set_param("User", "ubuntu")
-            .set_param("ServerAliveInterval", 30)
-            .set_param("ServerAliveCountMax", 5760)
-            .set_param("ConnectTimeout", 5)
-        )
+         .set_param("IdentityFile", "~/.ssh/id_%s" % profile)
+         .set_param("Port", 2200)
+         .set_param("User", "ubuntu")
+         .set_param("ServerAliveInterval", 30)
+         .set_param("ServerAliveCountMax", 5760)
+         .set_param("ConnectTimeout", 5)
+         )
     print(f"   => Jupyterlab Integration made the following changes to {config}:")
     ssh_config.dump()
     with open(config, "w") as fd:
@@ -190,7 +217,7 @@ def show_profiles():
 
 
 def create_kernelspec(
-    profile, organisation, host, cluster_id, cluster_name, local_env, python_path, no_spark
+        profile, organisation, host, cluster_id, cluster_name, local_env, python_path, no_spark
 ):
     """Create or edit the ssh_ipykernel specification for jupyter lab
     
