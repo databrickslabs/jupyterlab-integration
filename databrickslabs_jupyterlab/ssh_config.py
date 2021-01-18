@@ -34,9 +34,7 @@ class Block:
     tag: str = ""
 
     def to_string(self):
-        return f"{self.head.to_string()}\n" + "\n".join(
-            [p.to_string() for p in self.params]
-        )
+        return f"{self.head.to_string()}\n" + "\n".join([p.to_string() for p in self.params])
 
     def get_param(self, key):
         for kv in self.params:
@@ -124,7 +122,7 @@ class SshConfig:
         block = self.get_host(host)
         if block is None:
             block = Block(
-                KeyValue("", "Host", " ", host, _change_comment),
+                KeyValue("", "Host", " ", host, ""),
                 [],
                 "    ",
                 tag=self.tag,
