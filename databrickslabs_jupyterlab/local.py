@@ -36,43 +36,6 @@ def conda_version():
         return None
 
 
-def _build_config_content(lines, config):
-    """
-    Args:
-        lines: list[str] - a list of original config file lines
-        config: dict[str, Any] - a dictionary of config params to overwrite
-
-    Returns: list[str] - a list of resulting config file lines which should be written
-    """
-    result_config = []
-
-    is_key_value_pair = False
-    is_set_from_config = False
-
-    for line in lines:
-        kv = line.strip().split("=")
-        if len(kv) == 2:
-            k, v = kv
-            is_key_value_pair = True
-            if config.get(k, None) is not None:
-                result_config.append("%s=%s\n" % (k, config[k]))
-                del config[k]
-                is_set_from_config = True
-            else:
-                result_config.append("%s\n" % line)
-                is_set_from_config = False
-        else:
-            if is_key_value_pair and is_set_from_config:
-                continue
-            result_config.append("%s\n" % line)
-            is_key_value_pair = False
-
-    for k, v in config.items():
-        result_config.append("%s=%s\n" % (k, v))
-
-    return result_config
-
-
 def write_config():
     """Store jupyter lab configuration necessary for databrickslabs_jupyterlab
     Set values:
@@ -83,21 +46,31 @@ def write_config():
         "c.KernelManager.autorestart": False,
         "c.MappingKernelManager.kernel_info_timeout": 20,
     }
-
+    c1, c2 = list(config.keys())
     full_path = os.path.expanduser("~/.jupyter")
     if not os.path.exists(full_path):
         os.mkdir(full_path)
-
     config_file = os.path.join(full_path, "jupyter_notebook_config.py")
+    lines = []
     if os.path.exists(config_file):
         with open(config_file, "r") as fd:
             lines = fd.read().split("\n")
-
-        with open(config_file, "w") as fd:
-            fd.writelines(_build_config_content(lines, config))
-    else:
-        with open(config_file, "w") as fd:
-            fd.write("\n".join(["%s=%s" % (k, v) for k, v in config.items()]))
+        # avoid growing by one empty line for each run
+        if lines[-1] == "":
+            lines = lines[:-1]
+    with open(config_file, "w") as fd:
+        for line in lines:
+            if line.startswith(c1) or line.startswith(c2):
+                kv = line.split("=")
+                k = kv[0].strip()
+                if config.get(k) is not None:  #  if None it's a duplicate, so ignore
+                    fd.write("%s = %s\n" % (k, config[k]))
+                    del config[k]
+            else:
+                # else just copy line
+                fd.write("%s\n" % line)
+        # write all missing configs
+        fd.write("\n".join(["%s = %s" % (k, v) for k, v in config.items()]))
 
 
 def get_local_libs():
