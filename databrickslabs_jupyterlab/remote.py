@@ -313,12 +313,13 @@ def install_libs(cluster_id, host, token):
         "ipywidgets==%s" % deps["ipywidgets"],
         "ipykernel==%s" % deps["ipykernel"],
         "databrickslabs-jupyterlab==%s" % __version__,
+        "pygments>=2.4.1",
     ]
 
     print("   => Installing ", " ".join(libs))
 
     ssh = os.environ.get("SSH") or "ssh"
-    cmd = [ssh, cluster_id, "sudo", python_path + "/pip", "install"] + libs
+    cmd = [ssh, cluster_id, "sudo", python_path + "/pip", "install", "--upgrade"] + libs
     result = execute(cmd)
 
     if result["returncode"] == 0:
