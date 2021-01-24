@@ -46,31 +46,31 @@ def write_config():
         "c.KernelManager.autorestart": False,
         "c.MappingKernelManager.kernel_info_timeout": 20,
     }
-
+    c1, c2 = list(config.keys())
     full_path = os.path.expanduser("~/.jupyter")
     if not os.path.exists(full_path):
         os.mkdir(full_path)
-
     config_file = os.path.join(full_path, "jupyter_notebook_config.py")
+    lines = []
     if os.path.exists(config_file):
         with open(config_file, "r") as fd:
             lines = fd.read().split("\n")
-
-        with open(config_file, "w") as fd:
-            for line in lines:
-                kv = line.strip().split("=")
-                if len(kv) == 2:
-                    k, v = kv
-                    if config.get(k, None) is not None:
-                        fd.write("%s=%s\n" % (k, config[k]))
-                        del config[k]
-                    else:
-                        fd.write("%s\n" % line)
-            for k, v in config.items():
-                fd.write("%s=%s\n" % (k, v))
-    else:
-        with open(config_file, "w") as fd:
-            fd.write("\n".join(["%s=%s" % (k, v) for k, v in config.items()]))
+        # avoid growing by one empty line for each run
+        if lines[-1] == "":
+            lines = lines[:-1]
+    with open(config_file, "w") as fd:
+        for line in lines:
+            if line.startswith(c1) or line.startswith(c2):
+                kv = line.split("=")
+                k = kv[0].strip()
+                if config.get(k) is not None:  #  if None it's a duplicate, so ignore
+                    fd.write("%s = %s\n" % (k, config[k]))
+                    del config[k]
+            else:
+                # else just copy line
+                fd.write("%s\n" % line)
+        # write all missing configs
+        fd.write("\n".join(["%s = %s" % (k, v) for k, v in config.items()]))
 
 
 def get_local_libs():
@@ -159,13 +159,13 @@ def prepare_ssh_config(cluster_id, profile, public_dns):
     if host is None:
         host = ssh_config.add_host(cluster_id)
         (host.set_param("HostName", public_dns)
-            .set_param("IdentityFile", "~/.ssh/id_%s" % profile)
-            .set_param("Port", 2200)
-            .set_param("User", "ubuntu")
-            .set_param("ServerAliveInterval", 30)
-            .set_param("ServerAliveCountMax", 5760)
-            .set_param("ConnectTimeout", 5)
-        )
+         .set_param("IdentityFile", "~/.ssh/id_%s" % profile)
+         .set_param("Port", 2200)
+         .set_param("User", "ubuntu")
+         .set_param("ServerAliveInterval", 30)
+         .set_param("ServerAliveCountMax", 5760)
+         .set_param("ConnectTimeout", 5)
+         )
     print(f"   => Jupyterlab Integration made the following changes to {config}:")
     ssh_config.dump()
     with open(config, "w") as fd:
@@ -190,7 +190,7 @@ def show_profiles():
 
 
 def create_kernelspec(
-    profile, organisation, host, cluster_id, cluster_name, local_env, python_path, no_spark
+        profile, organisation, host, cluster_id, cluster_name, local_env, python_path, no_spark
 ):
     """Create or edit the ssh_ipykernel specification for jupyter lab
     
