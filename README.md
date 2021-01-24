@@ -33,7 +33,11 @@ In both cases, one will use it as
     dj <profile> -k
     ```
 
-- Support of Databricks Runtimes 6.4 and higher (incl 7.5)
+- Support of Databricks Runtimes 6.4, 7.3 and 7.5 (standard and ML)
+
+- A new flag "--env" allows to add extra environment variables available in the notebooks
+
+- Many bug fixes
 
 ## 2 Overview
 ![introduction](docs/v2/introduction.gif)
@@ -53,14 +57,14 @@ In both cases, one will use it as
 
     *JupyterLab Integration* is based on [Anaconda](https://www.anaconda.com/distribution) and supports:
 
-    - A recent version of Anaconda with Python >= *3.6*
-    - The tool *conda* must be newer than *4.7.5*, test were executed with *4.8.x*.
+    - A recent version of Anaconda with Python >= *3.8*
+    - The tool *conda* must be newer than *4.7.5*, test were executed with *4.9.2*.
 
     Since *Jupyterlab Integration* will create a separate conda environment, [Miniconda](https://docs.conda.io/en/latest/miniconda.html) is sufficient to start
 
 3. **Python**
 
-    *JupyterLab Integration* only works with Python 3 and supports Python 3.6 and Python 3.7 both on the remote cluster and locally.
+    *JupyterLab Integration* only works with Python 3 and supports Python 3.7 and Python 3.8 both on the remote cluster and locally.
 
 4. **Databricks CLI**
 
@@ -81,17 +85,13 @@ In both cases, one will use it as
 
 6. **Databricks Runtime**
 
-    *JupyterLab Integration* works with the following Databricks runtimes on AWS and Azure:
+    *JupyterLab Integration* has been tested with the following Databricks runtimes on AWS and Azure:
 
-    - *'5.5 ML LTS'*
-    - *'6.3'* and *'6.3 ML'*
     - *'6.4'* and *'6.4 ML'*
-    - *'6.5'* and *'6.5 ML'*
-    - *'7.0 BETA'* and *'7.0 ML BETA'*
+    - *'7.3'* and *'7.3 ML'*
+    - *'7.5'* and *'7.5 ML'*
 
-    Supported only on AWS:
-
-    - *'5.5 LTS'*
+    Newer runtimes might work, however are subject to own tests.
 
 ## 4 Running with docker
 
@@ -176,8 +176,8 @@ in both commands.
     Create a new conda environment and install *databrickslabs_jupyterlab* with the following commands:
 
     ```bash
-    (base)$ conda create -n db-jlab python=3.7
-    (base)$ conda activate db-jlab
+    (base)$ conda create -n db-jlab21 python=3.8
+    (base)$ conda activate db-jlab21
     (db-jlab)$ pip install --upgrade databrickslabs-jupyterlab==2.1.0-rc0
     ```
 
