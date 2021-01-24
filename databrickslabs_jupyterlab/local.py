@@ -191,7 +191,15 @@ def show_profiles():
 
 
 def create_kernelspec(
-    profile, organisation, host, cluster_id, cluster_name, local_env, python_path, no_spark
+    profile,
+    organisation,
+    host,
+    cluster_id,
+    cluster_name,
+    local_env,
+    python_path,
+    no_spark,
+    extra_env="",
 ):
     """Create or edit the ssh_ipykernel specification for jupyter lab
 
@@ -203,6 +211,7 @@ def create_kernelspec(
         cluster_name (str): Cluster name
         local_env (str): Name of the local conda environment
         python_path (str): Remote python path to be used for kernel
+        extra_env (str): Env vars to add to the remote notebook like "V1=ABC V2=DEF"
     """
     from ssh_ipykernel.manage import add_kernel  # pylint: disable=import-outside-toplevel
 
@@ -210,6 +219,8 @@ def create_kernelspec(
     env = "DBJL_PROFILE=%s DBJL_HOST=%s DBJL_CLUSTER=%s" % (profile, host, cluster_id)
     if organisation is not None:
         env += " DBJL_ORG=%s" % organisation
+    if extra_env != "":
+        env = env + " " + extra_env
 
     if cluster_name.replace(" ", "_") == local_env:
         display_name = "SSH %s %s:%s" % (cluster_id, profile, cluster_name)

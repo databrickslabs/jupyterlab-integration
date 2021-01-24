@@ -72,6 +72,13 @@ parser.add_argument(
     "-D", "--debug", dest="debug", action="store_true", help="Debug calls to REST API"
 )
 parser.add_argument(
+    "-e",
+    "--env",
+    dest="extra_env",
+    nargs="+",
+    help="Environment variables to add to the remote notebook env",
+)
+parser.add_argument(
     "-i", "--id", dest="cluster_id", help="The cluster_id to avoid manual selection"
 )
 parser.add_argument(
@@ -241,7 +248,11 @@ if args.profile == "":
 
 print("\n* Getting host and token from .databrickscfg")
 host, token = get_db_config(profile)
-if ("azuredatabricks.net" in host) and args.kernelspec and not args.organisation:
+if (
+    ("azuredatabricks.net" in host)
+    and (args.kernelspec or args.reconfigure)
+    and not args.organisation
+):
     if host.startswith("https://adb"):
         r = re.compile(r"https://adb-(\d+)\.\d+.azuredatabricks.net")
         result = r.match(host)
@@ -346,6 +357,12 @@ if args.lab:
 
 if args.kernelspec:
     print("\n* Creating remote kernel spec")
+    print("args.extra_env", args.extra_env)
+    if args.extra_env is None:
+        extra_env = ""
+    else:
+        extra_env = " ".join(args.extra_env)
+
     python_path = get_python_path(cluster_id)
     # Using local conda environment name avoids overwriting of kernelspecs from different
     # environments
@@ -358,6 +375,7 @@ if args.kernelspec:
         os.environ["CONDA_DEFAULT_ENV"],
         python_path,
         args.no_spark,
+        extra_env,
     )
     print_ok("   => OK")
 
