@@ -22,7 +22,7 @@
 
   Note: This assumes that [https://chocolatey.org](https://chocolatey.org) is installed
 
-- Copy `config-template.yaml` to `config.yaml` and edit it accordingly
+- Copy `<root>/tests/config-template.yaml` to `<root>/config.yaml` and edit it accordingly
 
 - Depending on whether test should be run against AWS or Azure, set one of
 
@@ -42,23 +42,23 @@
 - Start clusters
 
   ```bash
-  python 00-create-clusters.py
+  python tests/00-create-clusters.py
   ```
 
   or restart clusters:
 
   ```bash
-  python 01-restart-clusters.py
+  python tests/01-restart-clusters.py
   ```
 
 - Create secret scope and key for tests (if not already exists)
 
   ```bash
-  python 05-create-secret-scope.py
+  python tests/05-create-secret-scope.py
   ```
 
 - Execute tests
-  Note: For dev tests (the current version is not published to pypi), enable `03-install-wheel_test.py`, i.e. comment the skip marks decorating the test.
+  Note: For dev tests (the current version is not published to pypi), enable `30-install-wheel_test.py`, i.e. comment the skip marks decorating the test.
   
   Execute the tests
 
