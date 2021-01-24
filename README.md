@@ -95,7 +95,7 @@ In both cases, one will use it as
 
 ## 4 Running with docker
 
-A docker image ready for working with *Jupyterlab Integration* is available from Dockerhub. It is recommended to prepare your environment by pulling the repository: `docker pull bwalter42/databrickslabs_jupyterlab:2.1.0-rc2`
+A docker image ready for working with *Jupyterlab Integration* is available from Dockerhub. It is recommended to prepare your environment by pulling the repository: `docker pull bwalter42/databrickslabs_jupyterlab:2.1.0-rc3`
 
 There are two scripts in the folder `docker`:
 
@@ -115,7 +115,7 @@ Alternatively, under macOS and Linux one can use the following bash functions:
             -v $HOME/.ssh/:/home/dbuser/.ssh  \
             -v $HOME/.databrickscfg:/home/dbuser/.databrickscfg \
             -v $(pwd):/home/dbuser/notebooks \
-            bwalter42/databrickslabs_jupyterlab:2.1.0-rc2 /opt/conda/bin/databrickslabs-jupyterlab $@
+            bwalter42/databrickslabs_jupyterlab:2.1.0-rc3 /opt/conda/bin/databrickslabs-jupyterlab $@
     }
     ```
 
@@ -130,7 +130,7 @@ Alternatively, under macOS and Linux one can use the following bash functions:
             -v $HOME/.ssh/:/home/dbuser/.ssh  \
             -v $HOME/.databrickscfg:/home/dbuser/.databrickscfg \
             -v $(pwd):/home/dbuser/notebooks \
-            bwalter42/databrickslabs_jupyterlab:2.1.0-rc2 /opt/conda/bin/jupyter $@
+            bwalter42/databrickslabs_jupyterlab:2.1.0-rc3 /opt/conda/bin/jupyter $@
     }
     ```
 
@@ -178,7 +178,7 @@ in both commands.
     ```bash
     (base)$ conda create -n db-jlab21 python=3.8
     (base)$ conda activate db-jlab21
-    (db-jlab)$ pip install --upgrade databrickslabs-jupyterlab==2.1.0-rc2
+    (db-jlab)$ pip install --upgrade databrickslabs-jupyterlab==2.1.0-rc3
     ```
 
     The prefix `(db-jlab)$` for all command examples in this document assumes that the conda enviromnent `db-jlab` is activated.

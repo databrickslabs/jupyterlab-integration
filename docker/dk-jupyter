@@ -6,5 +6,5 @@ docker run -it --rm \
     -v $HOME/.ssh/:/home/dbuser/.ssh \
     -v $HOME/.databrickscfg:/home/dbuser/.databrickscfg \
     -v $(pwd):/home/dbuser/notebooks \
-    bwalter42/databrickslabs_jupyterlab:2.1.0-rc2 \
+    bwalter42/databrickslabs_jupyterlab:2.1.0-rc3 \
     /opt/conda/bin/jupyter $@
