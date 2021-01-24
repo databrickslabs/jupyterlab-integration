@@ -2,7 +2,7 @@ import json
 import os
 
 from jupyter_client import kernelspec
-from ssh_config import SSHConfig
+from databrickslabs_jupyterlab.utils import SshConfig
 
 from helpers import get_test_kernels, get_running_clusters
 
@@ -24,11 +24,12 @@ class TestRemoveConfig:
             known_hosts = fd.read()
 
         config = os.path.expanduser("~/.ssh/config")
-        try:
-            sc = SSHConfig.load(config)
-        except:  # pylint: disable=bare-except
-            sc = SSHConfig(config)
+        with open(config, "r") as fd:
+            data = fd.read()
+        sc = SshConfig(data)
 
+        host = sc.get_host(cluster_id)
+        assert host.get_param("ConnectTimeout").value == "5"
         test_addresses = [
             h.get("HostName") for h in sc.hosts() if h.name in list(self.clusters.values())
         ]
@@ -45,10 +46,10 @@ class TestRemoveConfig:
     # @pytest.mark.skip(reason="Keep ssh config")
     def test_remove_ssh_config(self):
         config = os.path.expanduser("~/.ssh/config")
-        try:
-            sc = SSHConfig.load(config)
-        except:  # pylint: disable=bare-except
-            sc = SSHConfig(config)
+        with open(config, "r") as fd:
+            data = fd.read()
+        sc = SshConfig(data)
+
         for host in list(self.clusters.values()):
             sc.remove(host)
         sc.write()
