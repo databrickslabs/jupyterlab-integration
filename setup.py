@@ -32,7 +32,7 @@ if os.environ.get("DB_HOME") is None:
 
 setup(
     name="databrickslabs_jupyterlab",
-    version="2.1.0-rc1",
+    version="2.1.0-rc2",
     author="Bernhard Walter",
     author_email="bernhard.walter@databricks.com",
     url="https://github.com/databrickslabs/Jupyterlab-Integration",
