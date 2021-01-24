@@ -70,9 +70,7 @@ class TestKernelSpec:
 
         prepare_ssh_config(cluster_id, self.profile, endpoint)
         ssh_config = os.path.expanduser("~/.ssh/config")
-        with open(ssh_config, "r") as fd:
-            data = fd.read()
-        sc = SshConfig(data)
+        sc = SshConfig(ssh_config)
         host = sc.get_host(cluster_id)
         assert host.get_param("ConnectTimeout").value == "5"
         assert host.get_param("ServerAliveCountMax").value == "5760"

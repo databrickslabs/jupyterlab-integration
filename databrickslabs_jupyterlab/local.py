@@ -149,10 +149,8 @@ def prepare_ssh_config(cluster_id, profile, endpoint):
         print_warning("   => at %s" % backup)
 
         shutil.copy(config, os.path.expanduser(backup))
-        with open(config, "r") as fd:
-            data = fd.read()
 
-    ssh_config = SshConfig(data)
+    ssh_config = SshConfig(config)
 
     host = ssh_config.get_host(cluster_id)
     if host is None:
@@ -169,8 +167,7 @@ def prepare_ssh_config(cluster_id, profile, endpoint):
 
     print(f"   => Jupyterlab Integration made the following changes to {config}:")
     ssh_config.dump()
-    with open(config, "w") as fd:
-        fd.write(ssh_config.to_string())
+    ssh_config.write()
 
     add_known_host(address, port)
 

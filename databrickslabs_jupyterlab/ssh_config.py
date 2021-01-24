@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from difflib import ndiff
 from typing import List, Dict
+import os
 import re
 
 
@@ -20,7 +21,7 @@ class KeyValue:
     key: str
     sep: str
     value: str
-    comment: str
+    comment: str = ""
 
     def to_string(self):
         return f"{self.indent}{self.key}{self.sep}{self.value}{self.comment}"
@@ -31,7 +32,6 @@ class Block:
     head: KeyValue
     params: List[KeyValue]
     indent: str = ""
-    tag: str = ""
 
     def to_string(self):
         return f"{self.head.to_string()}\n" + "\n".join([p.to_string() for p in self.params])
@@ -48,32 +48,42 @@ class Block:
             if self.params and self.params[-1].value == "":
                 self.params.insert(
                     len(self.params) - 1,
-                    KeyValue(self.indent, key, " ", value, self.tag),
+                    KeyValue(self.indent, key, " ", value),
                 )
             else:
-                self.params.append(KeyValue(self.indent, key, " ", value, self.tag))
+                self.params.append(KeyValue(self.indent, key, " ", value))
         else:
             p.value = value
-            if self.tag != "" and not self.tag in p.comment:
-                p.comment += self.tag
+
         return self
 
 
 @dataclass
 class SshConfig:
-    data: str
-    tag: str = ""
-    blocks: List = None
+    config_file: str
+    blocks: List[Block] = None
 
     def __post_init__(self):
+        self.load(self.config_file)
         self.parse()
 
     def to_string(self):
+        self.config_file = os.path.expanduser(self.config_file)
         return "\n".join([b.to_string() for b in self.blocks])
+
+    def load(self, config):
+        self.data = ""
+        if os.path.exists(self.config_file):
+            with open(self.config_file, "r") as fd:
+                self.data = fd.read()
+
+    def write(self):
+        with open(self.config_file, "w") as fd:
+            fd.write(self.to_string())
 
     @staticmethod
     def parse_line(raw_line):
-        indent, line = re.match("(^\s*)(.*)", raw_line).groups()
+        indent, line = re.match(r"(^\s*)(.*)", raw_line).groups()
         definition = re.split(r"(\s*#[#\s]+)", line)
         comment = "" if len(definition) == 1 else "".join(definition[1:])
         key_values = definition[0]
@@ -102,7 +112,7 @@ class SshConfig:
                     self.blocks.append(block)
                     block = None
                 head = KeyValue(indent, key, sep, params, comment)
-                block = Block(head, [], tag=self.tag)
+                block = Block(head, [])
             else:
                 block.params.append(KeyValue(indent, key, sep, params, comment))
                 if key != "":
@@ -118,6 +128,9 @@ class SshConfig:
                 return b
         return None
 
+    def get_hosts(self):
+        return self.blocks
+
     def add_host(self, host):
         block = self.get_host(host)
         if block is None:
@@ -125,10 +138,12 @@ class SshConfig:
                 KeyValue("", "Host", " ", host, ""),
                 [],
                 "    ",
-                tag=self.tag,
             )
             self.blocks.append(block)
         return block
+
+    def remove_host(self, name):
+        self.blocks = [b for b in self.blocks if isinstance(b, Block) and b.head.value != name]
 
     def dump(self):
         print("\n".join(ndiff(self.data.split("\n"), self.to_string().split("\n"))))
