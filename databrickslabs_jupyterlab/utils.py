@@ -12,7 +12,7 @@ is_windows = platform.platform(1, 1).split("-")[0] == "Windows"
 
 def bye(status=0):
     """Standard exit function
-    
+
     Args:
         msg (str, optional): Exit message to be printed. Defaults to None.
     """
@@ -60,12 +60,17 @@ def question(tag, message, choices):
     custom_style_fancy = Style(
         [
             ("answer", "fg:#f44336 bold"),  # submitted answer text behind the question
-            ("highlighted", "fg:#f44336 bold",),  # pointed-at choice in select and checkbox prompts
+            (
+                "highlighted",
+                "fg:#f44336 bold",
+            ),  # pointed-at choice in select and checkbox prompts
         ]
     )
 
     answer = questionary.select(
-        message, choices=choices, style=custom_style_fancy,
+        message,
+        choices=choices,
+        style=custom_style_fancy,
     ).ask()  # returns value of selection
     return {tag: answer}
 
@@ -83,7 +88,7 @@ def utf8_decode(text):
 
 def execute(cmd):
     """Execute subprocess
-    
+
     Args:
         cmd (list(str)): Command as list of cmd parts (e.g. ["ls", "-l"])
     """
@@ -125,24 +130,24 @@ def execute_script(script, success_message, error_message):
             print_ok(success_message)
 
 
-class SshConfig:
-    def __init__(self):
-        self.config_file = os.path.expanduser("~/.ssh/config")
-        self.load()
+# class SshConfig:
+#     def __init__(self):
+#         self.config_file = os.path.expanduser("~/.ssh/config")
+#         self.load()
 
-    def _get_mtime(self):
-        return os.stat(self.config_file).st_mtime
+#     def _get_mtime(self):
+#         return os.stat(self.config_file).st_mtime
 
-    def load(self):
-        self.mtime = self._get_mtime()
-        sc = ssh_config.SSHConfig.load(self.config_file)
-        self.hosts = {
-            h.name: h.attributes()["HostName"]
-            for h in sc.hosts()
-            if h.attributes().get("HostName", None) is not None
-        }
+#     def load(self):
+#         self.mtime = self._get_mtime()
+#         sc = ssh_config.SSHConfig.load(self.config_file)
+#         self.hosts = {
+#             h.name: h.attributes()["HostName"]
+#             for h in sc.hosts()
+#             if h.attributes().get("HostName", None) is not None
+#         }
 
-    def get_dns(self, host_name):
-        if self._get_mtime() > self.mtime:
-            self.load()
-        return self.hosts.get(host_name, None)
+#     def get_dns(self, host_name):
+#         if self._get_mtime() > self.mtime:
+#             self.load()
+#         return self.hosts.get(host_name, None)
