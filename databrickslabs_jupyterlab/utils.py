@@ -5,8 +5,6 @@ import sys
 import tempfile
 from html import escape
 
-import ssh_config
-
 is_windows = platform.platform(1, 1).split("-")[0] == "Windows"
 
 
