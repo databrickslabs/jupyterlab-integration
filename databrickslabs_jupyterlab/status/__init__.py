@@ -23,7 +23,6 @@ from databrickslabs_jupyterlab.remote import (
 )
 
 from databrickslabs_jupyterlab.kernel import DatabricksKernelStatus
-from databrickslabs_jupyterlab.utils import SshConfig
 from databrickslabs_jupyterlab.local import get_db_config, prepare_ssh_config
 
 DEBUG_LEVEL = os.environ.get("DEBUG_STATUS", "INFO")
