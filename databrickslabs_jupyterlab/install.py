@@ -216,14 +216,14 @@ def validate(env_name=None, labext=False):
     )
 
 
-def update_env(env_file):
-    script = "conda env update --file %s" % (env_file)
+# def update_env(env_file):
+#     script = "conda env update --file %s" % (env_file)
 
-    print("* Updating conda environment")
-    execute_script(
-        script, "Successfully updated conda environment", "Error while updating conda environment",
-    )
-    validate()
+#     print("* Updating conda environment")
+#     execute_script(
+#         script, "Successfully updated conda environment", "Error while updating conda environment",
+#     )
+#     validate()
 
 
 def install_env(env_file, env_name):
@@ -238,31 +238,31 @@ def install_env(env_file, env_name):
     validate(env_name)
 
 
-def install_labextensions(labext_file, env_name=None):
-    with open(labext_file, "r") as fd:
-        extensions = " ".join(fd.read().split("\n"))
-    script = _set_conda_env(env_name)
-    script += "jupyter labextension install --no-build %s\n" % extensions
-    script += "jupyter lab build --dev-build=True --minimize=False\n"
+# def install_labextensions(labext_file, env_name=None):
+#     with open(labext_file, "r") as fd:
+#         extensions = " ".join(fd.read().split("\n"))
+#     script = _set_conda_env(env_name)
+#     script += "jupyter labextension install --no-build %s\n" % extensions
+#     script += "jupyter lab build --dev-build=True --minimize=False\n"
 
-    print("* Installing jupyterlab extensions")
-    execute_script(
-        script,
-        "Successfully installed jupyter labextensions",
-        "Error while installing jupyter labextensions",
-    )
-    validate(env_name, labext=True)
+#     print("* Installing jupyterlab extensions")
+#     execute_script(
+#         script,
+#         "Successfully installed jupyter labextensions",
+#         "Error while installing jupyter labextensions",
+#     )
+#     validate(env_name, labext=True)
 
 
-def update_local():
-    module_path = os.path.dirname(databrickslabs_jupyterlab.__file__)
+# def update_local():
+#     module_path = os.path.dirname(databrickslabs_jupyterlab.__file__)
 
-    env_file = os.path.join(module_path, "lib", "env.yml")
-    update_env(env_file)
+#     env_file = os.path.join(module_path, "lib", "env.yml")
+#     update_env(env_file)
 
-    labext_file = os.path.join(module_path, "lib", "labextensions.txt")
-    install_labextensions(labext_file)
-    usage(os.environ.get("CONDA_DEFAULT_ENV", "unknown"))
+#     labext_file = os.path.join(module_path, "lib", "labextensions.txt")
+#     install_labextensions(labext_file)
+#     usage(os.environ.get("CONDA_DEFAULT_ENV", "unknown"))
 
 
 def install(profile, host, token, cluster_id, cluster_name, use_whitelist):

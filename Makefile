@@ -33,44 +33,21 @@ ext:
 bump:
 ifdef part
 ifdef version
-	bumpversion --new-version $(version) $(part) && grep current .bumpversion.cfg
+	bumpversion --allow-dirty --new-version $(version) $(part) && grep current .bumpversion.cfg
 else
-	bumpversion $(part) && grep current .bumpversion.cfg
+	bumpversion --allow-dirty $(part) && grep current .bumpversion.cfg
 endif
 else
 	@echo "$(ERROR_COLOR)Provide part=major|minor|patch|release|build and optionally version=x.y.z...$(NO_COLOR)"
 	exit 1
 endif
 
-bump_ext:
-ifdef part
-	$(eval cur_version=$(shell cd extensions/databrickslabs_jupyterlab_statusbar/ && npm version $(part) --preid=rc))
-else
-ifdef version
-	$(eval cur_version := $(shell cd extensions/databrickslabs_jupyterlab_statusbar/ && npm version $(version)))
-else
-	@echo "$(ERROR_COLOR)Provide part=major|minor|patch|premajor|preminor|prepatch|prerelease or version=x.y.z...$(NO_COLOR)"
-	exit 1
-endif
-endif
-	@echo "$(OK_COLOR)=> New version: $(cur_version:v%=%)$(NO_COLOR)"
-	@sed -i.bak 's|databrickslabs-jupyterlab-statusbar@.*|databrickslabs-jupyterlab-statusbar@$(cur_version)|' labextensions.txt
-	cat labextensions.txt
-	git add labextensions.txt extensions/databrickslabs_jupyterlab_statusbar/package.json
-	git commit -m "extension release $(cur_version)"
-
 # Dist commands
 
 # wheel:
 
 dist:
-	@mkdir -p databrickslabs_jupyterlab/lib
-	@cp env.yml labextensions.txt "databrickslabs_jupyterlab/lib/"
-ifdef CLUSTER
-	(DB_HOME=/databricks python setup.py sdist bdist_wheel)
-else
 	python setup.py sdist bdist_wheel
-endif
 
 dev_tag:
 	git tag -a v$(CURRENT_VERSION) -m "Dev release: $(CURRENT_VERSION)"
@@ -94,17 +71,6 @@ check_dist:
 
 upload:
 	@twine upload dist/*
-
-upload_ext:
-	cd extensions/databrickslabs_jupyterlab_statusbar && npm publish
-
-# dev tools
-
-check_version:
-	dev_tools/check_versions env.yml
-
-dev_tools:
-	pip install twine bumpversion yapf pylint pyYaml pytest
 
 docker:
 	@cd docker/image && docker build -t bwalter42/databrickslabs_jupyterlab:$(CURRENT_VERSION) .

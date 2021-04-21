@@ -2,42 +2,28 @@
 
 This package allows to connect to a remote Databricks cluster from a locally running JupyterLab.
 
-## >>> New minor release V2.1 (Jan 2021) <<<
 
-## 1 New features
+## >>> New minor release V2.2 (Apr 2021) <<<
 
-- A new parser for ssh/config that aims for minimum changes (including whitespaces and comments). For verification it shows the diff view to the original version:
-    ```text
-        Host 0102-115241-craws1
-    -     HostName ec2-11-22-33-44.eu-central-1.compute.amazonaws.com
-    +     HostName 111.222.333.444
-        User ubuntu
-    -     Port 2200
-    ?            ^^
+### 1 New features
 
-    +     Port 2222
-    ?            ^^
-
-        IdentityFile ~/.ssh/id_aws-ffm
-        ServerAliveInterval 30
-        ConnectTimeout 5
-        ServerAliveCountMax 5760
-    ```
-- SSH tunnels are now supported by setting the environment variable SSH_TUNNEL to `address:port` of the tunnel service. See above where a standard AWS Databricks hostname and port (`ec2-11-22-33-44.eu-central-1.compute.amazonaws.com`, `2200`) got replaced by a SSH tunnel at `111.222.333.444` and port `2222`. 
-For the ssh tunnel one can use a managed service like [ngrok](https://ngrok.com/). 
-Alternatively, build your own tunneling service based on e.g. [Fast Reverse Proxy (fpr)](https://github.com/fatedier/frp) as described in ![Fast Reverse proxy configuration](docs/v2/frp.md).
-In both cases, one will use it as 
+- **Jupyter Lab 3 support**
+    
+    Jupyter Integration now works with JupyterLab 3. This drastically simplified the installation. The bootstrap step (`dj -b`) is gone. Simply:
 
     ```bash
-    export SSH_TUNNEL=52.52.52.52:2222
-    dj <profile> -k
+    (base)$ conda create -n dj python=3.8  # you might need to add "pywin32" if you are on Windows
+    (base)$ conda activate dj
+    (dj)$ pip install --upgrade databrickslabs-jupyterlab[cli]==2.2.0-rc4
     ```
 
-- Support of Databricks Runtimes 6.4, 7.3 and 7.5 (standard and ML)
+    The following packages get installed:
+    - databrickslabs-jupyterlab
+    - databrickslabs-jupyterlab-status (providing the lab extension)
+    - ssh-ipykernel
+    - ssh-ipykernel-interrupt (providing the lab extension)
 
-- A new flag "--env" allows to add extra environment variables available in the notebooks
-
-- Many bug fixes
+- Support of Databricks Runtimes 6.4, 6.4(ESR), 7.3 and 7.5, 8.0, 8.1 (standard and ML)
 
 ## 2 Overview
 ![introduction](docs/v2/introduction.gif)
@@ -90,12 +76,14 @@ In both cases, one will use it as
     - *'6.4'* and *'6.4 ML'*
     - *'7.3'* and *'7.3 ML'*
     - *'7.5'* and *'7.5 ML'*
+    - *'8-0'* and *'8.0 ML'*
+    - *'8.1'* and *'8.1 ML'*
 
     Newer runtimes might work, however are subject to own tests.
 
 ## 4 Running with docker
 
-A docker image ready for working with *Jupyterlab Integration* is available from Dockerhub. It is recommended to prepare your environment by pulling the repository: `docker pull bwalter42/databrickslabs_jupyterlab:2.1.0-rc4`
+A docker image ready for working with *Jupyterlab Integration* is available from Dockerhub. It is recommended to prepare your environment by pulling the repository: `docker pull bwalter42/databrickslabs_jupyterlab:2.2.0-rc4`
 
 There are two scripts in the folder `docker`:
 
@@ -115,7 +103,7 @@ Alternatively, under macOS and Linux one can use the following bash functions:
             -v $HOME/.ssh/:/home/dbuser/.ssh  \
             -v $HOME/.databrickscfg:/home/dbuser/.databrickscfg \
             -v $(pwd):/home/dbuser/notebooks \
-            bwalter42/databrickslabs_jupyterlab:2.1.0-rc4 /opt/conda/bin/databrickslabs-jupyterlab $@
+            bwalter42/databrickslabs_jupyterlab:2.2.0-rc4 /opt/conda/bin/databrickslabs-jupyterlab $@
     }
     ```
 
@@ -130,7 +118,7 @@ Alternatively, under macOS and Linux one can use the following bash functions:
             -v $HOME/.ssh/:/home/dbuser/.ssh  \
             -v $HOME/.databrickscfg:/home/dbuser/.databrickscfg \
             -v $(pwd):/home/dbuser/notebooks \
-            bwalter42/databrickslabs_jupyterlab:2.1.0-rc4 /opt/conda/bin/jupyter $@
+            bwalter42/databrickslabs_jupyterlab:2.2.0-rc4 /opt/conda/bin/jupyter $@
     }
     ```
 
@@ -176,9 +164,9 @@ in both commands.
     Create a new conda environment and install *databrickslabs_jupyterlab* with the following commands:
 
     ```bash
-    (base)$ conda create -n db-jlab21 python=3.8
-    (base)$ conda activate db-jlab21
-    (db-jlab)$ pip install --upgrade databrickslabs-jupyterlab==2.1.0-rc4
+    (base)$ conda create -n dj python=3.8  # you might need to add "pywin32" if you are on Windows
+    (base)$ conda activate dj
+    (dj)$   pip install --upgrade databrickslabs-jupyterlab[cli]==2.2.0-rc4
     ```
 
     The prefix `(db-jlab)$` for all command examples in this document assumes that the conda enviromnent `db-jlab` is activated.
@@ -186,14 +174,6 @@ in both commands.
 2. **The tool *databrickslabs-jupyterlab / dj***
 
     It comes with a batch file `dj.bat` for Windows. On MacOS or Linux both `dj` and `databrickslabs-jupyterlab` exist
-
-3. **Bootstrap *Jupyterlab Integration***
-
-    Bootstrap the environment for *Jupyterlab Integration* with the following command (which will show the usage after successfully configuring *Juypterlab Integration*):
-
-    ```bash
-    (db-jlab)$ dj -b
-    ```
 
 ## 6 Getting started with local installation or docker
 

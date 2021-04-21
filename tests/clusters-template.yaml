@@ -9,13 +9,14 @@ azure:
   instances: Standard_DS3_v2
 
 spark_versions:
-- 5.5.x-scala2.11
-- 5.5.x-cpu-ml-scala2.11
-- 6.3.x-scala2.11
-- 6.3.x-cpu-ml-scala2.11
 - 6.4.x-scala2.11
+- 6.4.x-esr-scala2.11
 - 6.4.x-cpu-ml-scala2.11
 - 6.5.x-scala2.11
 - 6.5.x-cpu-ml-scala2.11
 - 7.0.x-scala2.12
 - 7.0.x-cpu-ml-scala2.12
+- 8.0.x-scala2.12
+- 8.0.x-cpu-ml-scala2.12
+- 8.1.x-scala2.12
+- 8.1.x-cpu-ml-scala2.12

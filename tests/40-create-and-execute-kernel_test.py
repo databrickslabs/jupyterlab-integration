@@ -117,7 +117,7 @@ class TestRunKernel:
                 kc,
                 cmd="result = spark.version",
                 user_expressions={"result": "result[:2]"},
-                expected="'3.'" if "7" in name else "'2.'",
+                expected="'3.'" if ("7" in name or "8" in name) else "'2.'",
             )
 
     def test_dbfs(self, name, cluster_id, spark):

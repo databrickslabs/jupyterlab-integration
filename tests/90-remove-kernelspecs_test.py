@@ -29,7 +29,7 @@ class TestRemoveConfig:
         test_addresses = [
             block.get_param("HostName").value
             for block in sc.get_hosts()
-            if isinstance(block, Block)
+            if isinstance(block, Block) and block.get_param("HostName") is not None
         ]
         test_ips = [".".join(a.split(".")[0].split("-")[1:]) for a in test_addresses]
         keep_addresses = []

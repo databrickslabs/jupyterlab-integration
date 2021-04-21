@@ -28,7 +28,7 @@ from databrickslabs_jupyterlab.local import (
     show_profiles,
     write_config,
 )
-from databrickslabs_jupyterlab.install import install, update_local
+from databrickslabs_jupyterlab.install import install
 from databrickslabs_jupyterlab.utils import bye
 
 
@@ -44,13 +44,13 @@ class VCheck(Enum):
 parser = argparse.ArgumentParser(description="Configure remote Databricks access with JupyterLab")
 
 parser.add_argument("profile", nargs="?", type=str, default="", help="A databricks-cli profile")
-parser.add_argument(
-    "-b",
-    "--bootstrap",
-    dest="bootstrap",
-    action="store_true",
-    help="Bootstrap the local databrickslabs-jupyterlab environment",
-)
+# parser.add_argument(
+#     "-b",
+#     "--bootstrap",
+#     dest="bootstrap",
+#     action="store_true",
+#     help="Bootstrap the local databrickslabs-jupyterlab environment",
+# )
 parser.add_argument(
     "-d", "--delete", dest="delete", action="store_true", help="Delete a jupyter kernelspec"
 )
@@ -204,9 +204,9 @@ if args.delete:
 #
 # Bootstrap the initial environment and exit
 #
-if args.bootstrap:
-    update_local()
-    bye()
+# if args.bootstrap:
+#     update_local()
+#     bye()
 
 #
 # Show all configure profiles

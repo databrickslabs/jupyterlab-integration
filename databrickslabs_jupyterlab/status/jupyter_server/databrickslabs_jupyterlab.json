@@ -1,0 +1,7 @@
+{
+  "ServerApp": {
+    "jpserver_extensions": {
+      "databrickslabs_jupyterlab": true
+    }
+  }
+}

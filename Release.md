@@ -72,41 +72,7 @@
   python 99-destroy-clusters.py
   ```
 
-### 2 Labextension
-
-In case the jupyter labextions has been changed:
-
-1. Commit changes
-
-2. Bump version of *databrickslabs_jupyterlab_statusbar*
-
-    - A new release candidate with rc0
-
-      ```bash
-      make bump_ext part=premajor|preminor|prepatch
-      ```
-
-    - A new build
-
-      ```bash
-      make bump_ext part=prerelease
-      ```
-
-    - A new release without release candidate
-
-      ```bash
-      make bump_ext version=major.minor.patch
-      ```
-
-3. Deploy to npmjs.com
-
-    ```bash
-    make upload_ext
-    ```
-
-4. Process with **Python package** since labextensions.txt is changed!
-
-### 3 Python package
+### 2 Python package
 
 In case the jupyter labextions and/or the python code has been changed:
 
@@ -166,6 +132,12 @@ In case the jupyter labextions and/or the python code has been changed:
     ```bash
     make upload
     ```
+
+### 3 Labextension
+
+1. Change directory to `databrickslabs_jupyterlab_status`
+2. Follow steps 2-6 of 2.
+
 
 ### 4 Docker image
 

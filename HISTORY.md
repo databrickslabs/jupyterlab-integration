@@ -1,3 +1,10 @@
+### V2.2.0 (Apr 2021)
+
+- **Jupyter Lab support** 
+    With support for Jupyterlab the installation could be simplified drastically
+
+- **Support of Databricks Runtimes 6.4 and higher (incl 8.1)**
+
 ### V2.1.0 (Jan 2021)
 
 - **A new parser for ssh/config** 
