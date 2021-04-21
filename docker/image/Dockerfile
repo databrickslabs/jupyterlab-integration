@@ -1,10 +1,8 @@
 FROM continuumio/miniconda3
 
 RUN . /opt/conda/bin/activate base && \
-    /opt/conda/bin/pip install --upgrade databrickslabs-jupyterlab==2.2.0[cli] && \
+    /opt/conda/bin/pip install --upgrade databrickslabs-jupyterlab[cli]==2.2.0 && \
     echo "cleaning" && \
-    npm install -g yarn && \
-    yarn cache clean && \
     conda clean --all && \
     /opt/conda/bin/jupyter lab clean && \
     find / -type f -name '*.py[co]' -delete -o -type d -name __pycache__ -delete
