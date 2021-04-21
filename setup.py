@@ -48,7 +48,7 @@ EXTRAS_REQUIRES = {
 
 setup(
     name="databrickslabs_jupyterlab",
-    version="2.2.0-rc4",
+    version="2.2.0",
     author="Bernhard Walter",
     author_email="bernhard.walter@databricks.com",
     url="https://github.com/databrickslabs/Jupyterlab-Integration",

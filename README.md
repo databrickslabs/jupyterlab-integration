@@ -14,7 +14,7 @@ This package allows to connect to a remote Databricks cluster from a locally run
     ```bash
     (base)$ conda create -n dj python=3.8  # you might need to add "pywin32" if you are on Windows
     (base)$ conda activate dj
-    (dj)$ pip install --upgrade databrickslabs-jupyterlab[cli]==2.2.0-rc4
+    (dj)$ pip install --upgrade databrickslabs-jupyterlab[cli]==2.2.0
     ```
 
     The following packages get installed:
@@ -83,7 +83,7 @@ This package allows to connect to a remote Databricks cluster from a locally run
 
 ## 4 Running with docker
 
-A docker image ready for working with *Jupyterlab Integration* is available from Dockerhub. It is recommended to prepare your environment by pulling the repository: `docker pull bwalter42/databrickslabs_jupyterlab:2.2.0-rc4`
+A docker image ready for working with *Jupyterlab Integration* is available from Dockerhub. It is recommended to prepare your environment by pulling the repository: `docker pull bwalter42/databrickslabs_jupyterlab:2.2.0`
 
 There are two scripts in the folder `docker`:
 
@@ -103,7 +103,7 @@ Alternatively, under macOS and Linux one can use the following bash functions:
             -v $HOME/.ssh/:/home/dbuser/.ssh  \
             -v $HOME/.databrickscfg:/home/dbuser/.databrickscfg \
             -v $(pwd):/home/dbuser/notebooks \
-            bwalter42/databrickslabs_jupyterlab:2.2.0-rc4 /opt/conda/bin/databrickslabs-jupyterlab $@
+            bwalter42/databrickslabs_jupyterlab:2.2.0 /opt/conda/bin/databrickslabs-jupyterlab $@
     }
     ```
 
@@ -118,7 +118,7 @@ Alternatively, under macOS and Linux one can use the following bash functions:
             -v $HOME/.ssh/:/home/dbuser/.ssh  \
             -v $HOME/.databrickscfg:/home/dbuser/.databrickscfg \
             -v $(pwd):/home/dbuser/notebooks \
-            bwalter42/databrickslabs_jupyterlab:2.2.0-rc4 /opt/conda/bin/jupyter $@
+            bwalter42/databrickslabs_jupyterlab:2.2.0 /opt/conda/bin/jupyter $@
     }
     ```
 
@@ -166,7 +166,7 @@ in both commands.
     ```bash
     (base)$ conda create -n dj python=3.8  # you might need to add "pywin32" if you are on Windows
     (base)$ conda activate dj
-    (dj)$   pip install --upgrade databrickslabs-jupyterlab[cli]==2.2.0-rc4
+    (dj)$   pip install --upgrade databrickslabs-jupyterlab[cli]==2.2.0
     ```
 
     The prefix `(db-jlab)$` for all command examples in this document assumes that the conda enviromnent `db-jlab` is activated.
