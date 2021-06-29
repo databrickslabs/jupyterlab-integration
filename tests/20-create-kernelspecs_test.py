@@ -4,6 +4,7 @@ import logging
 import subprocess
 
 import yaml
+import pytest
 
 from databrickslabs_jupyterlab.ssh_config import SshConfig
 
@@ -80,7 +81,7 @@ class TestKernelSpec:
 
         subprocess.check_output([SSH, cluster_id, "hostname"])
 
-    # @pytest.mark.skip(reason="Do not install local wheel")
+    @pytest.mark.skip(reason="Do not install local wheel")
     def test_install_wheel(self, name, cluster_id):
         os.environ["CLUSTER"] = cluster_id
         subprocess.check_output(["make", "install_wheel"], cwd=os.getcwd())
