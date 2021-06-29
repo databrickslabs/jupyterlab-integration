@@ -2,33 +2,11 @@
 
 This package allows to connect to a remote Databricks cluster from a locally running JupyterLab.
 
-## >>> New minor release V2.2.1 (June 2021) <<<
+## >>> 1 New minor release V2.2.1 (June 2021) <<<
 
 - Support of Databricks Runtimes 6.4(ESR) and 7.3, 7.6, 8.0, 8.1, 8.2, 8.3 (both standard and ML)
 - Upgrade to ssh_ipykernel 1.2.3 (security fixes for the Javascript Jupyterlab extension of ssh_ipykernel)
 - Security fixes for the Javascript Jupyterlab extension of databrickslabs-jupyterlab
-
-## >>> New minor release V2.2 (Apr 2021) <<<
-
-### 1 New features
-
-- **Jupyter Lab 3 support**
-    
-    Jupyter Integration now works with JupyterLab 3. This drastically simplified the installation. The bootstrap step (`dj -b`) is gone. Simply:
-
-    ```bash
-    (base)$ conda create -n dj python=3.8  # you might need to add "pywin32" if you are on Windows
-    (base)$ conda activate dj
-    (dj)$ pip install --upgrade databrickslabs-jupyterlab[cli]==2.2.1
-    ```
-
-    The following packages get installed:
-    - databrickslabs-jupyterlab
-    - databrickslabs-jupyterlab-status (providing the lab extension)
-    - ssh-ipykernel
-    - ssh-ipykernel-interrupt (providing the lab extension)
-
-- Support of Databricks Runtimes 6.4, 6.4(ESR), 7.3 and 7.5, 8.0, 8.1 (standard and ML)
 
 ## 2 Overview
 ![introduction](docs/v2/introduction.gif)
@@ -78,11 +56,13 @@ This package allows to connect to a remote Databricks cluster from a locally run
 
     *JupyterLab Integration* has been tested with the following Databricks runtimes on AWS and Azure:
 
-    - *'6.4'* and *'6.4 ML'*
+    - *'6.4 (ESR)'*
     - *'7.3'* and *'7.3 ML'*
-    - *'7.5'* and *'7.5 ML'*
-    - *'8-0'* and *'8.0 ML'*
+    - *'7.6'* and *'7.6 ML'*
+    - *'8.0'* and *'8.0 ML'*
     - *'8.1'* and *'8.1 ML'*
+    - *'8.2'* and *'8.2 ML'*
+    - *'8.3'* and *'8.3 ML'*
 
     Newer runtimes might work, however are subject to own tests.
 
