@@ -26,12 +26,31 @@ sys.path.insert(0, "/databricks/jars/spark--driver--spark--resources-resources.j
 
 from pyspark.conf import SparkConf  # pylint: disable=import-error,wrong-import-position
 
+NEW_DBUTILS = False
+
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     # Suppress py4j loading message on stderr by redirecting sys.stderr
     stderr_orig = sys.stderr
     sys.stderr = io.StringIO()
-    from PythonShell import get_existing_gateway, RemoteContext  # pylint: disable=import-error
+    try:
+        # Up to DBR 7.x
+        from PythonShell import get_existing_gateway, RemoteContext  # pylint: disable=import-error,wrong-import-position
+    except:
+        # Above DBR 8.0
+        sys.path.insert(0, "/databricks/python_shell")
+        sys.path.insert(0, "/databricks/python_shell/scripts/")
+
+        from dbruntime.spark_connection import RemoteContext, get_existing_gateway  # pylint: disable=import-error,wrong-import-position
+
+    try:
+        # up to DBR 8.2
+        from dbutils import DBUtils  # pylint: disable=import-error,wrong-import-position
+        NEW_DBUTILS = False
+    except:
+        # above DBR 8.3
+        from dbruntime.dbutils import DBUtils  # pylint: disable=import-error,wrong-import-position
+        NEW_DBUTILS = True
 
     out = sys.stderr.getvalue()
     # Restore sys.stderr
@@ -39,8 +58,6 @@ with warnings.catch_warnings():
     # Print any other error message to stderr
     if not "py4j imported" in out:
         print(out, file=sys.stderr)
-
-from dbutils import DBUtils  # pylint: disable=import-error,wrong-import-position
 
 
 class JobInfo:
@@ -109,8 +126,13 @@ class JobInfo:
 
 
 class DbjlUtils:
-    def __init__(self, shell, entry_point):
-        self._dbutils = DBUtils(shell, entry_point)
+    def __init__(self, shell, entry_point, sc, sqlContext, displayHTML):
+        # ugly, but not possible to differentiate <= 8.2 from >= 8.3
+        try:
+            self._dbutils = DBUtils(shell, entry_point)
+        except:
+            self._dbutils = DBUtils(shell, entry_point, sc, sqlContext, displayHTML)
+
         self.fs = self._dbutils.fs
         self.secrets = self._dbutils.secrets
         self.notebook = Notebook()
@@ -464,7 +486,7 @@ def dbcontext(progressbar=True, gw_port=None, gw_token=None, token=None, scala_c
 
     # Initialize dbutils
     #
-    dbutils = DbjlUtils(shell, entry_point)
+    dbutils = DbjlUtils(shell, entry_point, sc, sqlContext, shell.displayHTML)
 
     # Setting up Spark progress bar
     #

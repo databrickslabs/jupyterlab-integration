@@ -80,6 +80,12 @@ class TestKernelSpec:
 
         subprocess.check_output([SSH, cluster_id, "hostname"])
 
+    # @pytest.mark.skip(reason="Do not install local wheel")
+    def test_install_wheel(self, name, cluster_id):
+        os.environ["CLUSTER"] = cluster_id
+        subprocess.check_output(["make", "install_wheel"], cwd=os.getcwd())
+        del os.environ["CLUSTER"]
+
     def test_install_libs(self, name, cluster_id):
         result = install_libs(cluster_id, self.host, self.token)
         self.log.info("result: %s", result)

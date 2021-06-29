@@ -1,6 +1,6 @@
 {
   "name": "databricks_status",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "A JupyterLab extension to show starting status of Databricks clusters.",
   "keywords": [
     "jupyter",
@@ -46,12 +46,12 @@
   },
   "dependencies": {
     "@jupyterlab/application": "^3.0.9",
-    "@jupyterlab/apputils": "^3.0.7",
-    "@jupyterlab/coreutils": "^5.0.5",
+    "@jupyterlab/apputils": "^3.0.9",
+    "@jupyterlab/coreutils": "^5.0.6",
     "@jupyterlab/docregistry": "^3.0.9",
     "@jupyterlab/notebook": "^3.0.9",
-    "@jupyterlab/services": "^6.0.7",
-    "@jupyterlab/statusbar": "^3.0.7",
+    "@jupyterlab/services": "^6.0.9",
+    "@jupyterlab/statusbar": "^3.0.9",
     "@lumino/polling": "^1.0"
   },
   "devDependencies": {

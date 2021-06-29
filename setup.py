@@ -30,10 +30,10 @@ EXTRAS_REQUIRES = {
         "ipykernel>=5.5.3,<5.6.0",
         "tornado>=6.1.0,<6.2.0",
         "widgetsnbextension==3.5.1",
-        "ssh-ipykernel==1.2.2",
+        "ssh-ipykernel==1.2.3",
         "inquirer==2.6.3",
-        "pyperclip>=1.8.2<1.9.0",
-        "databrickslabs_jupyterlab_status==2.2.0"
+        "pyperclip>=1.8.2,<1.9.0",
+        "databrickslabs_jupyterlab_status==2.2.1"
     ],
     "dev": [
         "pytest", 
@@ -48,7 +48,7 @@ EXTRAS_REQUIRES = {
 
 setup(
     name="databrickslabs_jupyterlab",
-    version="2.2.0",
+    version="2.2.1",
     author="Bernhard Walter",
     author_email="bernhard.walter@databricks.com",
     url="https://github.com/databrickslabs/Jupyterlab-Integration",

@@ -1,3 +1,8 @@
+### V2.2.1 (June 2021)
+
+- **Support of Databricks Runtimes 6.4(ESR) and 7.3, 7.6, 8.0, 8.1, 8.2, 8.3 (both standard and ML)**
+- Security fixes for the Javascript Jupyterlab extension of ssh_ipykernel and databrickslabs-jupyterlab
+
 ### V2.2.0 (Apr 2021)
 
 - **Jupyter Lab support** 

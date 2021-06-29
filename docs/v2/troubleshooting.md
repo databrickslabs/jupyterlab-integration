@@ -30,7 +30,7 @@
     Config dir: /opt/miniconda/envs/dj/etc/jupyter
         databrickslabs_jupyterlab enabled
         - Validating databrickslabs_jupyterlab...
-        databrickslabs_jupyterlab 2.2.0 OK
+        databrickslabs_jupyterlab 2.2.1 OK
         jupyterlab enabled
         - Validating jupyterlab...
         jupyterlab 3.0.14 OK
@@ -52,7 +52,7 @@
     Config dir: /opt/miniconda/envs/dj/etc/jupyter
         databrickslabs_jupyterlab enabled
         - Validating databrickslabs_jupyterlab...
-        databrickslabs_jupyterlab 2.2.0 OK
+        databrickslabs_jupyterlab 2.2.1 OK
         jupyterlab enabled
         - Validating jupyterlab...
         jupyterlab 3.0.14 OK

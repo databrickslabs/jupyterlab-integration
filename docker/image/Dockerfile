@@ -1,7 +1,7 @@
 FROM continuumio/miniconda3
 
 RUN . /opt/conda/bin/activate base && \
-    /opt/conda/bin/pip install --upgrade databrickslabs-jupyterlab[cli]==2.2.0 && \
+    /opt/conda/bin/pip install --upgrade databrickslabs-jupyterlab[cli]==2.2.1 && \
     echo "cleaning" && \
     conda clean --all && \
     /opt/conda/bin/jupyter lab clean && \
