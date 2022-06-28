@@ -1,3 +1,11 @@
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+# DEPRECATED
+
+- SSH access in most workspaces is not allowed any more 
+- Jupyter features like `ipywidgets` are now supported in Databricks Notebooks 
+
+# = = = = = = = = = = = = = = = = = = = = = = = = = = = = = 
+
 # Local JupyterLab connecting to Databricks via SSH
 
 This package allows to connect to a remote Databricks cluster from a locally running JupyterLab.
